@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Product, ProductColor } from '../types';
 import { formatPrice } from '../data/products';
-import { ArrowLeft, Star, ChevronDown, ChevronUp, Share2, Check, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowLeft, Star, ChevronDown, ChevronUp, Check, ShieldCheck, Truck } from 'lucide-react';
 
 interface ProductDetailPageProps {
   product: Product;
@@ -19,7 +19,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<string>(product.sizes[1] || product.sizes[0]);
   const [activeMobileImageIndex, setActiveMobileImageIndex] = useState<number>(0);
-  const [addedToast, setAddedToast] = useState(false);
+  const [isButtonMorphed, setIsButtonMorphed] = useState(false);
 
   // Accordion state
   const [openAccordions, setOpenAccordions] = useState<{ [key: string]: boolean }>({
@@ -33,16 +33,34 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     setOpenAccordions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // Find active variant & stock
+  const currentVariant = product.variants?.find(
+    (v) => v.color.toLowerCase() === selectedColor.name.toLowerCase() && v.size === selectedSize
+  );
+
+  const variantStock = currentVariant ? currentVariant.stock : 5;
+  const isOutOfStock = variantStock === 0;
+
+  const productPrice = product.priceInKobo || (product as any).price * 100 || 4800000;
+
   const handleAdd = () => {
+    if (isOutOfStock) return;
     onAddToCart(product, selectedColor.name, selectedSize);
-    setAddedToast(true);
-    setTimeout(() => setAddedToast(false), 2500);
+
+    // Button morph: ADD TO BAG -> ADDED ✓ -> normal state after 1600ms
+    setIsButtonMorphed(true);
+    setTimeout(() => {
+      setIsButtonMorphed(false);
+    }, 1600);
   };
 
-  const imagesToDisplay = product.galleryImages?.length > 0 ? product.galleryImages : [product.primaryImage, product.secondaryImage];
+  const imagesToDisplay =
+    product.galleryImages?.length > 0
+      ? product.galleryImages
+      : [product.primaryImage, product.secondaryImage];
 
   return (
-    <div id="product-detail-page" className="min-h-screen bg-[#F4F1EB] pt-6 pb-28 md:pb-36">
+    <div id="product-detail-page" className="min-h-screen bg-[#F4F1EB] pt-6 pb-28 md:pb-36 animate-in fade-in duration-300">
       {/* Top back navigation */}
       <div className="max-w-[1344px] mx-auto px-5 md:px-12 mb-6">
         <button
@@ -71,7 +89,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <img
                     src={img}
                     alt={`${product.name} view ${idx + 1}`}
-                    className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-500 ease-out"
+                    className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-700 ease-out"
                     loading={idx === 0 ? 'eager' : 'lazy'}
                   />
                 </div>
@@ -86,7 +104,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   alt={product.name}
                   className="w-full h-full object-cover object-top"
                 />
-                
+
                 {/* Mobile Counter 1 / N */}
                 <div className="absolute bottom-4 right-4 bg-[#FAF9F6]/90 text-[#171714] text-xs font-semibold px-2.5 py-1 border border-[#D8D4CC]">
                   {activeMobileImageIndex + 1} / {imagesToDisplay.length}
@@ -100,7 +118,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     key={idx}
                     onClick={() => setActiveMobileImageIndex(idx)}
                     className={`relative w-14 h-16 flex-shrink-0 border ${
-                      activeMobileImageIndex === idx ? 'border-[#681F2C] ring-1 ring-[#681F2C]' : 'border-[#D8D4CC]'
+                      activeMobileImageIndex === idx
+                        ? 'border-[#681F2C] ring-1 ring-[#681F2C]'
+                        : 'border-[#D8D4CC]'
                     }`}
                   >
                     <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
@@ -131,9 +151,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               <div className="flex justify-between items-center pt-1">
                 <span className="font-sans text-2xl font-medium text-[#171714]">
-                  {formatPrice(product.price)}
+                  {formatPrice(productPrice)}
                 </span>
-                
+
                 {/* Rating review */}
                 <div className="flex items-center space-x-1 text-xs text-[#56554F]">
                   <div className="flex text-[#681F2C]">
@@ -192,46 +212,68 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
               <div className="grid grid-cols-5 gap-2">
                 {product.sizes.map((sz) => {
                   const isSelected = selectedSize === sz;
+                  const szVariant = product.variants?.find(
+                    (v) => v.color.toLowerCase() === selectedColor.name.toLowerCase() && v.size === sz
+                  );
+                  const szOutOfStock = szVariant && szVariant.stock === 0;
+
                   return (
                     <button
                       key={sz}
                       onClick={() => setSelectedSize(sz)}
-                      className={`h-11 flex items-center justify-center text-xs font-semibold uppercase tracking-wider transition-colors border ${
+                      disabled={szOutOfStock}
+                      className={`h-11 flex flex-col items-center justify-center text-xs font-semibold uppercase tracking-wider transition-colors border ${
                         isSelected
                           ? 'bg-[#171714] text-[#FAF9F6] border-[#171714]'
+                          : szOutOfStock
+                          ? 'bg-[#F4F1EB] text-[#8A8780] border-[#D8D4CC] line-through cursor-not-allowed opacity-50'
                           : 'bg-[#FAF9F6] text-[#171714] border-[#D8D4CC] hover:border-[#171714]'
                       }`}
                     >
-                      {sz}
+                      <span>{sz}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Stock Scarcity Notice */}
-              {product.stockWarning && (
-                <p className="text-xs text-[#681F2C] font-medium tracking-wide pt-1">
-                  • {product.stockWarning}
+              {/* Scarcity Notice */}
+              {variantStock > 0 && variantStock <= 3 && (
+                <p className="text-xs text-[#681F2C] font-semibold tracking-wide pt-1">
+                  • Only {variantStock} remaining in {selectedColor.name} · {selectedSize}
+                </p>
+              )}
+              {isOutOfStock && (
+                <p className="text-xs text-red-700 font-semibold tracking-wide pt-1">
+                  • Currently sold out in {selectedColor.name} · {selectedSize}
                 </p>
               )}
             </div>
 
-            {/* Desktop Add to Bag Primary CTA */}
+            {/* Desktop Add to Bag CTA (with morphing state) */}
             <div className="pt-2 hidden sm:block">
               <button
                 id="add-to-bag-desktop-btn"
                 onClick={handleAdd}
-                className="w-full bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold tracking-[0.2em] uppercase py-4 border border-[#171714] transition-colors cursor-pointer"
+                disabled={isOutOfStock}
+                className={`w-full text-xs font-semibold tracking-[0.2em] uppercase py-4 border transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 ${
+                  isOutOfStock
+                    ? 'bg-[#E6E1D7] text-[#8A8780] border-[#D8D4CC] cursor-not-allowed'
+                    : isButtonMorphed
+                    ? 'bg-[#681F2C] text-white border-[#681F2C] scale-[0.99]'
+                    : 'bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] border-[#171714]'
+                }`}
               >
-                ADD TO BAG — {formatPrice(product.price)}
+                {isOutOfStock ? (
+                  <span>SOLD OUT</span>
+                ) : isButtonMorphed ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>ADDED ✓</span>
+                  </>
+                ) : (
+                  <span>ADD TO BAG — {formatPrice(productPrice)}</span>
+                )}
               </button>
-
-              {addedToast && (
-                <div className="mt-2 p-2.5 bg-[#FAF9F6] border border-[#681F2C] text-center text-xs text-[#681F2C] font-medium flex items-center justify-center space-x-1.5 animate-in fade-in">
-                  <Check className="w-4 h-4" />
-                  <span>Added {product.name} ({selectedColor.name} · {selectedSize}) to bag</span>
-                </div>
-              )}
             </div>
 
             {/* Reassurance pills */}
@@ -255,7 +297,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   className="w-full flex justify-between items-center text-xs font-semibold tracking-[0.16em] uppercase text-[#171714] cursor-pointer"
                 >
                   <span>Description</span>
-                  {openAccordions.description ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {openAccordions.description ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
                 </button>
                 {openAccordions.description && (
                   <div className="pt-3 text-sm text-[#56554F] font-light leading-relaxed">
@@ -276,7 +322,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 {openAccordions.fit && (
                   <div className="pt-3 text-sm text-[#56554F] font-light leading-relaxed space-y-2">
                     <p>{product.fitAndSize}</p>
-                    <p className="text-xs text-[#171714] font-medium">Model is wearing size S.</p>
+                    <p className="text-xs text-[#171714] font-medium">
+                      Model is wearing size S.
+                    </p>
                   </div>
                 )}
               </div>
@@ -288,12 +336,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   className="w-full flex justify-between items-center text-xs font-semibold tracking-[0.16em] uppercase text-[#171714] cursor-pointer"
                 >
                   <span>Delivery & Returns</span>
-                  {openAccordions.delivery ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  {openAccordions.delivery ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
                 </button>
                 {openAccordions.delivery && (
                   <div className="pt-3 text-sm text-[#56554F] font-light leading-relaxed">
                     <p>{product.delivery}</p>
-                    <p className="text-xs text-[#56554F] pt-2">Exchanges accepted within 7 days for unworn garments with tags intact.</p>
+                    <p className="text-xs text-[#56554F] pt-2">
+                      Exchanges accepted within 7 days for unworn garments with tags intact.
+                    </p>
                   </div>
                 )}
               </div>
@@ -318,18 +372,33 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </div>
       </div>
 
-      {/* Mobile PDP Sticky Bottom Bar (Fitts's Law thumb action) */}
+      {/* Mobile PDP Sticky Bottom Bar with format: `₦48,000 | ADD TO BAG` */}
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F6] border-t border-[#D8D4CC] p-3 flex items-center justify-between shadow-lg">
         <div className="flex flex-col">
-          <span className="text-[10px] uppercase text-[#56554F] tracking-wider">{product.name}</span>
-          <span className="font-sans text-base font-semibold text-[#171714]">{formatPrice(product.price)}</span>
+          <span className="text-[10px] uppercase text-[#56554F] tracking-wider truncate max-w-[150px]">
+            {product.name}
+          </span>
+          <span className="font-sans text-sm font-semibold text-[#171714]">
+            {selectedColor.name} · {selectedSize}
+          </span>
         </div>
         <button
           id="add-to-bag-mobile-btn"
           onClick={handleAdd}
-          className="bg-[#171714] text-[#FAF9F6] hover:bg-[#681F2C] text-xs font-semibold tracking-[0.18em] uppercase px-6 py-3 border border-[#171714] transition-colors"
+          disabled={isOutOfStock}
+          className={`text-xs font-semibold tracking-[0.16em] uppercase px-5 py-3 border transition-all duration-300 ${
+            isOutOfStock
+              ? 'bg-[#E6E1D7] text-[#8A8780] border-[#D8D4CC]'
+              : isButtonMorphed
+              ? 'bg-[#681F2C] text-white border-[#681F2C]'
+              : 'bg-[#171714] text-[#FAF9F6] border-[#171714]'
+          }`}
         >
-          {addedToast ? 'Added ✓' : 'Add to Bag'}
+          {isOutOfStock
+            ? 'Sold Out'
+            : isButtonMorphed
+            ? 'Added ✓'
+            : `${formatPrice(productPrice)} | ADD TO BAG`}
         </button>
       </div>
     </div>

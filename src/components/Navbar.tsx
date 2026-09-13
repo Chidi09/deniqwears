@@ -78,6 +78,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               About
             </button>
+            <button
+              id="nav-atelier"
+              onClick={() => onNavigate({ type: 'admin' })}
+              className="editorial-link transition-colors hover:text-[#681F2C] py-1 cursor-pointer text-[#8A8780] hover:text-[#171714]"
+              title="Atelier Management"
+            >
+              Atelier
+            </button>
           </nav>
 
           {/* Mobile Hamburger */}
@@ -220,6 +228,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="text-left hover:text-[#681F2C] transition-colors"
               >
                 About The Brand
+              </button>
+              <button
+                onClick={() => {
+                  onNavigate({ type: 'admin' });
+                  setMobileMenuOpen(false);
+                }}
+                className="text-left text-base font-sans uppercase tracking-wider text-[#681F2C] font-semibold pt-2"
+              >
+                Atelier Back-Office →
               </button>
             </div>
           </div>

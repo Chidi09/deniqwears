@@ -187,6 +187,14 @@ export const Footer: React.FC<FooterProps> = ({
               <p>Plot 14 Oko Awo Street, Victoria Island, Lagos, Nigeria.</p>
               <p className="text-[#681F2C] font-semibold pt-1">Mon – Sat: 10:00 – 19:00</p>
               <p className="text-[11px]">Private fitting sessions by appointment.</p>
+              <div className="pt-2">
+                <button
+                  onClick={() => onNavigate({ type: 'admin' })}
+                  className="editorial-link text-[11px] uppercase tracking-wider text-[#8A8780] hover:text-[#171714] font-medium"
+                >
+                  Atelier Back-Office →
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -198,6 +206,13 @@ export const Footer: React.FC<FooterProps> = ({
             <span>TERMS</span>
             <span>·</span>
             <span>PRIVACY</span>
+            <span>·</span>
+            <button
+              onClick={() => onNavigate({ type: 'admin' })}
+              className="hover:text-[#171714] transition-colors"
+            >
+              STAFF
+            </button>
             <span>·</span>
             <span className="text-[#171714] font-semibold">LAGOS, NG</span>
           </div>

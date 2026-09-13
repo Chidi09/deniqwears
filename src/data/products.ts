@@ -1,7 +1,13 @@
 import { Product, LookbookItem } from '../types';
 
-export function formatPrice(price: number): string {
-  return '₦' + price.toLocaleString('en-NG');
+export function formatPrice(koboOrNaira: number): string {
+  // Gracefully handles both kobo (smallest currency unit e.g. 4800000) and naira values
+  const naira = koboOrNaira >= 100000 ? Math.round(koboOrNaira / 100) : koboOrNaira;
+  return '₦' + naira.toLocaleString('en-NG');
+}
+
+export function formatKobo(kobo: number): string {
+  return '₦' + Math.round(kobo / 100).toLocaleString('en-NG');
 }
 
 export const PRODUCTS: Product[] = [

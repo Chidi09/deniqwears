@@ -12,7 +12,7 @@ export interface ProductVariant {
   color: string;
   size: 'XS' | 'S' | 'M' | 'L' | 'XL';
   sku?: string;
-  priceInKobo?: number;
+  priceInKobo?: number; // Optional variant price override in kobo
   stock: number;
   active: boolean;
 }
@@ -21,14 +21,13 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  priceInKobo?: number; // Stored in smallest currency unit: Kobo (₦48,000 = 4800000)
-  price?: number; // Optional Naira display helper
-  status?: ProductStatus;
+  priceInKobo: number; // Stored in smallest currency unit (1 NGN = 100 kobo)
+  status: ProductStatus;
   category: 'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion';
   collection?: string;
   colors: ProductColor[];
   sizes: Array<'XS' | 'S' | 'M' | 'L' | 'XL'>;
-  variants?: ProductVariant[];
+  variants: ProductVariant[];
   primaryImage: string;
   secondaryImage: string;
   galleryImages: string[];
@@ -45,19 +44,8 @@ export interface Product {
   isSignatureSelection?: boolean;
   isAsymmetricFeature?: boolean;
   asymmetricRole?: 'large' | 'detail';
-}
-
-export interface CartItem {
-  id: string;
-  productId: string;
-  variantId: string;
-  name: string;
-  priceInKobo: number; // Client display cache, but server validates!
-  price?: number; // Optional Naira display helper
-  image: string;
-  selectedColor: string;
-  selectedSize: string;
-  quantity: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type OrderStatus =
@@ -79,7 +67,7 @@ export interface OrderItem {
   color: string;
   size: string;
   image: string;
-  unitPriceInKobo: number;
+  unitPriceInKobo: number; // Server-locked price in kobo
   quantity: number;
   totalPriceInKobo: number;
 }
@@ -107,7 +95,7 @@ export interface OrderTimelineEvent {
 
 export interface Order {
   id: string;
-  orderNumber: string;
+  orderNumber: string; // e.g. DNQ-18421
   idempotencyKey: string;
   status: OrderStatus;
   items: OrderItem[];
@@ -122,7 +110,7 @@ export interface Order {
   deliveryFeeInKobo: number;
   subtotalInKobo: number;
   discountInKobo: number;
-  totalInKobo: number;
+  totalInKobo: number; // Final immutable total
   currency: 'NGN' | 'USD';
   paymentMethod: 'paystack' | 'flutterwave' | 'stripe' | 'showroom';
   paymentReference?: string;
@@ -160,6 +148,16 @@ export interface StoreSettings {
   };
 }
 
+export interface DiscountCode {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number; // percentage (e.g. 10 for 10%) or fixed kobo
+  minSpendInKobo?: number;
+  active: boolean;
+  usageCount: number;
+}
+
 export interface AdminActivityLog {
   id: string;
   timestamp: string;
@@ -169,31 +167,3 @@ export interface AdminActivityLog {
   entityId?: string;
   details: string;
 }
-
-export interface LookbookItem {
-  id: string;
-  title: string;
-  caption: string;
-  editorialNote: string;
-  image: string;
-  aspectRatio: 'portrait' | 'tall' | 'wide' | 'square';
-  productIds: string[];
-}
-
-export interface FilterState {
-  category: Category;
-  sizes: string[];
-  colors: string[];
-  sortBy: 'featured' | 'price-asc' | 'price-desc' | 'newest';
-}
-
-export type ActivePage =
-  | { type: 'home' }
-  | { type: 'shop'; category?: Category }
-  | { type: 'product'; slug: string }
-  | { type: 'lookbook' }
-  | { type: 'about' }
-  | { type: 'checkout' }
-  | { type: 'order-confirmed'; orderNumber: string }
-  | { type: 'admin'; section?: 'overview' | 'products' | 'orders' | 'settings' | 'logs' }
-  | { type: 'account'; tab?: 'orders' | 'addresses' | 'wishlist' };

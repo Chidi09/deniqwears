@@ -12,6 +12,8 @@
   --color-oxblood: #681F2C;
   --color-soft-oxblood: #B78D91;
   --color-pure-white: #FFFFFF;
+
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
@@ -31,6 +33,35 @@ body {
 
 .font-sans {
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Motion Tokens: cubic-bezier(0.22, 1, 0.36, 1) */
+.ease-editorial {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.duration-instant {
+  transition-duration: 100ms;
+}
+
+.duration-fast {
+  transition-duration: 160ms;
+}
+
+.duration-standard {
+  transition-duration: 220ms;
+}
+
+.duration-reveal {
+  transition-duration: 350ms;
+}
+
+.duration-drawer {
+  transition-duration: 400ms;
+}
+
+.duration-editorial {
+  transition-duration: 700ms;
 }
 
 /* Custom subtle scrollbar */

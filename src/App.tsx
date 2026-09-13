@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ActivePage, CartItem, Category, LookbookItem, Product } from './types';
 import { PRODUCTS, LOOKBOOK_ITEMS } from './data/products';
+import { api } from './services/api';
 import { Navbar } from './components/Navbar';
 import { EditorialHero } from './components/EditorialHero';
 import { CollectionIntro } from './components/CollectionIntro';
@@ -18,32 +19,58 @@ import { ProductDetailPage } from './components/ProductDetailPage';
 import { ShopPage } from './components/ShopPage';
 import { LookbookPage } from './components/LookbookPage';
 import { AboutPage } from './components/AboutPage';
+import { CheckoutPage } from './components/CheckoutPage';
+import { AdminLayout } from './components/Admin/AdminLayout';
 import { CartDrawer } from './components/CartDrawer';
 import { SearchOverlay } from './components/SearchOverlay';
 import { SizeGuideModal } from './components/SizeGuideModal';
 import { LookbookModal } from './components/LookbookModal';
 import { QuickAddModal } from './components/QuickAddModal';
-import { CheckoutModal } from './components/CheckoutModal';
 import { AccountDrawer } from './components/AccountDrawer';
 
 export default function App() {
   // Navigation State
   const [activePage, setActivePage] = useState<ActivePage>({ type: 'home' });
 
+  // Live products loaded from server with fallback to static catalog
+  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+
   // Modals & Drawers State
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedLook, setSelectedLook] = useState<LookbookItem | null>(null);
   const [quickAddProduct, setQuickAddProduct] = useState<Product | null>(null);
+
+  // Sync catalog from backend API if available
+  useEffect(() => {
+    api
+      .getProducts()
+      .then((serverProducts) => {
+        if (serverProducts && serverProducts.length > 0) {
+          setProductsList(serverProducts);
+        }
+      })
+      .catch((err) => {
+        // Fallback to static PRODUCTS
+        console.warn('Using local catalogue cache:', err);
+      });
+  }, []);
 
   // Cart State (initialized with sample item for instant realism, persisted in localStorage)
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem('deniq_cart');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Normalize prices to kobo
+        return parsed.map((item: any) => ({
+          ...item,
+          priceInKobo: item.priceInKobo || (item.price ? item.price * 100 : 4800000),
+          price: item.price || Math.round((item.priceInKobo || 4800000) / 100),
+        }));
+      }
     } catch (e) {
       // fallback
     }
@@ -51,9 +78,12 @@ export default function App() {
       {
         id: 'init-cart-1',
         productId: 'prod-amara-dress',
+        variantId: 'v-1-1',
         name: 'The Amara Dress',
+        priceInKobo: 4800000,
         price: 48000,
-        image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=600&auto=format&fit=crop',
+        image:
+          'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=600&auto=format&fit=crop',
         selectedColor: 'Black',
         selectedSize: 'M',
         quantity: 1,
@@ -83,6 +113,12 @@ export default function App() {
   };
 
   const handleAddToCart = (product: Product, color: string, size: string) => {
+    const matchedVariant = product.variants?.find(
+      (v) => v.color.toLowerCase() === color.toLowerCase() && v.size === size
+    );
+    const variantId = matchedVariant ? matchedVariant.id : `${product.id}-${color}-${size}`;
+    const priceInKobo = product.priceInKobo || (product as any).price * 100 || 4800000;
+
     setCartItems((prev) => {
       const existing = prev.find(
         (i) => i.productId === product.id && i.selectedColor === color && i.selectedSize === size
@@ -95,8 +131,10 @@ export default function App() {
       const newItem: CartItem = {
         id: `${product.id}-${color}-${size}-${Date.now()}`,
         productId: product.id,
+        variantId,
         name: product.name,
-        price: product.price,
+        priceInKobo,
+        price: Math.round(priceInKobo / 100),
         image: product.primaryImage,
         selectedColor: color,
         selectedSize: size,
@@ -131,9 +169,31 @@ export default function App() {
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   // Selected Product for PDP
-  const currentProduct = activePage.type === 'product'
-    ? PRODUCTS.find((p) => p.slug === activePage.slug) || PRODUCTS[0]
-    : null;
+  const currentProduct =
+    activePage.type === 'product'
+      ? productsList.find((p) => p.slug === activePage.slug) || productsList[0]
+      : null;
+
+  // Render Admin View if requested
+  if (activePage.type === 'admin') {
+    return (
+      <AdminLayout
+        onExitToStore={() => handleNavigate({ type: 'home' })}
+        initialSection={activePage.section || 'overview'}
+      />
+    );
+  }
+
+  // Render Checkout View if requested
+  if (activePage.type === 'checkout') {
+    return (
+      <CheckoutPage
+        items={cartItems}
+        onBackToShopping={() => handleNavigate({ type: 'shop', category: 'all' })}
+        onClearCart={handleClearCart}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F4F1EB] text-[#171714]">
@@ -163,14 +223,14 @@ export default function App() {
 
             {/* 3. Asymmetric Product Showcase */}
             <AsymmetricShowcase
-              products={PRODUCTS}
+              products={productsList}
               onSelectProduct={handleSelectProduct}
               onQuickAdd={(p) => setQuickAddProduct(p)}
             />
 
             {/* 4. Normal Product Grid (4 col desktop / 2 col mobile) */}
             <ProductGrid
-              products={PRODUCTS.slice(0, 8)}
+              products={productsList.slice(0, 8)}
               title="Current Collection"
               subtitle="Defined silhouettes designed for lasting rotation"
               onSelectProduct={handleSelectProduct}
@@ -185,7 +245,7 @@ export default function App() {
 
             {/* 7. Signature Horizontal Collection (The Deniq Selection) */}
             <HorizontalSelection
-              products={PRODUCTS}
+              products={productsList}
               onSelectProduct={handleSelectProduct}
               onQuickAdd={(p) => setQuickAddProduct(p)}
             />
@@ -219,7 +279,7 @@ export default function App() {
         {/* VIEW 3: CATALOG / SHOP PAGE */}
         {activePage.type === 'shop' && (
           <ShopPage
-            products={PRODUCTS}
+            products={productsList}
             initialCategory={activePage.category || 'all'}
             onSelectProduct={handleSelectProduct}
             onQuickAdd={(p) => setQuickAddProduct(p)}
@@ -256,7 +316,7 @@ export default function App() {
         onRemoveItem={handleRemoveCartItem}
         onProceedToCheckout={() => {
           setCartOpen(false);
-          setCheckoutOpen(true);
+          handleNavigate({ type: 'checkout' });
         }}
       />
 
@@ -264,7 +324,7 @@ export default function App() {
       <SearchOverlay
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
-        products={PRODUCTS}
+        products={productsList}
         onSelectProduct={handleSelectProduct}
         onSelectCategory={handleCategoryNavigate}
       />
@@ -279,7 +339,7 @@ export default function App() {
       <LookbookModal
         look={selectedLook}
         onClose={() => setSelectedLook(null)}
-        products={PRODUCTS}
+        products={productsList}
         onSelectProduct={handleSelectProduct}
         onQuickAdd={(p) => setQuickAddProduct(p)}
       />
@@ -292,19 +352,11 @@ export default function App() {
         onViewProductDetails={handleSelectProduct}
       />
 
-      {/* Checkout Modal */}
-      <CheckoutModal
-        isOpen={checkoutOpen}
-        onClose={() => setCheckoutOpen(false)}
-        items={cartItems}
-        onClearCart={handleClearCart}
-      />
-
       {/* Account Drawer */}
       <AccountDrawer
         isOpen={accountOpen}
         onClose={() => setAccountOpen(false)}
-        products={PRODUCTS}
+        products={productsList}
         onSelectProduct={handleSelectProduct}
         onQuickAdd={(p) => setQuickAddProduct(p)}
       />
