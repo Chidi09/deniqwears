@@ -81,9 +81,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     return <AdminLogin onSuccess={() => setIsAuthenticated(true)} onExit={onExitToStore} />;
   }
 
-  const pendingOrdersCount = orders.filter(
-    (o) => o.status === 'PAID' && o.status !== 'FULFILLED'
-  ).length;
+  const pendingOrdersCount = orders.filter((o) => o.status === 'PAID').length;
 
   return (
     <div className="min-h-screen bg-[#F4F1EB] text-[#171714] flex flex-col font-sans">

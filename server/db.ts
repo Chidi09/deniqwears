@@ -761,4 +761,7 @@ class Database {
   }
 }
 
-export const db = new Database();
+const globalForDb = globalThis as unknown as { db?: Database };
+export const db = globalForDb.db ?? new Database();
+if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
+

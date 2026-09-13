@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CartItem, DeliveryZone, Order, StoreSettings } from '../types';
 import { api } from '../services/api';
 import { formatPrice } from '../data/products';
+import { useGuestCheckoutStore } from '../store/useStore';
 import {
   Lock,
   ArrowLeft,
@@ -25,23 +26,30 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   onBackToShopping,
   onClearCart,
 }) => {
+  const {
+    guestCustomer,
+    guestShippingAddress,
+    setGuestCustomer,
+    setGuestShippingAddress,
+  } = useGuestCheckoutStore();
+
   const [settings, setSettings] = useState<StoreSettings | null>(null);
   const [selectedZoneId, setSelectedZoneId] = useState<string>('zone-lagos-island');
 
-  // Form State
+  // Form State (hydrated from Zustand guest checkout store)
   const [contact, setContact] = useState({
-    email: '',
-    phone: '',
-    firstName: '',
-    lastName: '',
+    email: guestCustomer?.email || '',
+    phone: guestCustomer?.phone || '',
+    firstName: guestCustomer?.firstName || '',
+    lastName: guestCustomer?.lastName || '',
   });
 
   const [address, setAddress] = useState({
-    address: '',
-    apartment: '',
-    city: 'Victoria Island',
-    state: 'Lagos',
-    country: 'Nigeria',
+    address: guestShippingAddress?.address || '',
+    apartment: guestShippingAddress?.apartment || '',
+    city: guestShippingAddress?.city || 'Victoria Island',
+    state: guestShippingAddress?.state || 'Lagos',
+    country: guestShippingAddress?.country || 'Nigeria',
   });
 
   const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'flutterwave' | 'showroom'>('paystack');
@@ -139,6 +147,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
 
     setIsSubmitting(true);
+    setGuestCustomer(contact);
+    setGuestShippingAddress({
+      ...contact,
+      ...address,
+    });
 
     try {
       const payload = {

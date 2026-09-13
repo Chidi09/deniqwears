@@ -103,15 +103,20 @@ export const api = {
 
   // --- ADMIN ENDPOINTS ---
   getAdminToken(): string | null {
+    if (typeof window === 'undefined') return null;
     return localStorage.getItem(ADMIN_TOKEN_KEY);
   },
 
   setAdminToken(token: string) {
-    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    }
   },
 
   clearAdminToken() {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+    }
   },
 
   async adminLogin(email: string, password: string) {
