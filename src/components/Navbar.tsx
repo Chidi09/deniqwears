@@ -37,7 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         id="announcement-bar"
         className="w-full bg-[#171714] text-[#FAF9F6] text-[11px] tracking-[0.18em] uppercase py-2 px-4 text-center font-medium border-b border-[#56554F]/20"
       >
-        <span>Complimentary Express Delivery Across Lagos · Private Showroom Appointments Available</span>
+        <span>Complimentary Delivery on Lagos Island · Private Showroom Appointments Available</span>
       </div>
 
       {/* Main Header */}

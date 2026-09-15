@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ActivePage, CartItem, Category, LookbookItem, Product } from '../types';
-import { PRODUCTS } from '../data/products';
 import { useCartStore, useUIStore } from '../store/useStore';
 import { useProductsQuery } from '../hooks/queries';
 import { CartDrawer } from '../components/CartDrawer';
@@ -15,6 +14,8 @@ import { AccountDrawer } from '../components/AccountDrawer';
 
 interface StoreContextType {
   productsList: Product[];
+  productsLoading: boolean;
+  productsError: boolean;
   cartItems: CartItem[];
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
@@ -68,13 +69,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setQuickAddProduct,
   } = useUIStore();
 
-  // TanStack Query for catalog
-  const { data: serverProducts } = useProductsQuery();
-  const productsList = serverProducts && serverProducts.length > 0 ? serverProducts : PRODUCTS;
+  // The live catalog, with its real loading/error state exposed rather than
+  // papered over with demo fixtures.
+  const { data: serverProducts, isLoading: productsLoading, isError: productsError } = useProductsQuery();
+  const productsList = serverProducts ?? [];
 
-  // Hydration safety check
+  // Cart lines are persisted to localStorage and can sit there for days, so
+  // their cached prices drift after an admin price change. Reconcile against
+  // the live catalog for display; the server still recalculates at checkout,
+  // but the customer should never be shown a total we won't charge.
+  const reconciledCartItems = useMemo(() => {
+    if (productsList.length === 0) return cartItems;
+    return cartItems.map((item) => {
+      const product = productsList.find((p) => p.id === item.productId);
+      if (!product) return item;
+      const variant = product.variants?.find((v) => v.id === item.variantId);
+      const currentPrice = variant?.priceInKobo ?? product.priceInKobo;
+      return currentPrice === item.priceInKobo ? item : { ...item, priceInKobo: currentPrice };
+    });
+  }, [cartItems, productsList]);
+
+  // Hydration safety check: the cart is persisted to localStorage (see
+  // useStore.ts), so the server-rendered markup can never know its contents —
+  // `mounted` starts false to match that SSR output, then flips true once the
+  // client has taken over, so we intentionally render an extra time to avoid
+  // a hydration mismatch. There is no way to know "we've hydrated" except via
+  // an effect, which is exactly what this is for.
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- see comment above
     setMounted(true);
   }, []);
 
@@ -123,13 +146,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const totalCartCount = mounted ? totalCount() : 1;
-  const activeCartItems = mounted ? cartItems : [];
+  // Zero before hydration, matching the server-rendered markup. This used to
+  // be 1, which briefly showed a phantom item in the bag on every page load.
+  const totalCartCount = mounted ? totalCount() : 0;
+  const activeCartItems = mounted ? reconciledCartItems : [];
 
   return (
     <StoreContext.Provider
       value={{
         productsList,
+        productsLoading,
+        productsError,
         cartItems: activeCartItems,
         cartOpen,
         setCartOpen,
@@ -173,7 +200,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         onClose={() => setSearchOpen(false)}
         products={productsList}
         onSelectProduct={handleSelectProduct}
-        onSelectCategory={handleCategoryNavigate}
+        onSelectCategory={(category) => handleCategoryNavigate(category as Category)}
       />
 
       <SizeGuideModal
@@ -196,13 +223,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         onViewProductDetails={handleSelectProduct}
       />
 
-      <AccountDrawer
-        isOpen={accountOpen}
-        onClose={() => setAccountOpen(false)}
-        products={productsList}
-        onSelectProduct={handleSelectProduct}
-        onQuickAdd={(p) => setQuickAddProduct(p)}
-      />
+      <AccountDrawer isOpen={accountOpen} onClose={() => setAccountOpen(false)} />
     </StoreContext.Provider>
   );
 }

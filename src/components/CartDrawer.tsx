@@ -1,6 +1,7 @@
 import React from 'react';
+import { useDialog } from '../hooks/useDialog';
 import { CartItem } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { X, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -20,9 +21,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onRemoveItem,
   onProceedToCheckout,
 }) => {
+  // Escape to close, focus trapped/restored, background scroll locked.
+  const dialogRef = useDialog<HTMLDivElement>(isOpen, onClose);
+
   if (!isOpen) return null;
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.priceInKobo * item.quantity, 0);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -33,7 +37,14 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#FAF9F6] border-l border-[#D8D4CC] shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Shopping bag"
+          tabIndex={-1}
+          className="w-screen max-w-md bg-[#FAF9F6] border-l border-[#D8D4CC] shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300"
+        >
           {/* Header */}
           <div className="p-6 border-b border-[#D8D4CC] flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -99,7 +110,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       </p>
 
                       <p className="font-sans text-sm font-semibold text-[#171714] mt-1">
-                        {formatPrice(item.price)}
+                        {formatKobo(item.priceInKobo)}
                       </p>
                     </div>
 
@@ -140,12 +151,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span className="text-[#171714] font-medium">Calculated at checkout</span>
                 </div>
                 <div className="flex justify-between text-[#56554F]">
-                  <span>LAGOS COURIER</span>
+                  <span>LAGOS ISLAND</span>
                   <span className="text-[#681F2C] font-semibold">Complimentary</span>
                 </div>
                 <div className="flex justify-between text-sm font-semibold text-[#171714] pt-2 border-t border-[#D8D4CC]">
                   <span>SUBTOTAL</span>
-                  <span className="text-base">{formatPrice(subtotal)}</span>
+                  <span className="text-base">{formatKobo(subtotal)}</span>
                 </div>
               </div>
 

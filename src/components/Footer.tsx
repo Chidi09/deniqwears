@@ -138,7 +138,7 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-2.5 text-[#56554F]">
               <li>
                 <a
-                  href="https://instagram.com"
+                  href="https://instagram.com/deniqwears"
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[#171714] transition-colors"
@@ -148,7 +148,7 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <a
-                  href="https://tiktok.com"
+                  href="https://tiktok.com/@deniqwears"
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-[#171714] transition-colors"

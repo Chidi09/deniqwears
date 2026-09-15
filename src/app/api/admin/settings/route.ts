@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/db';
 import { requireAdminAuth } from '../auth-helper';
 import { StoreSettingsUpdateSchema } from '@/src/lib/schemas';
+import { getErrorMessage } from '@/src/lib/errors';
 
 export async function GET(req: NextRequest) {
-  const auth = requireAdminAuth(req);
+  const auth = await requireAdminAuth(req);
   if (!auth.authorized) return auth.response!;
 
-  const settings = db.getSettings();
+  const settings = await db.getSettings({ includeInactiveZones: true });
   return NextResponse.json({ settings });
 }
 
 export async function PUT(req: NextRequest) {
-  const auth = requireAdminAuth(req);
+  const auth = await requireAdminAuth(req);
   if (!auth.authorized) return auth.response!;
 
   try {
@@ -26,11 +27,14 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const updated = db.updateSettings(parseResult.data as any, auth.adminEmail!);
+    const updated = await db.updateSettings(
+      parseResult.data as Parameters<typeof db.updateSettings>[0],
+      auth.adminEmail!
+    );
     return NextResponse.json({ settings: updated });
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.json(
-      { error: err.message || 'Failed to update settings' },
+      { error: getErrorMessage(err, 'Failed to update settings') },
       { status: 500 }
     );
   }

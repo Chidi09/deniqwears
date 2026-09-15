@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Product, ProductVariant } from '../../types';
+import { Product, ProductVariant, GARMENT_SIZES } from '../../types';
 import { api } from '../../services/api';
+import { getErrorMessage } from '../../lib/errors';
 import {
   X,
   Image as ImageIcon,
@@ -66,11 +67,11 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     product?.variants && product.variants.length > 0
       ? product.variants
       : [
-          { id: 'v-1', color: 'Black', size: 'S', stock: 4, active: true },
-          { id: 'v-2', color: 'Black', size: 'M', stock: 5, active: true },
-          { id: 'v-3', color: 'Black', size: 'L', stock: 3, active: true },
-          { id: 'v-4', color: 'Ivory', size: 'S', stock: 2, active: true },
-          { id: 'v-5', color: 'Ivory', size: 'M', stock: 3, active: true },
+          { id: 'v-1', color: 'Black', size: '12', stock: 4, active: true },
+          { id: 'v-2', color: 'Black', size: '14', stock: 5, active: true },
+          { id: 'v-3', color: 'Black', size: '16', stock: 3, active: true },
+          { id: 'v-4', color: 'Ivory', size: '12', stock: 2, active: true },
+          { id: 'v-5', color: 'Ivory', size: '14', stock: 3, active: true },
         ]
   );
 
@@ -139,7 +140,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     const newVariant: ProductVariant = {
       id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
       color: 'Black',
-      size: 'M',
+      size: '14',
       stock: 4,
       active: true,
     };
@@ -167,7 +168,11 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
 
     const primaryImg = images[primaryImageIdx] || images[0];
     const secondaryImg = images.find((_, i) => i !== primaryImageIdx) || primaryImg;
-    const gallery = images.filter((_, i) => i !== primaryImageIdx);
+    // The gallery is the FULL set with the primary first. It previously
+    // excluded the primary image, and the PDP renders galleryImages instead of
+    // primaryImage whenever the array is non-empty — so the chosen hero shot
+    // disappeared from the product page as soon as the product was saved.
+    const gallery = [primaryImg, ...images.filter((_, i) => i !== primaryImageIdx)];
 
     // Derive available colors and sizes from variants
     const colorsMap = new Map<string, string>();
@@ -189,7 +194,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       hex,
     }));
 
-    const sizes = Array.from(new Set(variants.map((v) => v.size))) as any;
+    const sizes = Array.from(new Set(variants.map((v) => v.size))) as ProductVariant['size'][];
 
     const payload = {
       name,
@@ -220,8 +225,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       }
       onSaved();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Unable to save garment');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to save garment'));
     } finally {
       setSaving(false);
     }
@@ -234,8 +239,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       await api.archiveAdminProduct(product.id);
       onSaved();
       onClose();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(getErrorMessage(err, 'Archive failed'));
     }
   };
 
@@ -304,7 +309,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               </label>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as any)}
+                onChange={(e) => setCategory(e.target.value as Product['category'])}
                 className="w-full bg-[#F4F1EB] border border-[#D8D4CC] px-3.5 py-2.5 text-xs uppercase tracking-wider font-semibold focus:outline-none focus:border-[#171714]"
               >
                 <option value="dresses">Dresses</option>
@@ -334,7 +339,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
+                onChange={(e) => setStatus(e.target.value as 'live' | 'draft' | 'archived')}
                 className="w-full bg-[#F4F1EB] border border-[#D8D4CC] px-3.5 py-2.5 text-xs uppercase tracking-wider font-semibold focus:outline-none focus:border-[#171714]"
               >
                 <option value="live">Live (Purchasable)</option>
@@ -484,18 +489,18 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                         <select
                           value={v.size}
                           onChange={(e) => {
-                            const val = e.target.value as any;
+                            const val = e.target.value as ProductVariant['size'];
                             setVariants((prev) =>
                               prev.map((item) => (item.id === v.id ? { ...item, size: val } : item))
                             );
                           }}
                           className="px-2 py-1 border border-[#D8D4CC] bg-[#FAF9F6] text-xs font-semibold"
                         >
-                          <option value="XS">XS</option>
-                          <option value="S">S</option>
-                          <option value="M">M</option>
-                          <option value="L">L</option>
-                          <option value="XL">XL</option>
+                          {GARMENT_SIZES.map((size) => (
+                            <option key={size} value={size}>
+                              {size}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td className="py-2 px-3">

@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductStatus {
+  live
+  draft
+  archived
+}
+
+enum ProductBadge {
+  NEW
+  EXCLUSIVE
+  LIMITED
+}
+
+enum AsymmetricRole {
+  large
+  detail
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAYMENT_PROCESSING
+  PAID
+  PAYMENT_FAILED
+  CANCELLED
+  FULFILLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  paystack
+  flutterwave
+  stripe
+  showroom
+}
+
+enum DiscountType {
+  percentage
+  fixed
+}
+
+enum AdminActivityEntityType {
+  product
+  order
+  settings
+  inventory
+}
+
+enum AdminRole {
+  ADMIN
+}
+
+model Product {
+  id                    String          @id @default(cuid())
+  name                  String
+  slug                  String          @unique
+  priceInKobo           Int
+  status                ProductStatus   @default(live)
+  category              String
+  collection            String?
+  colors                Json // ProductColor[]
+  sizes                 String[]
+  primaryImage          String
+  secondaryImage        String
+  galleryImages         String[]
+  badge                 ProductBadge?
+  rating                Float           @default(0)
+  reviewsCount          Int             @default(0)
+  stockWarning          String?
+  description           String
+  fitAndSize            String
+  delivery              String
+  care                  String
+  editorialSubtitle     String?
+  isNewArrival          Boolean         @default(false)
+  isSignatureSelection  Boolean         @default(false)
+  isAsymmetricFeature   Boolean         @default(false)
+  asymmetricRole        AsymmetricRole?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  variants   ProductVariant[]
+  orderItems OrderItem[]
+
+  @@index([status])
+}
+
+model ProductVariant {
+  id           String   @id @default(cuid())
+  productId    String
+  color        String
+  size         String
+  sku          String?
+  priceInKobo  Int?
+  stock        Int      @default(0)
+  active       Boolean  @default(true)
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@unique([productId, color, size])
+}
+
+model DeliveryZone {
+  id                String   @id @default(cuid())
+  name              String
+  feeInKobo         Int
+  estimatedDelivery String
+  description       String
+  active            Boolean  @default(true)
+  sortOrder         Int      @default(0)
+
+  orders Order[]
+}
+
+model StoreSettings {
+  id                          String   @id @default("singleton")
+  storeName                   String
+  supportEmail                String
+  supportWhatsApp             String
+  currency                    String   @default("NGN")
+  freeDeliveryThresholdInKobo Int
+  returnPeriodDays            Int
+  paystackEnabled             Boolean  @default(true)
+  flutterwaveEnabled          Boolean  @default(true)
+  stripeEnabled               Boolean  @default(false)
+  showroomCollectionEnabled   Boolean  @default(true)
+  updatedAt                   DateTime @updatedAt
+}
+
+model DiscountCode {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  type           DiscountType
+  value          Int
+  minSpendInKobo Int?
+  active         Boolean      @default(true)
+  usageCount     Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id               String        @id @default(cuid())
+  orderNumber      String        @unique
+  idempotencyKey   String        @unique
+  status           OrderStatus   @default(DRAFT)
+  customerEmail    String
+  customerFirstName String
+  customerLastName String
+  customerPhone    String
+  shippingAddress  Json // ShippingAddress
+  deliveryZoneId   String?
+  deliveryFeeInKobo Int
+  subtotalInKobo   Int
+  discountInKobo   Int           @default(0)
+  discountCodeId   String?
+  totalInKobo      Int
+  /// Cumulative amount refunded against this order. Kept as a column (not
+  /// derived from timeline text) so revenue can be reported net of refunds.
+  refundedInKobo   Int           @default(0)
+  currency         String        @default("NGN")
+  paymentMethod    PaymentMethod
+  paymentReference String?
+  paymentId        String?
+  paidAt           DateTime?
+  dispatchedAt     DateTime?
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  deliveryZone DeliveryZone?       @relation(fields: [deliveryZoneId], references: [id])
+  discountCode DiscountCode?       @relation(fields: [discountCodeId], references: [id])
+  items        OrderItem[]
+  timeline     OrderTimelineEvent[]
+
+  @@index([status])
+  @@index([paymentReference])
+  // Finance queries filter and group on paidAt; createdAt drives the
+  // pending-collection figures and the orders list ordering.
+  @@index([paidAt])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id               String @id @default(cuid())
+  orderId          String
+  productId        String
+  variantId        String
+  name             String
+  color            String
+  size             String
+  image            String
+  unitPriceInKobo  Int
+  quantity         Int
+  totalPriceInKobo Int
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id])
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  // Top-products aggregation groups by productId across orders.
+  @@index([productId])
+  @@index([orderId])
+}
+
+model OrderTimelineEvent {
+  id          String      @id @default(cuid())
+  orderId     String
+  status      OrderStatus
+  title       String
+  description String
+  timestamp   DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+  /// Bumped to invalidate every existing session for this admin (password
+  /// rotation, suspected token leak, account disabled).
+  sessionVersion Int     @default(1)
+  active         Boolean @default(true)
+}
+
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  source      String   @default("storefront")
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
+}
+
+model AdminActivityLog {
+  id         String                  @id @default(cuid())
+  timestamp  DateTime                @default(now())
+  adminEmail String
+  action     String
+  entityType AdminActivityEntityType
+  entityId   String?
+  details    String
+
+  @@index([timestamp])
+}

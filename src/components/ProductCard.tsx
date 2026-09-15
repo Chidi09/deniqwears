@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 
 interface ProductCardProps {
   product: Product;
@@ -12,10 +12,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div
+    <a
       id={`product-card-${product.id}`}
-      className="group cursor-pointer flex flex-col"
-      onClick={() => onSelect(product.slug)}
+      href={`/product/${product.slug}`}
+      onClick={(e) => {
+        // Let modified clicks (new tab/window) behave natively.
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        onSelect(product.slug);
+      }}
+      className="group cursor-pointer flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-[#681F2C] focus-visible:ring-offset-2"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -60,7 +66,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
             {product.name}
           </h4>
           <span className="font-sans text-sm font-semibold text-[#171714] whitespace-nowrap">
-            {formatPrice(product.price)}
+            {formatKobo(product.priceInKobo)}
           </span>
         </div>
 
@@ -83,6 +89,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
           </div>
         </div>
       </div>
-    </div>
+    </a>
   );
 };

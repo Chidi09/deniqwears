@@ -1,767 +1,954 @@
+import { randomBytes } from 'node:crypto';
+import { Prisma, ProductStatus as PrismaProductStatus } from '@prisma/client';
+import { prisma } from './prisma';
 import {
   Product,
+  ProductColor,
   ProductVariant,
   Order,
+  OrderStatus,
+  ShippingAddress,
   StoreSettings,
   DiscountCode,
   AdminActivityLog,
-  DeliveryZone,
-  OrderStatus,
+  COLLECTED_STATUSES,
+  FinanceSummary,
+  RevenuePoint,
+  PaymentMethodTotal,
+  TopProduct,
 } from './types';
 
-// Initial seed products with variant-level inventory and prices in kobo (1 NGN = 100 kobo)
-const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: 'prod-amara-dress',
-    name: 'The Amara Dress',
-    slug: 'the-amara-dress',
-    priceInKobo: 4800000, // ₦48,000
-    status: 'live',
-    category: 'dresses',
-    collection: 'COLLECTION 01',
-    colors: [
-      { name: 'Black', hex: '#171714' },
-      { name: 'Ivory', hex: '#FAF9F6' },
-      { name: 'Oxblood', hex: '#681F2C' },
-    ],
-    sizes: ['XS', 'S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v-amara-blk-xs', color: 'Black', size: 'XS', stock: 4, active: true },
-      { id: 'v-amara-blk-s', color: 'Black', size: 'S', stock: 5, active: true },
-      { id: 'v-amara-blk-m', color: 'Black', size: 'M', stock: 3, active: true },
-      { id: 'v-amara-blk-l', color: 'Black', size: 'L', stock: 6, active: true },
-      { id: 'v-amara-blk-xl', color: 'Black', size: 'XL', stock: 2, active: true },
-      { id: 'v-amara-iv-xs', color: 'Ivory', size: 'XS', stock: 2, active: true },
-      { id: 'v-amara-iv-s', color: 'Ivory', size: 'S', stock: 4, active: true },
-      { id: 'v-amara-iv-m', color: 'Ivory', size: 'M', stock: 2, active: true },
-      { id: 'v-amara-iv-l', color: 'Ivory', size: 'L', stock: 1, active: true },
-      { id: 'v-amara-iv-xl', color: 'Ivory', size: 'XL', stock: 0, active: true },
-      { id: 'v-amara-ox-s', color: 'Oxblood', size: 'S', stock: 3, active: true },
-      { id: 'v-amara-ox-m', color: 'Oxblood', size: 'M', stock: 4, active: true },
-      { id: 'v-amara-ox-l', color: 'Oxblood', size: 'L', stock: 2, active: true },
-    ],
-    primaryImage: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1200&auto=format&fit=crop',
-    secondaryImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-    galleryImages: [
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
-    ],
-    badge: 'NEW',
-    rating: 4.9,
-    reviewsCount: 28,
-    stockWarning: 'Only 3 left in size M',
-    description: 'A floor-sweeping column dress cut from heavy double-faced satin. Designed with an asymmetric open back, clean neck binding, and subtle darting that contours with quiet authority.',
-    fitAndSize: 'Tailored architectural fit through the bodice, relaxing into a gentle fluid flare at the ankle. True to size.',
-    delivery: 'Complimentary express dispatch across Lagos. Victoria Island atelier fittings available.',
-    care: 'Dry clean only. Store on wide padded hanger.',
-    editorialSubtitle: 'Cut from fluid Japanese satin with clean asymmetric back contours.',
-    isNewArrival: true,
-    isSignatureSelection: true,
-    isAsymmetricFeature: true,
-    asymmetricRole: 'large',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-sculpted-corset',
-    name: 'Sculpted Satin Corset',
-    slug: 'sculpted-satin-corset',
-    priceInKobo: 3450000, // ₦34,500
-    status: 'live',
-    category: 'tops',
-    collection: 'COLLECTION 01',
-    colors: [
-      { name: 'Oxblood', hex: '#681F2C' },
-      { name: 'Black', hex: '#171714' },
-    ],
-    sizes: ['XS', 'S', 'M', 'L'],
-    variants: [
-      { id: 'v-corset-ox-xs', color: 'Oxblood', size: 'XS', stock: 2, active: true },
-      { id: 'v-corset-ox-s', color: 'Oxblood', size: 'S', stock: 3, active: true },
-      { id: 'v-corset-ox-m', color: 'Oxblood', size: 'M', stock: 2, active: true },
-      { id: 'v-corset-ox-l', color: 'Oxblood', size: 'L', stock: 1, active: true },
-      { id: 'v-corset-blk-xs', color: 'Black', size: 'XS', stock: 3, active: true },
-      { id: 'v-corset-blk-s', color: 'Black', size: 'S', stock: 4, active: true },
-      { id: 'v-corset-blk-m', color: 'Black', size: 'M', stock: 3, active: true },
-      { id: 'v-corset-blk-l', color: 'Black', size: 'L', stock: 2, active: true },
-    ],
-    primaryImage: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
-    secondaryImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop',
-    galleryImages: [
-      'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop',
-    ],
-    badge: 'LIMITED',
-    rating: 4.8,
-    reviewsCount: 19,
-    stockWarning: 'Low stock in Oxblood S',
-    description: 'Internal steel-spring boning encased in lustrous satin. Creates an exaggerated hourglass contour while maintaining total flexibility.',
-    fitAndSize: 'Structured bodice with hook-and-eye rear closure. Size up if between ribcage sizes.',
-    delivery: 'Dispatched within 24 hours.',
-    care: 'Spot clean or specialist dry clean.',
-    editorialSubtitle: 'Internal structural boning with raw-edge hem finish.',
-    isNewArrival: true,
-    isSignatureSelection: false,
-    isAsymmetricFeature: true,
-    asymmetricRole: 'detail',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 8).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-luna-set',
-    name: 'The Luna Two-Piece Set',
-    slug: 'the-luna-two-piece-set',
-    priceInKobo: 5500000, // ₦55,000
-    status: 'live',
-    category: 'sets',
-    collection: 'COLLECTION 01',
-    colors: [
-      { name: 'Sand', hex: '#E6E1D7' },
-      { name: 'Black', hex: '#171714' },
-    ],
-    sizes: ['XS', 'S', 'M', 'L'],
-    variants: [
-      { id: 'v-luna-snd-xs', color: 'Sand', size: 'XS', stock: 1, active: true },
-      { id: 'v-luna-snd-s', color: 'Sand', size: 'S', stock: 2, active: true },
-      { id: 'v-luna-snd-m', color: 'Sand', size: 'M', stock: 2, active: true },
-      { id: 'v-luna-snd-l', color: 'Sand', size: 'L', stock: 1, active: true },
-      { id: 'v-luna-blk-s', color: 'Black', size: 'S', stock: 3, active: true },
-      { id: 'v-luna-blk-m', color: 'Black', size: 'M', stock: 3, active: true },
-      { id: 'v-luna-blk-l', color: 'Black', size: 'L', stock: 2, active: true },
-    ],
-    primaryImage: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=1200&auto=format&fit=crop',
-    secondaryImage: 'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?q=80&w=1200&auto=format&fit=crop',
-    galleryImages: [
-      'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1485968579580-b6d095142e6e?q=80&w=1200&auto=format&fit=crop',
-    ],
-    badge: 'EXCLUSIVE',
-    rating: 4.9,
-    reviewsCount: 34,
-    description: 'A cropped high-neck shell paired with sweeping wide-leg pleated trousers. Tailored in structured crêpe that moves with effortless poise.',
-    fitAndSize: 'Trousers feature a deep rise and 34" inseam made for heels.',
-    delivery: 'Complimentary shipping across Nigeria.',
-    care: 'Dry clean only.',
-    editorialSubtitle: 'Relaxed yet authoritative tailoring for evening salons.',
-    isNewArrival: true,
-    isSignatureSelection: true,
-    isAsymmetricFeature: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-sade-column-gown',
-    name: 'Sade Column Gown',
-    slug: 'sade-column-gown',
-    priceInKobo: 6200000, // ₦62,000
-    status: 'live',
-    category: 'occasion',
-    collection: 'ATELIER OCCASION',
-    colors: [
-      { name: 'Black', hex: '#171714' },
-      { name: 'Oxblood', hex: '#681F2C' },
-    ],
-    sizes: ['S', 'M', 'L'],
-    variants: [
-      { id: 'v-sade-blk-s', color: 'Black', size: 'S', stock: 2, active: true },
-      { id: 'v-sade-blk-m', color: 'Black', size: 'M', stock: 2, active: true },
-      { id: 'v-sade-blk-l', color: 'Black', size: 'L', stock: 1, active: true },
-      { id: 'v-sade-ox-s', color: 'Oxblood', size: 'S', stock: 1, active: true },
-      { id: 'v-sade-ox-m', color: 'Oxblood', size: 'M', stock: 1, active: true },
-    ],
-    primaryImage: 'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1200&auto=format&fit=crop',
-    secondaryImage: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1200&auto=format&fit=crop',
-    galleryImages: [
-      'https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1200&auto=format&fit=crop',
-    ],
-    rating: 5.0,
-    reviewsCount: 14,
-    description: 'Heavyweight matte jersey that falls like liquid marble. High boatneck front with a dramatic plunge back that commands silence when turning.',
-    fitAndSize: 'Slim architectural column with side hem slit. Model is 5\'10" wearing S.',
-    delivery: 'Hand-delivered with garment bag.',
-    care: 'Specialist dry clean only.',
-    editorialSubtitle: 'Architectural column tailored for indelible arrivals.',
-    isNewArrival: false,
-    isSignatureSelection: true,
-    isAsymmetricFeature: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-pleated-trousers',
-    name: 'Wide-Leg Pleated Trousers',
-    slug: 'wide-leg-pleated-trousers',
-    priceInKobo: 3800000, // ₦38,000
-    status: 'live',
-    category: 'bottoms',
-    collection: 'COLLECTION 01',
-    colors: [
-      { name: 'Ivory', hex: '#FAF9F6' },
-      { name: 'Graphite', hex: '#56554F' },
-      { name: 'Black', hex: '#171714' },
-    ],
-    sizes: ['XS', 'S', 'M', 'L', 'XL'],
-    variants: [
-      { id: 'v-tr-iv-xs', color: 'Ivory', size: 'XS', stock: 3, active: true },
-      { id: 'v-tr-iv-s', color: 'Ivory', size: 'S', stock: 4, active: true },
-      { id: 'v-tr-iv-m', color: 'Ivory', size: 'M', stock: 3, active: true },
-      { id: 'v-tr-iv-l', color: 'Ivory', size: 'L', stock: 2, active: true },
-      { id: 'v-tr-blk-s', color: 'Black', size: 'S', stock: 5, active: true },
-      { id: 'v-tr-blk-m', color: 'Black', size: 'M', stock: 4, active: true },
-    ],
-    primaryImage: 'https://images.unsplash.com/photo-1551803091-e20673f15770?q=80&w=1200&auto=format&fit=crop',
-    secondaryImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-    galleryImages: [
-      'https://images.unsplash.com/photo-1551803091-e20673f15770?q=80&w=1200&auto=format&fit=crop',
-    ],
-    badge: 'NEW',
-    rating: 4.7,
-    reviewsCount: 22,
-    description: 'Double front pleats that drape into expansive wide legs. Crafted from tropical weight wool blend suitable for warm climates.',
-    fitAndSize: 'High-rise waistband sits at natural waist.',
-    delivery: 'Standard 48-hour delivery.',
-    care: 'Dry clean recommended.',
-    editorialSubtitle: 'High-rise waistline framing double front inverted pleats.',
-    isNewArrival: true,
-    isSignatureSelection: false,
-    isAsymmetricFeature: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'prod-bias-slip',
-    name: 'Silk Georgette Slip',
-    slug: 'silk-georgette-slip',
-    priceInKobo: 4200000, // ₦42,000
-    status: 'draft',
-    category: 'dresses',
-    collection: 'STUDIO PREVIEW',
-    colors: [{ name: 'Oxblood', hex: '#681F2C' }],
-    sizes: ['S', 'M', 'L'],
-    variants: [
-      { id: 'v-slip-ox-s', color: 'Oxblood', size: 'S', stock: 0, active: true },
-      { id: 'v-slip-ox-m', color: 'Oxblood', size: 'M', stock: 0, active: true },
-    ],
-    primaryImage: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
-    secondaryImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop',
-    galleryImages: [],
-    badge: 'LIMITED',
-    rating: 4.9,
-    reviewsCount: 8,
-    description: 'Bias-cut 100% silk georgette with hand-rolled hems.',
-    fitAndSize: 'Bias cut skims natural curves.',
-    delivery: 'Studio preview drop.',
-    care: 'Dry clean only.',
-    isNewArrival: false,
-    isSignatureSelection: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+const SETTINGS_ID = 'singleton';
 
-// Initial Delivery Zones
-const INITIAL_DELIVERY_ZONES: DeliveryZone[] = [
-  {
-    id: 'zone-lagos-island',
-    name: 'Lagos Island (Victoria Island, Ikoyi, Lekki 1)',
-    feeInKobo: 0, // Complimentary
-    estimatedDelivery: 'Same Day / Next Day (by 14:00)',
-    description: 'Private concierge express courier from our VI Flagship atelier',
-    active: true,
-  },
-  {
-    id: 'zone-lagos-mainland',
-    name: 'Lagos Mainland & Greater Lagos',
-    feeInKobo: 250000, // ₦2,500
-    estimatedDelivery: '24 – 36 Hours',
-    description: 'Fast tracked Lagos courier',
-    active: true,
-  },
-  {
-    id: 'zone-abuja',
-    name: 'Abuja FCT',
-    feeInKobo: 450000, // ₦4,500
-    estimatedDelivery: '2 Business Days',
-    description: 'Dedicated priority air dispatch',
-    active: true,
-  },
-  {
-    id: 'zone-rivers',
-    name: 'Rivers / Port Harcourt',
-    feeInKobo: 450000, // ₦4,500
-    estimatedDelivery: '2 Business Days',
-    description: 'Direct air courier dispatch',
-    active: true,
-  },
-  {
-    id: 'zone-nationwide',
-    name: 'Other Nationwide (Nigeria)',
-    feeInKobo: 450000, // ₦4,500
-    estimatedDelivery: '3 – 4 Business Days',
-    description: 'Insured nationwide express courier',
-    active: true,
-  },
-];
+// --- Mappers: Prisma rows -> domain shapes ---
 
-// Initial Store Settings
-const INITIAL_SETTINGS: StoreSettings = {
-  storeName: 'Deniqwears',
-  supportEmail: 'concierge@deniqwears.com',
-  supportWhatsApp: '+234 818 000 3344',
-  currency: 'NGN',
-  freeDeliveryThresholdInKobo: 10000000, // ₦100,000 threshold for free nationwide delivery
-  returnPeriodDays: 7,
-  deliveryZones: INITIAL_DELIVERY_ZONES,
-  paymentProviders: {
-    paystack: true,
-    flutterwave: true,
-    stripe: false,
-    showroomCollection: true,
-  },
-};
+type ProductWithVariants = Prisma.ProductGetPayload<{ include: { variants: true } }>;
 
-// Initial Orders (featuring the exact order types and state machine requested)
-const INITIAL_ORDERS: Order[] = [
-  {
-    id: 'ord-18421',
-    orderNumber: 'DNQ-18421',
-    idempotencyKey: 'idemp-init-1',
-    status: 'PAID',
-    items: [
-      {
-        id: 'item-1',
-        productId: 'prod-amara-dress',
-        variantId: 'v-amara-blk-m',
-        name: 'The Amara Dress',
-        color: 'Black',
-        size: 'M',
-        image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=400&auto=format&fit=crop',
-        unitPriceInKobo: 4800000,
-        quantity: 1,
-        totalPriceInKobo: 4800000,
-      },
-      {
-        id: 'item-2',
-        productId: 'prod-pleated-trousers',
-        variantId: 'v-tr-iv-m',
-        name: 'Wide-Leg Pleated Trousers',
-        color: 'Ivory',
-        size: 'M',
-        image: 'https://images.unsplash.com/photo-1551803091-e20673f15770?q=80&w=400&auto=format&fit=crop',
-        unitPriceInKobo: 3800000,
-        quantity: 1,
-        totalPriceInKobo: 3800000,
-      },
-    ],
+function mapVariant(v: ProductWithVariants['variants'][number]): ProductVariant {
+  return {
+    id: v.id,
+    color: v.color,
+    size: v.size,
+    sku: v.sku,
+    priceInKobo: v.priceInKobo,
+    stock: v.stock,
+    active: v.active,
+  };
+}
+
+function mapProduct(p: ProductWithVariants): Product {
+  return {
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    priceInKobo: p.priceInKobo,
+    status: p.status,
+    category: p.category,
+    collection: p.collection,
+    colors: (p.colors as unknown as ProductColor[]) ?? [],
+    sizes: p.sizes,
+    variants: p.variants.map(mapVariant),
+    primaryImage: p.primaryImage,
+    secondaryImage: p.secondaryImage,
+    galleryImages: p.galleryImages,
+    badge: p.badge,
+    rating: p.rating,
+    reviewsCount: p.reviewsCount,
+    stockWarning: p.stockWarning,
+    description: p.description,
+    fitAndSize: p.fitAndSize,
+    delivery: p.delivery,
+    care: p.care,
+    editorialSubtitle: p.editorialSubtitle,
+    isNewArrival: p.isNewArrival,
+    isSignatureSelection: p.isSignatureSelection,
+    isAsymmetricFeature: p.isAsymmetricFeature,
+    asymmetricRole: p.asymmetricRole,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  };
+}
+
+type OrderWithRelations = Prisma.OrderGetPayload<{
+  include: { items: true; timeline: true };
+}>;
+
+function mapOrder(o: OrderWithRelations): Order {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    idempotencyKey: o.idempotencyKey,
+    status: o.status,
+    items: o.items.map((i) => ({
+      id: i.id,
+      productId: i.productId,
+      variantId: i.variantId,
+      name: i.name,
+      color: i.color,
+      size: i.size,
+      image: i.image,
+      unitPriceInKobo: i.unitPriceInKobo,
+      quantity: i.quantity,
+      totalPriceInKobo: i.totalPriceInKobo,
+    })),
     customer: {
-      firstName: 'Ada',
-      lastName: 'Okafor',
-      email: 'ada.okafor@gmail.com',
-      phone: '+234 803 123 4567',
+      email: o.customerEmail,
+      firstName: o.customerFirstName,
+      lastName: o.customerLastName,
+      phone: o.customerPhone,
     },
-    shippingAddress: {
-      firstName: 'Ada',
-      lastName: 'Okafor',
-      email: 'ada.okafor@gmail.com',
-      phone: '+234 803 123 4567',
-      address: '14 Admiralty Way',
-      apartment: 'Apt 4B',
-      city: 'Lekki Phase 1',
-      state: 'Lagos',
-      country: 'Nigeria',
-    },
-    deliveryZoneId: 'zone-lagos-island',
-    deliveryFeeInKobo: 0,
-    subtotalInKobo: 8600000,
-    discountInKobo: 0,
-    totalInKobo: 8600000, // ₦86,000
+    shippingAddress: o.shippingAddress as unknown as ShippingAddress,
+    deliveryZoneId: o.deliveryZoneId,
+    deliveryFeeInKobo: o.deliveryFeeInKobo,
+    subtotalInKobo: o.subtotalInKobo,
+    discountInKobo: o.discountInKobo,
+    discountCodeId: o.discountCodeId,
+    totalInKobo: o.totalInKobo,
+    refundedInKobo: o.refundedInKobo,
+    currency: o.currency as 'NGN' | 'USD',
+    paymentMethod: o.paymentMethod,
+    paymentReference: o.paymentReference,
+    paymentId: o.paymentId,
+    paidAt: o.paidAt?.toISOString() ?? null,
+    dispatchedAt: o.dispatchedAt?.toISOString() ?? null,
+    notes: o.notes,
+    timeline: o.timeline
+      .slice()
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      .map((t) => ({
+        id: t.id,
+        status: t.status,
+        title: t.title,
+        description: t.description,
+        timestamp: t.timestamp.toISOString(),
+      })),
+    createdAt: o.createdAt.toISOString(),
+    updatedAt: o.updatedAt.toISOString(),
+  };
+}
+
+function mapSettings(
+  s: Awaited<ReturnType<typeof prisma.storeSettings.findUniqueOrThrow>>,
+  deliveryZones: Awaited<ReturnType<typeof prisma.deliveryZone.findMany>>
+): StoreSettings {
+  return {
+    storeName: s.storeName,
+    supportEmail: s.supportEmail,
+    supportWhatsApp: s.supportWhatsApp,
     currency: 'NGN',
-    paymentMethod: 'paystack',
-    paymentReference: 'pstk_ref_92817281',
-    paidAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-    timeline: [
-      {
-        id: 't-1',
-        status: 'PENDING_PAYMENT',
-        title: 'Order Created',
-        description: 'Order initiated at checkout',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4.2).toISOString(),
-      },
-      {
-        id: 't-2',
-        status: 'PAID',
-        title: 'Payment Confirmed',
-        description: 'Verified via Paystack (pstk_ref_92817281)',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4.2).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-  },
-  {
-    id: 'ord-18420',
-    orderNumber: 'DNQ-18420',
-    idempotencyKey: 'idemp-init-2',
-    status: 'PAYMENT_PROCESSING',
-    items: [
-      {
-        id: 'item-3',
-        productId: 'prod-sculpted-corset',
-        variantId: 'v-corset-ox-s',
-        name: 'Sculpted Satin Corset',
-        color: 'Oxblood',
-        size: 'S',
-        image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=400&auto=format&fit=crop',
-        unitPriceInKobo: 3450000,
-        quantity: 1,
-        totalPriceInKobo: 3450000,
-      },
-    ],
-    customer: {
-      firstName: 'Tolu',
-      lastName: 'James',
-      email: 'tolu.james@outlook.com',
-      phone: '+234 818 998 7766',
+    freeDeliveryThresholdInKobo: s.freeDeliveryThresholdInKobo,
+    returnPeriodDays: s.returnPeriodDays,
+    deliveryZones: deliveryZones.map((z) => ({
+      id: z.id,
+      name: z.name,
+      feeInKobo: z.feeInKobo,
+      estimatedDelivery: z.estimatedDelivery,
+      description: z.description,
+      active: z.active,
+    })),
+    paymentProviders: {
+      paystack: s.paystackEnabled,
+      flutterwave: s.flutterwaveEnabled,
+      stripe: s.stripeEnabled,
+      showroomCollection: s.showroomCollectionEnabled,
     },
-    shippingAddress: {
-      firstName: 'Tolu',
-      lastName: 'James',
-      email: 'tolu.james@outlook.com',
-      phone: '+234 818 998 7766',
-      address: '22 Danube Street',
-      city: 'Maitama',
-      state: 'Abuja',
-      country: 'Nigeria',
-    },
-    deliveryZoneId: 'zone-abuja',
-    deliveryFeeInKobo: 450000,
-    subtotalInKobo: 3450000,
-    discountInKobo: 0,
-    totalInKobo: 3900000, // ₦39,000
-    currency: 'NGN',
-    paymentMethod: 'paystack',
-    paymentReference: 'pstk_ref_81273918',
-    timeline: [
-      {
-        id: 't-3',
-        status: 'PENDING_PAYMENT',
-        title: 'Order Created',
-        description: 'Order initiated at checkout',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-      },
-      {
-        id: 't-4',
-        status: 'PAYMENT_PROCESSING',
-        title: 'Payment Awaiting Settlement',
-        description: 'Customer redirected to provider checkout',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5.9).toISOString(),
-      },
-    ],
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 5.9).toISOString(),
-  },
-];
+  };
+}
 
-// Initial Discounts
-const INITIAL_DISCOUNTS: DiscountCode[] = [
-  {
-    id: 'disc-welcome10',
-    code: 'WELCOME10',
-    type: 'percentage',
-    value: 10,
-    minSpendInKobo: 3000000, // ₦30,000 min spend
-    active: true,
-    usageCount: 14,
-  },
-  {
-    id: 'disc-deniqvip',
-    code: 'DENIQVIP',
-    type: 'fixed',
-    value: 500000, // ₦5,000 off
-    minSpendInKobo: 5000000, // ₦50,000 min spend
-    active: true,
-    usageCount: 8,
-  },
-];
+function mapDiscount(d: Awaited<ReturnType<typeof prisma.discountCode.findFirst>>): DiscountCode | undefined {
+  if (!d) return undefined;
+  return {
+    id: d.id,
+    code: d.code,
+    type: d.type,
+    value: d.value,
+    minSpendInKobo: d.minSpendInKobo,
+    active: d.active,
+    usageCount: d.usageCount,
+  };
+}
 
-// Activity Logs
-const INITIAL_ACTIVITY_LOGS: AdminActivityLog[] = [
-  {
-    id: 'log-1',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    adminEmail: 'admin@deniqwears.com',
-    action: 'Price updated',
-    entityType: 'product',
-    entityId: 'prod-amara-dress',
-    details: 'Price updated from ₦45,000 to ₦48,000',
-  },
-  {
-    id: 'log-2',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-    adminEmail: 'admin@deniqwears.com',
-    action: 'Inventory adjusted',
-    entityType: 'inventory',
-    entityId: 'prod-sculpted-corset',
-    details: 'Oxblood S stock updated to 3',
-  },
-];
+function mapActivityLog(l: Awaited<ReturnType<typeof prisma.adminActivityLog.findMany>>[number]): AdminActivityLog {
+  return {
+    id: l.id,
+    timestamp: l.timestamp.toISOString(),
+    adminEmail: l.adminEmail,
+    action: l.action,
+    entityType: l.entityType,
+    entityId: l.entityId,
+    details: l.details,
+  };
+}
 
-// Database state in memory
-class Database {
-  private products: Product[] = [...INITIAL_PRODUCTS];
-  private orders: Order[] = [...INITIAL_ORDERS];
-  private deliveryZones: DeliveryZone[] = [...INITIAL_DELIVERY_ZONES];
-  private settings: StoreSettings = { ...INITIAL_SETTINGS };
-  private discounts: DiscountCode[] = [...INITIAL_DISCOUNTS];
-  private activityLogs: AdminActivityLog[] = [...INITIAL_ACTIVITY_LOGS];
-  private idempotencyKeys: Set<string> = new Set(['idemp-init-1', 'idemp-init-2']);
+const PRODUCT_INCLUDE = { variants: true } satisfies Prisma.ProductInclude;
+const ORDER_INCLUDE = { items: true, timeline: true } satisfies Prisma.OrderInclude;
 
+export const db = {
   // --- PRODUCTS ---
-  getProducts(includeDraftsAndArchived = false): Product[] {
-    if (includeDraftsAndArchived) {
-      return this.products;
-    }
-    return this.products.filter((p) => p.status === 'live');
-  }
+  async getProducts(includeDraftsAndArchived = false): Promise<Product[]> {
+    const products = await prisma.product.findMany({
+      where: includeDraftsAndArchived ? undefined : { status: PrismaProductStatus.live },
+      include: PRODUCT_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+    return products.map(mapProduct);
+  },
 
-  getProductById(id: string): Product | undefined {
-    return this.products.find((p) => p.id === id);
-  }
+  async getProductById(id: string): Promise<Product | undefined> {
+    const product = await prisma.product.findUnique({ where: { id }, include: PRODUCT_INCLUDE });
+    return product ? mapProduct(product) : undefined;
+  },
 
-  getProductBySlug(slug: string): Product | undefined {
-    return this.products.find((p) => p.slug === slug);
-  }
+  async getProductBySlug(slug: string): Promise<Product | undefined> {
+    const product = await prisma.product.findUnique({ where: { slug }, include: PRODUCT_INCLUDE });
+    return product ? mapProduct(product) : undefined;
+  },
 
-  createProduct(data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>, adminEmail: string): Product {
-    const id = `prod-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const now = new Date().toISOString();
-    const newProduct: Product = {
-      ...data,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.products.unshift(newProduct);
+  async createProduct(
+    data: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'variants'> & { variants?: Omit<ProductVariant, 'id'>[] },
+    adminEmail: string
+  ): Promise<Product> {
+    const created = await prisma.product.create({
+      data: {
+        name: data.name,
+        slug: data.slug || slugify(data.name),
+        priceInKobo: data.priceInKobo,
+        status: data.status,
+        category: data.category,
+        collection: data.collection,
+        colors: data.colors as unknown as Prisma.InputJsonValue,
+        sizes: data.sizes,
+        primaryImage: data.primaryImage,
+        secondaryImage: data.secondaryImage,
+        galleryImages: data.galleryImages,
+        badge: data.badge ?? null,
+        rating: data.rating ?? 0,
+        reviewsCount: data.reviewsCount ?? 0,
+        stockWarning: data.stockWarning,
+        description: data.description,
+        fitAndSize: data.fitAndSize,
+        delivery: data.delivery,
+        care: data.care,
+        editorialSubtitle: data.editorialSubtitle,
+        isNewArrival: data.isNewArrival ?? false,
+        isSignatureSelection: data.isSignatureSelection ?? false,
+        isAsymmetricFeature: data.isAsymmetricFeature ?? false,
+        asymmetricRole: data.asymmetricRole ?? null,
+        variants: data.variants?.length
+          ? {
+              create: data.variants.map((v) => ({
+                color: v.color,
+                size: v.size,
+                sku: v.sku,
+                priceInKobo: v.priceInKobo,
+                stock: v.stock,
+                active: v.active,
+              })),
+            }
+          : undefined,
+      },
+      include: PRODUCT_INCLUDE,
+    });
 
-    this.logActivity({
+    await db.logActivity({
       adminEmail,
       action: 'Product created',
       entityType: 'product',
-      entityId: id,
-      details: `Created new product "${newProduct.name}" at ₦${(newProduct.priceInKobo / 100).toLocaleString()}`,
+      entityId: created.id,
+      details: `Created new product "${created.name}" at ₦${(created.priceInKobo / 100).toLocaleString()}`,
     });
 
-    return newProduct;
-  }
+    return mapProduct(created);
+  },
 
-  updateProduct(id: string, updates: Partial<Product>, adminEmail: string): Product | null {
-    const idx = this.products.findIndex((p) => p.id === id);
-    if (idx === -1) return null;
+  async updateProduct(
+    id: string,
+    updates: Partial<Omit<Product, 'variants'>> & { variants?: ProductVariant[] },
+    adminEmail: string
+  ): Promise<Product | null> {
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (!existing) return null;
 
-    const oldProduct = this.products[idx];
-    const updatedProduct: Product = {
-      ...oldProduct,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    this.products[idx] = updatedProduct;
+    const updated = await prisma.$transaction(async (tx) => {
+      if (updates.variants) {
+        // Reconcile against what's actually stored, scoped to THIS product.
+        // Previously: any row carrying an id was assumed to exist (so a new
+        // row with a client-generated `v-...` id failed to save), updates were
+        // filtered by variant id alone (so a bad payload could edit another
+        // product's variants), and omitted rows were left untouched and
+        // silently purchasable after being removed in the editor.
+        const storedVariants = await tx.productVariant.findMany({ where: { productId: id } });
+        const storedIds = new Set(storedVariants.map((v) => v.id));
+        const submittedIds = new Set<string>();
 
-    // Log price change if occurred
-    if (updates.priceInKobo && updates.priceInKobo !== oldProduct.priceInKobo) {
-      this.logActivity({
+        for (const v of updates.variants) {
+          const isExisting = v.id && storedIds.has(v.id);
+
+          if (isExisting) {
+            submittedIds.add(v.id!);
+            await tx.productVariant.updateMany({
+              // Scoped by productId so an id from another product can't match.
+              where: { id: v.id!, productId: id },
+              data: {
+                color: v.color,
+                size: v.size,
+                sku: v.sku,
+                priceInKobo: v.priceInKobo,
+                stock: v.stock,
+                active: v.active,
+              },
+            });
+          } else {
+            const created = await tx.productVariant.create({
+              data: {
+                productId: id,
+                color: v.color,
+                size: v.size,
+                sku: v.sku,
+                priceInKobo: v.priceInKobo,
+                stock: v.stock,
+                active: v.active,
+              },
+            });
+            submittedIds.add(created.id);
+          }
+        }
+
+        // Variants removed in the editor are deactivated, not deleted —
+        // historical order items reference them by foreign key.
+        const removedIds = storedVariants.filter((v) => !submittedIds.has(v.id)).map((v) => v.id);
+        if (removedIds.length > 0) {
+          await tx.productVariant.updateMany({
+            where: { id: { in: removedIds }, productId: id },
+            data: { active: false },
+          });
+        }
+      }
+
+      return tx.product.update({
+        where: { id },
+        data: {
+          ...(updates.name !== undefined && { name: updates.name }),
+          ...(updates.slug !== undefined && { slug: updates.slug }),
+          ...(updates.priceInKobo !== undefined && { priceInKobo: updates.priceInKobo }),
+          ...(updates.status !== undefined && { status: updates.status }),
+          ...(updates.category !== undefined && { category: updates.category }),
+          ...(updates.collection !== undefined && { collection: updates.collection }),
+          ...(updates.colors !== undefined && { colors: updates.colors as unknown as Prisma.InputJsonValue }),
+          ...(updates.sizes !== undefined && { sizes: updates.sizes }),
+          ...(updates.primaryImage !== undefined && { primaryImage: updates.primaryImage }),
+          ...(updates.secondaryImage !== undefined && { secondaryImage: updates.secondaryImage }),
+          ...(updates.galleryImages !== undefined && { galleryImages: updates.galleryImages }),
+          ...(updates.badge !== undefined && { badge: updates.badge }),
+          ...(updates.stockWarning !== undefined && { stockWarning: updates.stockWarning }),
+          ...(updates.description !== undefined && { description: updates.description }),
+          ...(updates.fitAndSize !== undefined && { fitAndSize: updates.fitAndSize }),
+          ...(updates.delivery !== undefined && { delivery: updates.delivery }),
+          ...(updates.care !== undefined && { care: updates.care }),
+          ...(updates.editorialSubtitle !== undefined && { editorialSubtitle: updates.editorialSubtitle }),
+          ...(updates.isNewArrival !== undefined && { isNewArrival: updates.isNewArrival }),
+          ...(updates.isSignatureSelection !== undefined && { isSignatureSelection: updates.isSignatureSelection }),
+          ...(updates.isAsymmetricFeature !== undefined && { isAsymmetricFeature: updates.isAsymmetricFeature }),
+          ...(updates.asymmetricRole !== undefined && { asymmetricRole: updates.asymmetricRole }),
+        },
+        include: PRODUCT_INCLUDE,
+      });
+    });
+
+    if (updates.priceInKobo !== undefined && updates.priceInKobo !== existing.priceInKobo) {
+      await db.logActivity({
         adminEmail,
         action: 'Price changed',
         entityType: 'product',
         entityId: id,
-        details: `Price changed for ${updatedProduct.name}: ₦${(oldProduct.priceInKobo / 100).toLocaleString()} → ₦${(updates.priceInKobo / 100).toLocaleString()}`,
+        details: `Price changed for ${updated.name}: ₦${(existing.priceInKobo / 100).toLocaleString()} → ₦${(updates.priceInKobo / 100).toLocaleString()}`,
       });
     } else {
-      this.logActivity({
+      await db.logActivity({
         adminEmail,
         action: 'Product updated',
         entityType: 'product',
         entityId: id,
-        details: `Updated details for "${updatedProduct.name}"`,
+        details: `Updated details for "${updated.name}"`,
       });
     }
 
-    return updatedProduct;
-  }
+    return mapProduct(updated);
+  },
 
-  // Routine destruction is Archive rather than permanent delete
-  archiveProduct(id: string, adminEmail: string): Product | null {
-    const product = this.getProductById(id);
-    if (!product) return null;
-    return this.updateProduct(id, { status: 'archived' }, adminEmail);
-  }
+  // Routine destruction is Archive rather than permanent delete (preserves order history)
+  async archiveProduct(id: string, adminEmail: string): Promise<Product | null> {
+    return db.updateProduct(id, { status: 'archived' }, adminEmail);
+  },
 
-  quickUpdatePricesAndStock(
+  async quickUpdatePricesAndStock(
     items: Array<{ productId: string; priceInKobo?: number; totalStock?: number; status?: 'live' | 'draft' | 'archived' }>,
     adminEmail: string
-  ): void {
+  ): Promise<void> {
     for (const item of items) {
-      const p = this.getProductById(item.productId);
-      if (!p) continue;
-      const updates: Partial<Product> = {};
+      const product = await prisma.product.findUnique({ where: { id: item.productId }, include: PRODUCT_INCLUDE });
+      if (!product) continue;
+
+      const updates: Partial<Product> & { variants?: ProductVariant[] } = {};
       if (typeof item.priceInKobo === 'number') updates.priceInKobo = item.priceInKobo;
       if (item.status) updates.status = item.status;
-      if (typeof item.totalStock === 'number' && p.variants.length > 0) {
-        // Distribute stock across active variants
-        const perVariant = Math.max(1, Math.floor(item.totalStock / p.variants.length));
-        updates.variants = p.variants.map((v) => ({ ...v, stock: perVariant }));
+      if (typeof item.totalStock === 'number') {
+        // Distribute across ACTIVE variants only, preserving the exact total:
+        // the old `Math.max(1, floor(total / count))` wrote at least one unit
+        // to every variant (so setting stock to 0 restocked every size) and
+        // silently dropped the remainder (5 units over 2 variants became 4).
+        const activeVariants = product.variants.filter((v) => v.active);
+        if (activeVariants.length > 0) {
+          const base = Math.floor(item.totalStock / activeVariants.length);
+          let remainder = item.totalStock % activeVariants.length;
+
+          const activeIds = new Set(activeVariants.map((v) => v.id));
+          updates.variants = product.variants.map((v) => {
+            if (!activeIds.has(v.id)) return mapVariant(v);
+            const extra = remainder > 0 ? 1 : 0;
+            remainder -= extra;
+            return { ...mapVariant(v), stock: base + extra };
+          });
+        }
       }
-      this.updateProduct(item.productId, updates, adminEmail);
+      await db.updateProduct(item.productId, updates, adminEmail);
     }
-  }
+  },
 
   // --- ORDERS ---
-  getOrders(): Order[] {
-    return [...this.orders].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }
+  /**
+   * Most recent orders first, bounded. This previously fetched every order
+   * with all relations on each admin page load (and the overview endpoint
+   * then did it again), which grows without limit as the store trades.
+   */
+  async getOrders(limit = 200): Promise<Order[]> {
+    const orders = await prisma.order.findMany({
+      include: ORDER_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return orders.map(mapOrder);
+  },
 
-  getOrderById(id: string): Order | undefined {
-    return this.orders.find((o) => o.id === id || o.orderNumber === id);
-  }
+  async getOrderById(id: string): Promise<Order | undefined> {
+    const order = await prisma.order.findFirst({
+      where: { OR: [{ id }, { orderNumber: id }] },
+      include: ORDER_INCLUDE,
+    });
+    return order ? mapOrder(order) : undefined;
+  },
 
-  hasIdempotencyKey(key: string): boolean {
-    return this.idempotencyKeys.has(key);
-  }
+  async getOrderByPaymentReference(reference: string): Promise<Order | undefined> {
+    const order = await prisma.order.findFirst({
+      where: { paymentReference: reference },
+      include: ORDER_INCLUDE,
+    });
+    return order ? mapOrder(order) : undefined;
+  },
 
-  recordIdempotencyKey(key: string): void {
-    this.idempotencyKeys.add(key);
-  }
+  /** Direct indexed lookup — the previous path loaded every order into memory. */
+  async getOrderByIdempotencyKey(key: string): Promise<Order | undefined> {
+    const order = await prisma.order.findUnique({
+      where: { idempotencyKey: key },
+      include: ORDER_INCLUDE,
+    });
+    return order ? mapOrder(order) : undefined;
+  },
 
-  createOrder(orderData: Omit<Order, 'id' | 'orderNumber' | 'timeline' | 'createdAt' | 'updatedAt'>): Order {
-    const orderNumber = `DNQ-${Math.floor(10000 + Math.random() * 90000)}`;
-    const id = `ord-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-    const now = new Date().toISOString();
+  async hasIdempotencyKey(key: string): Promise<boolean> {
+    const existing = await prisma.order.findUnique({ where: { idempotencyKey: key } });
+    return !!existing;
+  },
 
-    const order: Order = {
-      ...orderData,
-      id,
-      orderNumber,
-      timeline: [
-        {
-          id: `tl-${Date.now()}-1`,
+  async createOrder(
+    orderData: Omit<Order, 'id' | 'orderNumber' | 'timeline' | 'createdAt' | 'updatedAt' | 'refundedInKobo'>
+  ): Promise<Order> {
+    const order = await prisma.$transaction(async (tx) => {
+      // Wide enough not to collide in practice, and no check-then-insert race:
+      // the old scheme drew from 90,000 values, checked availability before
+      // inserting, and after five clashes inserted an unverified number anyway.
+      const orderNumber = generateOrderNumber();
+
+      const created = await tx.order.create({
+        data: {
+          orderNumber,
+          idempotencyKey: orderData.idempotencyKey,
           status: orderData.status,
-          title: 'Order Created',
-          description: `Order initialized for ${orderData.customer.firstName} ${orderData.customer.lastName}`,
-          timestamp: now,
+          customerEmail: orderData.customer.email,
+          customerFirstName: orderData.customer.firstName,
+          customerLastName: orderData.customer.lastName,
+          customerPhone: orderData.customer.phone,
+          shippingAddress: orderData.shippingAddress as unknown as Prisma.InputJsonValue,
+          deliveryZoneId: orderData.deliveryZoneId,
+          deliveryFeeInKobo: orderData.deliveryFeeInKobo,
+          subtotalInKobo: orderData.subtotalInKobo,
+          discountInKobo: orderData.discountInKobo,
+          discountCodeId: orderData.discountCodeId ?? null,
+          totalInKobo: orderData.totalInKobo,
+          currency: orderData.currency,
+          paymentMethod: orderData.paymentMethod,
+          items: {
+            create: orderData.items.map((i) => ({
+              productId: i.productId,
+              variantId: i.variantId,
+              name: i.name,
+              color: i.color,
+              size: i.size,
+              image: i.image,
+              unitPriceInKobo: i.unitPriceInKobo,
+              quantity: i.quantity,
+              totalPriceInKobo: i.totalPriceInKobo,
+            })),
+          },
+          timeline: {
+            create: {
+              status: orderData.status,
+              title: 'Order Created',
+              description: `Order initialized for ${orderData.customer.firstName} ${orderData.customer.lastName}`,
+            },
+          },
         },
-      ],
-      createdAt: now,
-      updatedAt: now,
-    };
+        include: ORDER_INCLUDE,
+      });
 
-    this.orders.unshift(order);
-    this.recordIdempotencyKey(orderData.idempotencyKey);
-    return order;
-  }
+      return created;
+    });
 
-  updateOrderStatus(orderId: string, newStatus: OrderStatus, reason?: string, adminEmail?: string): Order | null {
-    const order = this.getOrderById(orderId);
-    if (!order) return null;
+    return mapOrder(order);
+  },
 
-    order.status = newStatus;
-    order.updatedAt = new Date().toISOString();
+  async updateOrderStatus(
+    orderId: string,
+    newStatus: OrderStatus,
+    reason?: string,
+    adminEmail?: string
+  ): Promise<Order | null> {
+    const existing = await prisma.order.findFirst({
+      where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+      include: ORDER_INCLUDE,
+    });
+    if (!existing) return null;
 
-    if (newStatus === 'PAID') {
-      order.paidAt = new Date().toISOString();
-      // Deduct variant stock
-      for (const item of order.items) {
-        this.deductVariantStock(item.productId, item.variantId, item.quantity);
+    const updated = await prisma.$transaction(async (tx) => {
+      if (newStatus === 'PAID' && existing.status !== 'PAID') {
+        // Claim the PAID transition atomically. The status read above happens
+        // outside the transaction, so a webhook and a browser callback can both
+        // see the same unpaid order; without this guard both would deduct
+        // stock, both would append a PAID event and both would email.
+        const claimed = await tx.order.updateMany({
+          where: { id: existing.id, status: { not: 'PAID' } },
+          data: { status: 'PAID' },
+        });
+        if (claimed.count === 0) {
+          throw new OrderAlreadyPaidError(existing.id);
+        }
+
+        // Aggregate per variant: one order can list the same variant on
+        // several lines, and each line decrementing separately is how a
+        // single order oversells a variant.
+        const quantityByVariant = new Map<string, number>();
+        for (const item of existing.items) {
+          quantityByVariant.set(
+            item.variantId,
+            (quantityByVariant.get(item.variantId) ?? 0) + item.quantity
+          );
+        }
+
+        for (const [variantId, quantity] of quantityByVariant) {
+          // Conditional decrement: only succeeds if the stock is actually
+          // there. The old condition was `stock >= 0`, which always matched
+          // and then clamped a negative result to zero — concealing the
+          // oversell while keeping the customer's money.
+          const decremented = await tx.productVariant.updateMany({
+            where: { id: variantId, stock: { gte: quantity } },
+            data: { stock: { decrement: quantity } },
+          });
+
+          if (decremented.count === 0) {
+            const variant = await tx.productVariant.findUnique({ where: { id: variantId } });
+            throw new InsufficientStockError(variantId, quantity, variant?.stock ?? 0);
+          }
+        }
       }
-    }
 
-    if (newStatus === 'FULFILLED') {
-      order.dispatchedAt = new Date().toISOString();
-    }
+      const order = await tx.order.update({
+        where: { id: existing.id },
+        data: {
+          status: newStatus,
+          ...(newStatus === 'PAID' && { paidAt: new Date() }),
+          ...(newStatus === 'FULFILLED' && { dispatchedAt: new Date() }),
+          timeline: {
+            create: {
+              status: newStatus,
+              title: `Status: ${newStatus.replace(/_/g, ' ')}`,
+              description: reason || `Order updated to ${newStatus}`,
+            },
+          },
+        },
+        include: ORDER_INCLUDE,
+      });
 
-    order.timeline.push({
-      id: `tl-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-      status: newStatus,
-      title: `Status: ${newStatus.replace(/_/g, ' ')}`,
-      description: reason || `Order updated to ${newStatus}`,
-      timestamp: new Date().toISOString(),
+      return order;
     });
 
     if (adminEmail) {
-      this.logActivity({
+      await db.logActivity({
         adminEmail,
         action: 'Order status updated',
         entityType: 'order',
-        entityId: order.id,
-        details: `Order #${order.orderNumber} transitioned to ${newStatus}`,
+        entityId: updated.id,
+        details: `Order #${updated.orderNumber} transitioned to ${newStatus}`,
       });
     }
 
-    return order;
-  }
+    return mapOrder(updated);
+  },
 
-  private deductVariantStock(productId: string, variantId: string, quantity: number): void {
-    const product = this.getProductById(productId);
-    if (!product) return;
-    const variant = product.variants.find((v) => v.id === variantId);
-    if (variant) {
-      variant.stock = Math.max(0, variant.stock - quantity);
-    }
-  }
+  async setOrderPaymentReference(orderId: string, reference: string, paymentMethod: Order['paymentMethod']): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentReference: reference, paymentMethod },
+    });
+  },
+
+  /**
+   * Adds to the cumulative refunded total (partial refunds stack).
+   *
+   * Optimistic concurrency: the write only applies if the stored total is
+   * still what the caller read, so two requests can't both spend the same
+   * remaining balance. Returns false when it lost the race.
+   */
+  async recordOrderRefund(
+    orderId: string,
+    refundedInKobo: number,
+    expectedCurrentRefundedInKobo: number
+  ): Promise<boolean> {
+    const result = await prisma.order.updateMany({
+      where: { id: orderId, refundedInKobo: expectedCurrentRefundedInKobo },
+      data: { refundedInKobo: { increment: refundedInKobo } },
+    });
+    return result.count > 0;
+  },
+
+  async setOrderPaymentId(orderId: string, paymentId: string, paidAt: string): Promise<void> {
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { paymentId, paidAt: new Date(paidAt) },
+    });
+  },
+
+  // --- FINANCE / ANALYTICS ---
+  // Revenue is recognised on `paidAt` (when money actually arrived), not
+  // createdAt, and always reported net of refunds.
+  async getFinanceSummary(since: Date): Promise<FinanceSummary> {
+    const [collected, pending, awaitingDispatch, lost] = await Promise.all([
+      prisma.order.aggregate({
+        where: { paidAt: { gte: since }, status: { in: [...COLLECTED_STATUSES] } },
+        _sum: {
+          totalInKobo: true,
+          refundedInKobo: true,
+          deliveryFeeInKobo: true,
+          discountInKobo: true,
+          subtotalInKobo: true,
+        },
+        _count: { _all: true },
+      }),
+      prisma.order.aggregate({
+        where: { createdAt: { gte: since }, status: { in: ['PENDING_PAYMENT', 'PAYMENT_PROCESSING'] } },
+        _sum: { totalInKobo: true },
+        _count: { _all: true },
+      }),
+      prisma.order.count({ where: { status: 'PAID' } }),
+      prisma.order.count({
+        where: { createdAt: { gte: since }, status: { in: ['PAYMENT_FAILED', 'CANCELLED'] } },
+      }),
+    ]);
+
+    const grossSalesInKobo = collected._sum.totalInKobo ?? 0;
+    const refundedInKobo = collected._sum.refundedInKobo ?? 0;
+    const paidOrdersCount = collected._count._all;
+
+    return {
+      grossSalesInKobo,
+      refundedInKobo,
+      netRevenueInKobo: grossSalesInKobo - refundedInKobo,
+      merchandiseInKobo: collected._sum.subtotalInKobo ?? 0,
+      deliveryFeesInKobo: collected._sum.deliveryFeeInKobo ?? 0,
+      discountsGivenInKobo: collected._sum.discountInKobo ?? 0,
+      paidOrdersCount,
+      averageOrderValueInKobo: paidOrdersCount > 0 ? Math.round(grossSalesInKobo / paidOrdersCount) : 0,
+      pendingCollectionInKobo: pending._sum.totalInKobo ?? 0,
+      pendingCollectionCount: pending._count._all,
+      awaitingDispatchCount: awaitingDispatch,
+      failedOrCancelledCount: lost,
+    };
+  },
+
+  /** Daily net revenue, gap-filled so the chart has a bar per day. */
+  async getRevenueSeries(days: number): Promise<RevenuePoint[]> {
+    const since = startOfDayUtc(new Date(Date.now() - (days - 1) * 86_400_000));
+
+    const rows = await prisma.$queryRaw<Array<{ day: Date; net: bigint | number }>>`
+      SELECT date_trunc('day', "paidAt") AS day,
+             COALESCE(SUM("totalInKobo"), 0) - COALESCE(SUM("refundedInKobo"), 0) AS net
+      FROM "Order"
+      WHERE "paidAt" >= ${since}
+        AND "status" IN ('PAID', 'FULFILLED', 'REFUNDED', 'PARTIALLY_REFUNDED')
+      GROUP BY 1
+      ORDER BY 1
+    `;
+
+    const byDay = new Map(rows.map((row) => [startOfDayUtc(row.day).toISOString(), Number(row.net)]));
+
+    return Array.from({ length: days }, (_, index) => {
+      const date = startOfDayUtc(new Date(since.getTime() + index * 86_400_000));
+      return {
+        date: date.toISOString(),
+        netRevenueInKobo: byDay.get(date.toISOString()) ?? 0,
+      };
+    });
+  },
+
+  /** How much money arrived through each payment route (cash vs gateway). */
+  async getPaymentMethodBreakdown(since: Date): Promise<PaymentMethodTotal[]> {
+    const rows = await prisma.$queryRaw<
+      Array<{ method: PaymentMethodTotal['method']; net: bigint | number; orders: bigint | number }>
+    >`
+      SELECT "paymentMethod" AS method,
+             COALESCE(SUM("totalInKobo"), 0) - COALESCE(SUM("refundedInKobo"), 0) AS net,
+             COUNT(*) AS orders
+      FROM "Order"
+      WHERE "paidAt" >= ${since}
+        AND "status" IN ('PAID', 'FULFILLED', 'REFUNDED', 'PARTIALLY_REFUNDED')
+      GROUP BY "paymentMethod"
+      ORDER BY net DESC
+    `;
+
+    return rows.map((row) => ({
+      method: row.method,
+      netInKobo: Number(row.net),
+      ordersCount: Number(row.orders),
+    }));
+  },
+
+  /**
+   * Line-level totals for products sold in the period. Note this is gross of
+   * order-level discounts and of partial refunds — it answers "what sold",
+   * not "what we banked"; net revenue is the summary figure for that.
+   */
+  async getTopProducts(since: Date, limit = 5): Promise<TopProduct[]> {
+    const rows = await prisma.$queryRaw<
+      Array<{ productId: string; name: string | null; units: bigint | number; revenue: bigint | number }>
+    >`
+      SELECT i."productId" AS "productId",
+             p."name" AS name,
+             COALESCE(SUM(i."quantity"), 0) AS units,
+             COALESCE(SUM(i."totalPriceInKobo"), 0) AS revenue
+      FROM "OrderItem" i
+      JOIN "Order" o ON o."id" = i."orderId"
+      LEFT JOIN "Product" p ON p."id" = i."productId"
+      WHERE o."paidAt" >= ${since}
+        -- Fully refunded orders sold nothing in the end, so they must not
+        -- inflate a product's units or revenue.
+        AND o."status" IN ('PAID', 'FULFILLED', 'PARTIALLY_REFUNDED')
+      GROUP BY i."productId", p."name"
+      ORDER BY revenue DESC
+      LIMIT ${limit}
+    `;
+
+    return rows.map((row) => ({
+      productId: row.productId,
+      name: row.name ?? 'Removed garment',
+      unitsSold: Number(row.units),
+      revenueInKobo: Number(row.revenue),
+    }));
+  },
 
   // --- STORE SETTINGS ---
-  getSettings(): StoreSettings {
-    return this.settings;
-  }
+  /**
+   * Storefront reads get active zones only; admin reads pass
+   * includeInactiveZones so a disabled zone can still be seen and re-enabled.
+   */
+  async getSettings(options: { includeInactiveZones?: boolean } = {}): Promise<StoreSettings> {
+    const [settings, zones] = await Promise.all([
+      prisma.storeSettings.findUniqueOrThrow({ where: { id: SETTINGS_ID } }),
+      prisma.deliveryZone.findMany({
+        where: options.includeInactiveZones ? undefined : { active: true },
+        orderBy: { sortOrder: 'asc' },
+      }),
+    ]);
+    return mapSettings(settings, zones);
+  },
 
-  updateSettings(updates: Partial<StoreSettings>, adminEmail: string): StoreSettings {
-    this.settings = { ...this.settings, ...updates };
-    this.logActivity({
+  async updateSettings(updates: Partial<StoreSettings>, adminEmail: string): Promise<StoreSettings> {
+    await prisma.storeSettings.update({
+      where: { id: SETTINGS_ID },
+      data: {
+        ...(updates.storeName !== undefined && { storeName: updates.storeName }),
+        ...(updates.supportEmail !== undefined && { supportEmail: updates.supportEmail }),
+        ...(updates.supportWhatsApp !== undefined && { supportWhatsApp: updates.supportWhatsApp }),
+        ...(updates.freeDeliveryThresholdInKobo !== undefined && {
+          freeDeliveryThresholdInKobo: updates.freeDeliveryThresholdInKobo,
+        }),
+        ...(updates.returnPeriodDays !== undefined && { returnPeriodDays: updates.returnPeriodDays }),
+        ...(updates.paymentProviders?.paystack !== undefined && { paystackEnabled: updates.paymentProviders.paystack }),
+        ...(updates.paymentProviders?.flutterwave !== undefined && {
+          flutterwaveEnabled: updates.paymentProviders.flutterwave,
+        }),
+        ...(updates.paymentProviders?.stripe !== undefined && { stripeEnabled: updates.paymentProviders.stripe }),
+        ...(updates.paymentProviders?.showroomCollection !== undefined && {
+          showroomCollectionEnabled: updates.paymentProviders.showroomCollection,
+        }),
+      },
+    });
+
+    // Delivery zones were accepted by the schema and shown as saved in the UI,
+    // but never written — fee/name/activation edits silently vanished.
+    if (updates.deliveryZones) {
+      for (const zone of updates.deliveryZones) {
+        await prisma.deliveryZone.updateMany({
+          where: { id: zone.id },
+          data: {
+            name: zone.name,
+            feeInKobo: zone.feeInKobo,
+            estimatedDelivery: zone.estimatedDelivery,
+            description: zone.description,
+            active: zone.active,
+          },
+        });
+      }
+    }
+
+    await db.logActivity({
       adminEmail,
       action: 'Settings updated',
       entityType: 'settings',
       details: 'Store delivery, threshold, or payment configurations updated',
     });
-    return this.settings;
-  }
 
-  getDeliveryZone(zoneId: string): DeliveryZone | undefined {
-    return this.settings.deliveryZones.find((z) => z.id === zoneId);
-  }
+    // Admins need to see inactive zones too, otherwise a zone switched off can
+    // never be switched back on.
+    return db.getSettings({ includeInactiveZones: true });
+  },
 
   // --- DISCOUNTS ---
-  getDiscount(code: string): DiscountCode | undefined {
-    return this.discounts.find((d) => d.code.toUpperCase() === code.trim().toUpperCase() && d.active);
-  }
+  async getDiscount(code: string): Promise<DiscountCode | undefined> {
+    const discount = await prisma.discountCode.findFirst({
+      where: { code: { equals: code.trim(), mode: 'insensitive' }, active: true },
+    });
+    return mapDiscount(discount);
+  },
 
-  incrementDiscountUsage(id: string): void {
-    const d = this.discounts.find((item) => item.id === id);
-    if (d) d.usageCount += 1;
-  }
+  async incrementDiscountUsage(id: string): Promise<void> {
+    await prisma.discountCode.update({ where: { id }, data: { usageCount: { increment: 1 } } });
+  },
+
+  // --- ADMIN USERS ---
+  async getAdminByEmail(email: string) {
+    return prisma.adminUser.findUnique({ where: { email: email.toLowerCase().trim() } });
+  },
+
+  async getAdminById(id: string) {
+    return prisma.adminUser.findUnique({ where: { id } });
+  },
+
+  /** Invalidates every existing session for this admin. */
+  async revokeAdminSessions(adminId: string): Promise<void> {
+    await prisma.adminUser.update({
+      where: { id: adminId },
+      data: { sessionVersion: { increment: 1 } },
+    });
+  },
+
+  async recordAdminLogin(adminId: string): Promise<void> {
+    await prisma.adminUser.update({ where: { id: adminId }, data: { lastLoginAt: new Date() } });
+  },
+
+  // --- LOGIN RATE LIMITING ---
+  // Backed by the database (not in-memory) because serverless deployments
+  // (e.g. Vercel) run each request on a potentially fresh instance — an
+  // in-memory counter would silently stop limiting anything in production.
+  async recordLoginAttempt(email: string, ipAddress: string, success: boolean): Promise<void> {
+    await prisma.loginAttempt.create({
+      data: { email: email.toLowerCase().trim(), ipAddress, success },
+    });
+  },
+
+  async countRecentFailedLoginAttempts(email: string, ipAddress: string, windowMinutes: number): Promise<number> {
+    const since = new Date(Date.now() - windowMinutes * 60_000);
+    return prisma.loginAttempt.count({
+      where: {
+        success: false,
+        createdAt: { gte: since },
+        OR: [{ email: email.toLowerCase().trim() }, { ipAddress }],
+      },
+    });
+  },
 
   // --- ACTIVITY LOGS ---
-  logActivity(data: Omit<AdminActivityLog, 'id' | 'timestamp'>): void {
-    const newLog: AdminActivityLog = {
-      ...data,
-      id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-      timestamp: new Date().toISOString(),
-    };
-    this.activityLogs.unshift(newLog);
-    // keep up to 200 logs
-    if (this.activityLogs.length > 200) {
-      this.activityLogs.pop();
-    }
-  }
+  async logActivity(data: Omit<AdminActivityLog, 'id' | 'timestamp'>): Promise<void> {
+    await prisma.adminActivityLog.create({
+      data: {
+        adminEmail: data.adminEmail,
+        action: data.action,
+        entityType: data.entityType,
+        entityId: data.entityId ?? undefined,
+        details: data.details,
+      },
+    });
+  },
 
-  getActivityLogs(): AdminActivityLog[] {
-    return this.activityLogs;
+  async getActivityLogs(limit = 200): Promise<AdminActivityLog[]> {
+    const logs = await prisma.adminActivityLog.findMany({
+      orderBy: { timestamp: 'desc' },
+      take: limit,
+    });
+    return logs.map(mapActivityLog);
+  },
+};
+
+/** Another caller won the race to mark this order paid. Safe to treat as success. */
+export class OrderAlreadyPaidError extends Error {
+  constructor(public readonly orderId: string) {
+    super(`Order ${orderId} was already marked paid by a concurrent request`);
+    this.name = 'OrderAlreadyPaidError';
   }
 }
 
-const globalForDb = globalThis as unknown as { db?: Database };
-export const db = globalForDb.db ?? new Database();
-if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
+/** Stock ran out between checkout validation and payment confirmation. */
+export class InsufficientStockError extends Error {
+  constructor(
+    public readonly variantId: string,
+    public readonly requested: number,
+    public readonly available: number
+  ) {
+    super(`Insufficient stock for variant ${variantId}: needed ${requested}, ${available} available`);
+    this.name = 'InsufficientStockError';
+  }
+}
 
+/**
+ * DNQ-<8 crockford-ish base32 chars>, ~1e12 values. Public-facing, so it is
+ * deliberately not a credential — order lookup is authorised separately.
+ */
+function generateOrderNumber(): string {
+  const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const bytes = randomBytes(8);
+  let out = '';
+  for (let i = 0; i < 8; i += 1) out += ALPHABET[bytes[i] % ALPHABET.length];
+  return `DNQ-${out}`;
+}
+
+function startOfDayUtc(date: Date): Date {
+  const copy = new Date(date);
+  copy.setUTCHours(0, 0, 0, 0);
+  return copy;
+}
+
+function slugify(name: string): string {
+  return `${name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')}-${Date.now().toString(36)}`;
+}

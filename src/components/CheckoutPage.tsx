@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { CartItem, DeliveryZone, Order, StoreSettings } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { CartItem, Order, StoreSettings } from '../types';
 import { api } from '../services/api';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { useGuestCheckoutStore } from '../store/useStore';
+import { useVerifyPaymentMutation } from '../hooks/mutations';
+import { getErrorMessage } from '../lib/errors';
 import {
   Lock,
   ArrowLeft,
@@ -14,6 +16,15 @@ import {
   Building,
   ChevronRight,
 } from 'lucide-react';
+
+// Full list so customers outside Lagos can actually give their real state.
+const NIGERIAN_STATES = [
+  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT - Abuja', 'Gombe',
+  'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
+  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto',
+  'Taraba', 'Yobe', 'Zamfara',
+];
 
 interface CheckoutPageProps {
   items: CartItem[];
@@ -53,11 +64,40 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   });
 
   const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'flutterwave' | 'showroom'>('paystack');
+
+  // Only offer what the store has switched on. The server rejects disabled
+  // methods regardless, but they should never have been shown as options.
+  const providerEnabled = {
+    paystack: settings?.paymentProviders.paystack ?? true,
+    flutterwave: settings?.paymentProviders.flutterwave ?? false,
+    showroom: settings?.paymentProviders.showroomCollection ?? false,
+  };
+
+  // If the selected method gets switched off while the page is open, fall
+  // back to one that is actually available.
+  useEffect(() => {
+    if (!providerEnabled[paymentMethod]) {
+      const firstEnabled = (['paystack', 'flutterwave', 'showroom'] as const).find(
+        (method) => providerEnabled[method]
+      );
+      if (firstEnabled) setPaymentMethod(firstEnabled);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
   const [promoCode, setPromoCode] = useState('');
   const [promoDiscount, setPromoDiscount] = useState<number>(0);
+  // The quote is pinned to the code and subtotal it was issued for. Editing
+  // the field or changing the bag after applying used to leave a stale
+  // discount on screen while a different code (or none) was submitted, so the
+  // charge could exceed the displayed total.
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; subtotalInKobo: number } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
 
+  // One key per logical checkout attempt, so a retry after a network failure
+  // recovers the original order instead of creating a second one. Cleared only
+  // once an order is confirmed.
+  const idempotencyKeyRef = useRef<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
@@ -78,27 +118,33 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     });
   }, []);
 
-  // Check URL params for payment return/verification
+  // Check URL params for payment return/verification. The gateway redirects
+  // the customer back here after they've actually paid (see handleSubmit),
+  // so this is where verification belongs — never before that redirect.
+  const verifyPaymentMutation = useVerifyPaymentMutation();
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const reference = params.get('reference');
     const orderId = params.get('orderId');
+    if (!reference || !orderId) return;
 
-    if (reference && orderId) {
-      setIsSubmitting(true);
-      api
-        .verifyPayment(reference, orderId)
-        .then((res) => {
+    verifyPaymentMutation.mutate(
+      { reference, orderId },
+      {
+        onSuccess: (res) => {
           if (res.success && res.order) {
             setConfirmedOrder(res.order);
             onClearCart();
+          } else {
+            setErrorMsg(res.message || 'Payment could not be completed.');
           }
-        })
-        .catch((err) => {
-          setErrorMsg(err.message || 'Payment verification failed');
-        })
-        .finally(() => setIsSubmitting(false));
-    }
+        },
+        onError: (err: Error) => setErrorMsg(getErrorMessage(err, 'Payment verification failed')),
+      }
+    );
+    // Intentionally runs once on mount to inspect the initial URL only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Calculations for UI display
@@ -107,7 +153,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const currentZone = settings?.deliveryZones.find((z) => z.id === selectedZoneId);
   const isFreeDelivery = (settings?.freeDeliveryThresholdInKobo && subtotalInKobo >= settings.freeDeliveryThresholdInKobo) || currentZone?.feeInKobo === 0;
   const deliveryFeeInKobo = isFreeDelivery ? 0 : (currentZone?.feeInKobo || 0);
-  const totalInKobo = Math.max(0, subtotalInKobo + deliveryFeeInKobo - promoDiscount);
+  // A discount only counts while the code in the box and the bag value still
+  // match what the server quoted.
+  const promoStillValid =
+    !!appliedPromo &&
+    appliedPromo.code === promoCode.trim() &&
+    appliedPromo.subtotalInKobo === subtotalInKobo;
+  const effectiveDiscount = promoStillValid ? promoDiscount : 0;
+  const totalInKobo = Math.max(0, subtotalInKobo + deliveryFeeInKobo - effectiveDiscount);
 
   // Apply Promo
   const handleApplyPromo = async (e: React.FormEvent) => {
@@ -119,9 +172,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     try {
       const res = await api.validateDiscount(promoCode, subtotalInKobo);
       setPromoDiscount(res.discountInKobo);
-      setPromoSuccess(`Discount applied: -${formatPrice(res.discountInKobo)}`);
-    } catch (err: any) {
-      setPromoError(err.message || 'Invalid promo code');
+      setAppliedPromo({ code: promoCode.trim(), subtotalInKobo });
+      setPromoSuccess(`Discount applied: -${formatKobo(res.discountInKobo)}`);
+    } catch (err) {
+      setPromoError(getErrorMessage(err, 'Invalid promo code'));
       setPromoDiscount(0);
     }
   };
@@ -146,6 +200,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
+    // Created on first submit (not during render, which must stay pure) and
+    // reused by retries so a failed attempt recovers its original order.
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = `idemp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    }
+
     setIsSubmitting(true);
     setGuestCustomer(contact);
     setGuestShippingAddress({
@@ -166,31 +226,31 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           ...address,
         },
         deliveryZoneId: selectedZoneId,
-        discountCode: promoDiscount > 0 ? promoCode : undefined,
+        discountCode: promoStillValid ? appliedPromo!.code : undefined,
         paymentMethod,
-        idempotencyKey: `idemp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        idempotencyKey: idempotencyKeyRef.current,
       };
 
       const result = await api.initiateCheckout(payload);
+      const session = result.paymentSession;
+      const redirectUrl = session?.authorizationUrl || session?.checkoutUrl;
 
-      // Verify transaction immediately in self-contained/preview mode or handle redirect
-      if (result.paymentSession?.reference) {
-        const verifyRes = await api.verifyPayment(
-          result.paymentSession.reference,
-          result.order.id
-        );
-        if (verifyRes.success) {
-          setConfirmedOrder(verifyRes.order);
-          onClearCart();
-        } else {
-          setErrorMsg(verifyRes.message || 'Payment could not be completed.');
-        }
-      } else {
-        setConfirmedOrder(result.order);
-        onClearCart();
+      if (redirectUrl) {
+        // Send the customer to the gateway to actually authorize/pay. They
+        // land back on this same page (via the reference/orderId query
+        // params handled in the effect above), which is what triggers
+        // verification — never verify before the customer has paid.
+        window.location.href = redirectUrl;
+        return;
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Unable to place order. Please check your details.');
+
+      // No gateway redirect (e.g. showroom in-person collection): the order
+      // is placed but payment isn't captured online, so there's nothing to
+      // verify yet. An admin confirms payment manually once collected.
+      setConfirmedOrder(result.order);
+      onClearCart();
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, 'Unable to place order. Please check your details.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -221,7 +281,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 Thank you, {confirmedOrder.customer.firstName}.
               </h1>
               <p className="text-sm text-[#56554F] leading-relaxed">
-                Your order is now confirmed and entered into production. A receipt and private tracking link have been dispatched to{' '}
+                Your order is confirmed and entered into production. A receipt has been sent to{' '}
                 <span className="font-medium text-[#171714]">{confirmedOrder.customer.email}</span>.
               </p>
             </div>
@@ -248,7 +308,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       </div>
                     </div>
                     <span className="font-medium text-[#171714]">
-                      {formatPrice(item.totalPriceInKobo)}
+                      {formatKobo(item.totalPriceInKobo)}
                     </span>
                   </div>
                 ))}
@@ -478,7 +538,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         {zone.feeInKobo === 0 ? (
                           <span className="text-[#681F2C]">Complimentary</span>
                         ) : (
-                          formatPrice(zone.feeInKobo)
+                          formatKobo(zone.feeInKobo)
                         )}
                       </span>
                     </label>
@@ -527,6 +587,50 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   />
                 </div>
               </div>
+
+              {/* State was fixed at "Lagos" and not editable, so an Abuja
+                  customer submitted an Abuja city with a Lagos state. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label
+                    htmlFor="checkout-state"
+                    className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]"
+                  >
+                    State
+                  </label>
+                  <select
+                    id="checkout-state"
+                    required
+                    value={address.state}
+                    onChange={(e) => setAddress({ ...address, state: e.target.value })}
+                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
+                  >
+                    {NIGERIAN_STATES.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label
+                    htmlFor="checkout-country"
+                    className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]"
+                  >
+                    Country
+                  </label>
+                  <input
+                    id="checkout-country"
+                    type="text"
+                    value={address.country}
+                    readOnly
+                    className="w-full bg-[#F4F1EB] border border-[#D8D4CC] px-3.5 py-2.5 text-xs text-[#56554F]"
+                  />
+                  <p className="text-[10px] text-[#8A8780]">
+                    We currently deliver within Nigeria only.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* STEP 3: PAYMENT METHOD */}
@@ -538,6 +642,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
 
               <div className="space-y-2.5">
+                {providerEnabled.paystack && (
                 <label
                   onClick={() => setPaymentMethod('paystack')}
                   className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
@@ -561,7 +666,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                   <CreditCard className="w-4 h-4 text-[#56554F]" />
                 </label>
-
+                )}
+                {providerEnabled.flutterwave && (
                 <label
                   onClick={() => setPaymentMethod('flutterwave')}
                   className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
@@ -585,7 +691,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                   <CreditCard className="w-4 h-4 text-[#56554F]" />
                 </label>
-
+                )}
+                {providerEnabled.showroom && (
                 <label
                   onClick={() => setPaymentMethod('showroom')}
                   className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
@@ -609,6 +716,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </div>
                   <Building className="w-4 h-4 text-[#56554F]" />
                 </label>
+                )}
               </div>
             </div>
 
@@ -617,12 +725,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <button
                 type="button"
                 onClick={handlePay}
-                disabled={isSubmitting}
+                disabled={isSubmitting || verifyPaymentMutation.isPending}
                 className="w-full bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold tracking-[0.2em] uppercase py-4 border border-[#171714] transition-colors cursor-pointer flex items-center justify-center space-x-2"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>
-                  {isSubmitting ? 'Securing Transaction...' : `Authorize Payment — ${formatPrice(totalInKobo)}`}
+                  {isSubmitting || verifyPaymentMutation.isPending
+                    ? 'Securing Transaction...'
+                    : `Authorize Payment — ${formatKobo(totalInKobo)}`}
                 </span>
               </button>
 
@@ -662,7 +772,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       </p>
                       <p className="text-[#56554F] text-[11px] mt-0.5">Qty: {item.quantity}</p>
                       <p className="font-semibold text-[#171714] mt-1">
-                        {formatPrice(item.priceInKobo * item.quantity)}
+                        {formatKobo(item.priceInKobo * item.quantity)}
                       </p>
                     </div>
                   </div>
@@ -687,14 +797,21 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   </button>
                 </div>
                 {promoError && <p className="text-[11px] text-red-600">{promoError}</p>}
-                {promoSuccess && <p className="text-[11px] text-[#681F2C] font-medium">{promoSuccess}</p>}
+                {promoSuccess && promoStillValid && (
+                  <p className="text-[11px] text-[#681F2C] font-medium">{promoSuccess}</p>
+                )}
+                {appliedPromo && !promoStillValid && (
+                  <p className="text-[11px] text-[#56554F]">
+                    Your bag or code changed — re-apply the code to use it.
+                  </p>
+                )}
               </form>
 
               {/* Price Calculation */}
               <div className="border-t border-[#D8D4CC] pt-4 space-y-2 text-xs uppercase tracking-wider">
                 <div className="flex justify-between text-[#56554F]">
                   <span>Subtotal</span>
-                  <span className="text-[#171714] font-medium">{formatPrice(subtotalInKobo)}</span>
+                  <span className="text-[#171714] font-medium">{formatKobo(subtotalInKobo)}</span>
                 </div>
 
                 <div className="flex justify-between text-[#56554F]">
@@ -703,28 +820,28 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {deliveryFeeInKobo === 0 ? (
                       <span className="text-[#681F2C]">Complimentary</span>
                     ) : (
-                      formatPrice(deliveryFeeInKobo)
+                      formatKobo(deliveryFeeInKobo)
                     )}
                   </span>
                 </div>
 
-                {promoDiscount > 0 && (
+                {effectiveDiscount > 0 && (
                   <div className="flex justify-between text-[#681F2C] font-semibold">
                     <span>Promotion Discount</span>
-                    <span>-{formatPrice(promoDiscount)}</span>
+                    <span>-{formatKobo(effectiveDiscount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-sm font-semibold text-[#171714] pt-3 border-t border-[#D8D4CC]">
                   <span>Total (Server Verified)</span>
-                  <span className="text-base font-bold">{formatPrice(totalInKobo)}</span>
+                  <span className="text-base font-bold">{formatKobo(totalInKobo)}</span>
                 </div>
               </div>
 
               {/* Free delivery threshold callout */}
               {settings?.freeDeliveryThresholdInKobo && subtotalInKobo < settings.freeDeliveryThresholdInKobo && (
                 <div className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-[11px] text-[#56554F]">
-                  Add {formatPrice(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more to unlock complimentary nationwide delivery.
+                  Add {formatKobo(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more to unlock complimentary nationwide delivery.
                 </div>
               )}
             </div>

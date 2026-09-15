@@ -1,6 +1,6 @@
 import React from 'react';
 import { LookbookItem, Product } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { X, ArrowRight } from 'lucide-react';
 
 interface LookbookModalProps {
@@ -20,7 +20,7 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
 }) => {
   if (!look) return null;
 
-  const taggedProducts = products.filter((p) => look.productIds.includes(p.id));
+  const taggedProducts = products.filter((p) => look.productSlugs.includes(p.slug));
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 md:p-8 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -90,7 +90,7 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
                       {prod.name}
                     </h5>
                     <p className="font-sans text-xs font-semibold text-[#171714]">
-                      {formatPrice(prod.price)}
+                      {formatKobo(prod.priceInKobo)}
                     </p>
                     <div className="flex space-x-2 mt-2">
                       <button

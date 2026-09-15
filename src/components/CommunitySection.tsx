@@ -15,7 +15,7 @@ export const CommunitySection: React.FC = () => {
           </h3>
         </div>
         <a
-          href="https://instagram.com"
+          href="https://instagram.com/deniqwears"
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center space-x-2 text-xs tracking-[0.16em] uppercase font-medium text-[#171714] hover:text-[#681F2C] transition-colors mt-2 sm:mt-0"

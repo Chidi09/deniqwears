@@ -2,6 +2,15 @@ export type Category = 'all' | 'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasi
 
 export type ProductStatus = 'live' | 'draft' | 'archived';
 
+/**
+ * UK dress sizing — the range Deniqwears cuts. Single source of truth: the
+ * variant type, Zod validation, shop filters, admin form and size guide all
+ * derive from this list, so adding a size means editing one line.
+ */
+export const GARMENT_SIZES = ['10', '12', '14', '16', '18', '20'] as const;
+
+export type GarmentSize = (typeof GARMENT_SIZES)[number];
+
 export interface ProductColor {
   name: string;
   hex: string;
@@ -10,7 +19,7 @@ export interface ProductColor {
 export interface ProductVariant {
   id: string;
   color: string;
-  size: 'XS' | 'S' | 'M' | 'L' | 'XL';
+  size: GarmentSize;
   sku?: string;
   priceInKobo?: number;
   stock: number;
@@ -21,13 +30,19 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  priceInKobo?: number; // Stored in smallest currency unit: Kobo (₦48,000 = 4800000)
-  price?: number; // Optional Naira display helper
+  /**
+   * The one price field. Always kobo, the smallest currency unit
+   * (₦48,000 = 4_800_000). There is deliberately no naira `price` companion:
+   * two units for one concept is what let display code read an absent field
+   * and render NaN, and what made a "guess the unit by magnitude" formatter
+   * seem necessary.
+   */
+  priceInKobo: number;
   status?: ProductStatus;
   category: 'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion';
   collection?: string;
   colors: ProductColor[];
-  sizes: Array<'XS' | 'S' | 'M' | 'L' | 'XL'>;
+  sizes: GarmentSize[];
   variants?: ProductVariant[];
   primaryImage: string;
   secondaryImage: string;
@@ -52,8 +67,8 @@ export interface CartItem {
   productId: string;
   variantId: string;
   name: string;
-  priceInKobo: number; // Client display cache, but server validates!
-  price?: number; // Optional Naira display helper
+  /** Display cache only — the server always recalculates at checkout. */
+  priceInKobo: number;
   image: string;
   selectedColor: string;
   selectedSize: string;
@@ -123,6 +138,8 @@ export interface Order {
   subtotalInKobo: number;
   discountInKobo: number;
   totalInKobo: number;
+  /** Cumulative amount refunded against this order (kobo). */
+  refundedInKobo: number;
   currency: 'NGN' | 'USD';
   paymentMethod: 'paystack' | 'flutterwave' | 'stripe' | 'showroom';
   paymentReference?: string;
@@ -177,7 +194,36 @@ export interface LookbookItem {
   editorialNote: string;
   image: string;
   aspectRatio: 'portrait' | 'tall' | 'wide' | 'square';
-  productIds: string[];
+  /**
+   * Slugs, not database IDs. Seeded products get generated CUIDs, so the old
+   * fixture IDs matched nothing and "Shop the Look" always came up empty.
+   * Slugs are stable, human-checkable and actually present in the catalog.
+   */
+  productSlugs: string[];
+}
+
+export interface PaymentSession {
+  provider: string;
+  reference: string;
+  checkoutUrl?: string;
+  authorizationUrl?: string;
+  accessCode?: string;
+  clientSecret?: string;
+  amountInKobo: number;
+  currency: string;
+  expiresAt: string;
+}
+
+// Payload shape the admin product form builds — everything but the
+// server-assigned id/timestamps, all optional since create vs. update send
+// different subsets.
+export type ProductInput = Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>;
+
+export interface QuickEditItem {
+  productId: string;
+  priceInKobo?: number;
+  totalStock?: number;
+  status?: ProductStatus;
 }
 
 export interface FilterState {

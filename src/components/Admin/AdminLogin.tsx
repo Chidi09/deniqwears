@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
+import { getErrorMessage } from '../../lib/errors';
 import { Lock, ShieldAlert, ArrowLeft } from 'lucide-react';
 
 interface AdminLoginProps {
@@ -8,8 +9,8 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => {
-  const [email, setEmail] = useState('admin@deniqwears.com');
-  const [password, setPassword] = useState('deniq2026');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,8 +22,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
     try {
       await api.adminLogin(email, password);
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Authentication failed'));
     } finally {
       setLoading(false);
     }
@@ -96,11 +97,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
             </button>
           </div>
         </form>
-
-        <div className="mt-6 pt-6 border-t border-[#3A3935] text-[11px] text-[#8A8780]">
-          <p>Demo Showroom Access:</p>
-          <p className="font-mono text-xs text-[#FAF9F6] mt-0.5">admin@deniqwears.com / deniq2026</p>
-        </div>
       </div>
     </div>
   );

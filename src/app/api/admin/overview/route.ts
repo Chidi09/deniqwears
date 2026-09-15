@@ -3,17 +3,26 @@ import { db } from '@/server/db';
 import { requireAdminAuth } from '../auth-helper';
 
 export async function GET(req: NextRequest) {
-  const auth = requireAdminAuth(req);
+  const auth = await requireAdminAuth(req);
   if (!auth.authorized) return auth.response!;
 
-  const orders = db.getOrders();
-  const products = db.getProducts(true);
+  const [orders, products, recentActivity] = await Promise.all([
+    db.getOrders(),
+    db.getProducts(true),
+    db.getActivityLogs(),
+  ]);
 
-  // Total paid revenue in kobo
-  const paidOrders = orders.filter(
-    (o) => o.status === 'PAID' || o.status === 'FULFILLED'
+  // One revenue definition across the whole back-office: money collected on
+  // any order that was ever paid, net of refunds. Filtering to PAID/FULFILLED
+  // dropped refunded orders entirely, so a partial refund made the retained
+  // portion vanish from the books rather than reducing it.
+  const collectedOrders = orders.filter((o) =>
+    ['PAID', 'FULFILLED', 'REFUNDED', 'PARTIALLY_REFUNDED'].includes(o.status)
   );
-  const totalRevenueInKobo = paidOrders.reduce((sum, o) => sum + o.totalInKobo, 0);
+  const totalRevenueInKobo = collectedOrders.reduce(
+    (sum, o) => sum + o.totalInKobo - (o.refundedInKobo ?? 0),
+    0
+  );
 
   // Status counts (Paid, waiting for dispatch)
   const pendingOrdersCount = orders.filter((o) => o.status === 'PAID').length;
@@ -48,6 +57,6 @@ export async function GET(req: NextRequest) {
     lowStockCount: lowStockAlerts.length,
     lowStockAlerts: lowStockAlerts.slice(0, 5),
     recentOrders: orders.slice(0, 5),
-    recentActivity: db.getActivityLogs().slice(0, 6),
+    recentActivity: recentActivity.slice(0, 6),
   });
 }

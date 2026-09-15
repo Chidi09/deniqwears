@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Product } from '../../types';
-import { formatPrice } from '../../data/products';
+import { formatKobo } from '../../lib/money';
 import { api } from '../../services/api';
+import { getErrorMessage } from '../../lib/errors';
 import {
   Search,
   Plus,
@@ -13,6 +14,8 @@ import {
   Save,
   AlertCircle,
 } from 'lucide-react';
+
+type QuickEditFields = { priceInKobo?: number; totalStock?: number; status?: Product['status'] };
 
 interface AdminProductsProps {
   products: Product[];
@@ -33,7 +36,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
 
   // Quick edit scratchpad
   const [modifiedItems, setModifiedItems] = useState<{
-    [productId: string]: { priceInKobo?: number; totalStock?: number; status?: any };
+    [productId: string]: QuickEditFields;
   }>({});
 
   // Inline price editing state
@@ -75,8 +78,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       setNotice('Price updated successfully');
       setTimeout(() => setNotice(null), 3000);
       onRefresh();
-    } catch (e: any) {
-      alert(e.message || 'Failed to update price');
+    } catch (e) {
+      alert(getErrorMessage(e, 'Failed to update price'));
     } finally {
       setEditingPriceId(null);
     }
@@ -85,21 +88,21 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   // Quick edit value changes
   const handleQuickChange = (
     productId: string,
-    field: 'priceInKobo' | 'totalStock' | 'status',
-    val: any
+    field: keyof QuickEditFields,
+    val: string | number
   ) => {
     setModifiedItems((prev) => ({
       ...prev,
       [productId]: {
         ...prev[productId],
         [field]: val,
-      },
+      } as QuickEditFields,
     }));
   };
 
   const handleSaveQuickEdit = async () => {
     const items = Object.entries(modifiedItems).map(([productId, changesRaw]) => {
-      const changes = changesRaw as { priceInKobo?: number; totalStock?: number; status?: any };
+      const changes = changesRaw as QuickEditFields;
       return {
         productId,
         priceInKobo: changes.priceInKobo,
@@ -121,8 +124,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       setNotice(`Saved batch updates for ${items.length} garments`);
       setTimeout(() => setNotice(null), 3500);
       onRefresh();
-    } catch (err: any) {
-      alert(err.message || 'Failed to batch update');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to batch update'));
     } finally {
       setSavingQuickEdit(false);
     }
@@ -137,8 +140,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       setNotice('Garment archived');
       setTimeout(() => setNotice(null), 3000);
       onRefresh();
-    } catch (err: any) {
-      alert(err.message || 'Archive failed');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Archive failed'));
     }
   };
 
@@ -328,7 +331,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                           className="group text-xs font-semibold text-[#171714] hover:text-[#681F2C] flex items-center space-x-1 text-left"
                           title="Click to edit price directly"
                         >
-                          <span>{formatPrice(p.priceInKobo)}</span>
+                          <span>{formatKobo(p.priceInKobo)}</span>
                           <Edit2 className="w-3 h-3 text-[#8A8780] opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       )}

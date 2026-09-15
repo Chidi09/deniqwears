@@ -48,27 +48,20 @@ interface GuestCheckoutState {
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      cartItems: [
-        {
-          id: 'init-cart-1',
-          productId: 'prod-amara-dress',
-          variantId: 'v-amara-blk-m',
-          name: 'The Amara Dress',
-          priceInKobo: 4800000,
-          price: 48000,
-          image:
-            'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=600&auto=format&fit=crop',
-          selectedColor: 'Black',
-          selectedSize: 'M',
-          quantity: 1,
-        },
-      ],
+      // Starts empty. This previously shipped a fixture Amara dress with
+      // fixture IDs, so every new visitor found an item they never added
+      // in their bag — and checkout rejected it, because those IDs don't
+      // exist in the real catalog.
+      cartItems: [],
       addItem: (product: Product, color: string, size: string) => {
         const matchedVariant = product.variants?.find(
           (v) => v.color.toLowerCase() === color.toLowerCase() && v.size === size
         );
         const variantId = matchedVariant ? matchedVariant.id : `${product.id}-${color}-${size}`;
-        const priceInKobo = product.priceInKobo || (product as any).price * 100 || 4800000;
+        // Variant override wins over the base price, and there is no
+        // invented fallback: a product with no price is a data bug that
+        // should surface, not silently become ₦48,000.
+        const priceInKobo = matchedVariant?.priceInKobo ?? product.priceInKobo;
 
         set((state) => {
           const existing = state.cartItems.find(
@@ -87,7 +80,6 @@ export const useCartStore = create<CartState>()(
             variantId,
             name: product.name,
             priceInKobo,
-            price: Math.round(priceInKobo / 100),
             image: product.primaryImage,
             selectedColor: color,
             selectedSize: size,

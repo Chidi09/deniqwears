@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product, ProductColor } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { ArrowLeft, Star, ChevronDown, ChevronUp, Check, ShieldCheck, Truck } from 'lucide-react';
 
 interface ProductDetailPageProps {
@@ -16,8 +16,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onAddToCart,
   onOpenSizeGuide,
 }) => {
-  const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
-  const [selectedSize, setSelectedSize] = useState<string>(product.sizes[1] || product.sizes[0]);
+  // Empty colours/sizes are valid create payloads for drafts, and these were
+  // dereferenced unconditionally (`selectedColor.name`), crashing the page.
+  const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(
+    product.sizes[1] || product.sizes[0]
+  );
   const [activeMobileImageIndex, setActiveMobileImageIndex] = useState<number>(0);
   const [isButtonMorphed, setIsButtonMorphed] = useState(false);
 
@@ -33,15 +37,43 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     setOpenAccordions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // A garment with no colours or sizes can't be configured or bought. It is a
+  // valid draft shape, so render an honest message instead of dereferencing
+  // undefined selections (which is what crashed this page).
+  if (!selectedColor || !selectedSize) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center px-6 text-center bg-[#F4F1EB]">
+        <span className="text-xs uppercase tracking-[0.3em] text-[#681F2C] font-semibold mb-3">
+          Not Yet Available
+        </span>
+        <h1 className="font-serif text-3xl text-[#171714] mb-4">{product.name}</h1>
+        <p className="text-[#56554F] text-sm max-w-md mb-8">
+          This piece hasn’t been configured for sale yet. Contact the concierge if you would like to
+          be told when it is released.
+        </p>
+        <button
+          onClick={onBack}
+          className="text-xs uppercase tracking-widest bg-[#171714] text-[#FAF9F6] px-6 py-3.5 hover:bg-[#681F2C] transition-colors cursor-pointer"
+        >
+          Return to Collection
+        </button>
+      </div>
+    );
+  }
+
   // Find active variant & stock
   const currentVariant = product.variants?.find(
     (v) => v.color.toLowerCase() === selectedColor.name.toLowerCase() && v.size === selectedSize
   );
 
-  const variantStock = currentVariant ? currentVariant.stock : 5;
+  // A missing variant means that colour/size combination isn't sold — treat it
+  // as unavailable. It used to default to "5 in stock", offering combinations
+  // checkout would reject, and `active` was ignored entirely.
+  const variantStock = currentVariant && currentVariant.active ? currentVariant.stock : 0;
   const isOutOfStock = variantStock === 0;
 
-  const productPrice = product.priceInKobo || (product as any).price * 100 || 4800000;
+  // Variant override wins; no invented fallback price.
+  const productPrice = currentVariant?.priceInKobo ?? product.priceInKobo;
 
   const handleAdd = () => {
     if (isOutOfStock) return;
@@ -151,7 +183,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               <div className="flex justify-between items-center pt-1">
                 <span className="font-sans text-2xl font-medium text-[#171714]">
-                  {formatPrice(productPrice)}
+                  {formatKobo(productPrice)}
                 </span>
 
                 {/* Rating review */}
@@ -271,7 +303,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <span>ADDED ✓</span>
                   </>
                 ) : (
-                  <span>ADD TO BAG — {formatPrice(productPrice)}</span>
+                  <span>ADD TO BAG — {formatKobo(productPrice)}</span>
                 )}
               </button>
             </div>
@@ -398,7 +430,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             ? 'Sold Out'
             : isButtonMorphed
             ? 'Added ✓'
-            : `${formatPrice(productPrice)} | ADD TO BAG`}
+            : `${formatKobo(productPrice)} | ADD TO BAG`}
         </button>
       </div>
     </div>

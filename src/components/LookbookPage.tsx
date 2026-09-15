@@ -1,5 +1,5 @@
 import React from 'react';
-import { LOOKBOOK_ITEMS, PRODUCTS } from '../data/products';
+import { LOOKBOOK_ITEMS } from '../data/products';
 import { LookbookItem, ActivePage, Product } from '../types';
 import { ArrowLeft } from 'lucide-react';
 

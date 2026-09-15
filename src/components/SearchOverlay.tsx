@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDialog } from '../hooks/useDialog';
 import { Product } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { Search, X, ArrowRight } from 'lucide-react';
 
 interface SearchOverlayProps {
@@ -11,8 +12,18 @@ interface SearchOverlayProps {
   onSelectCategory: (category: string) => void;
 }
 
-export const SearchOverlay: React.FC<SearchOverlayProps> = ({
-  isOpen,
+// The parent keeps this mounted permanently and toggles `isOpen`, so the
+// outer component stays hook-free and simply gates rendering. Mounting a
+// fresh SearchOverlayContent each time it opens resets `query` for free
+// (no effect needed to clear it on close).
+export const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, ...rest }) => {
+  if (!isOpen) return null;
+  return <SearchOverlayContent {...rest} />;
+};
+
+type SearchOverlayContentProps = Omit<SearchOverlayProps, 'isOpen'>;
+
+const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
   onClose,
   products,
   onSelectProduct,
@@ -20,33 +31,36 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useDialog<HTMLDivElement>(true, onClose);
 
+  // Autofocus the input on mount (a real external-system side effect — this
+  // is what useEffect is for), not clearing state on close.
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-    } else {
-      setQuery('');
-    }
-  }, [isOpen]);
+    const timer = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (!isOpen) return null;
-
-  const filteredProducts = query.trim() === ''
-    ? []
-    : products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.category.toLowerCase().includes(query.toLowerCase()) ||
-          p.description.toLowerCase().includes(query.toLowerCase())
-      );
+  // Trim once and match collection too — the placeholder promises collection
+  // search, and an untrimmed term meant a trailing space returned nothing.
+  const term = query.trim().toLowerCase();
+  const filteredProducts =
+    term === ''
+      ? []
+      : products.filter((p) =>
+          [p.name, p.category, p.description, p.collection ?? '']
+            .some((field) => field.toLowerCase().includes(term))
+        );
 
   const trendingTerms = ['Dresses', 'Sets', 'Evening', 'Corset', 'Oxblood', 'Tailored'];
 
   return (
     <div
       id="search-fullscreen-overlay"
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search the collection"
+      tabIndex={-1}
       className="fixed inset-0 z-50 bg-[#FAF9F6]/98 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
     >
       <div className="max-w-[1000px] mx-auto px-6 py-8 md:py-12">
@@ -132,7 +146,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                     </div>
                     <div className="text-xs">
                       <p className="font-serif text-sm text-[#171714] group-hover:text-[#681F2C]">{p.name}</p>
-                      <p className="text-[#56554F]">{formatPrice(p.price)}</p>
+                      <p className="text-[#56554F]">{formatKobo(p.priceInKobo)}</p>
                     </div>
                   </div>
                 ))}
@@ -177,7 +191,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                         {product.name}
                       </h4>
                       <p className="font-sans text-sm font-medium text-[#171714]">
-                        {formatPrice(product.price)}
+                        {formatKobo(product.priceInKobo)}
                       </p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-[#56554F] group-hover:text-[#681F2C] group-hover:translate-x-1 transition-transform" />

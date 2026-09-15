@@ -1,6 +1,6 @@
 import React from 'react';
 import { Product } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { ArrowUpRight } from 'lucide-react';
 
 interface AsymmetricShowcaseProps {
@@ -14,10 +14,19 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
   onSelectProduct,
   onQuickAdd,
 }) => {
-  const biasDress = products.find(p => p.slug === 'deniq-bias-dress') || products[0];
-  const sculptedCorset = products.find(p => p.slug === 'sculpted-corset') || products[1];
-  const lunaSet = products.find(p => p.slug === 'the-luna-set') || products[4];
-  const pleatedMidi = products.find(p => p.slug === 'deniq-pleated-midi') || products[3];
+  // Prefer products the admin actually flagged as features, then fall back to
+  // whatever the live catalog has — never to fixed indices (0/1/4/3), which
+  // crashed the homepage for any store with fewer than five products.
+  const featured = products.filter((p) => p.isAsymmetricFeature);
+  const pool = featured.length >= 4 ? featured : products;
+
+  const biasDress = pool[0];
+  const sculptedCorset = pool[1];
+  const lunaSet = pool[2];
+  const pleatedMidi = pool[3];
+
+  // Each slot renders only if the catalog actually has a product for it.
+  if (!biasDress) return null;
 
   return (
     <section id="asymmetric-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 pb-24 md:pb-32 space-y-20 md:space-y-28">
@@ -57,12 +66,13 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatPrice(biasDress.price)}
+              {formatKobo(biasDress.priceInKobo)}
             </span>
           </div>
         </div>
 
         {/* Smaller / Detail Item */}
+        {sculptedCorset && (
         <div className="md:col-span-5 md:pb-12 group cursor-pointer" onClick={() => onSelectProduct(sculptedCorset.slug)}>
           <div className="relative aspect-[4/5] overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC]">
             <img
@@ -96,13 +106,15 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatPrice(sculptedCorset.price)}
+              {formatKobo(sculptedCorset.priceInKobo)}
             </span>
           </div>
         </div>
+      )}
       </div>
 
       {/* Editorial Pair 02: Reversed Cadence (Smaller Left, Large Right) */}
+      {lunaSet && pleatedMidi && (
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-14 items-end pt-4">
         {/* Detail Item (Left) */}
         <div className="md:col-span-5 md:pb-12 order-2 md:order-1 group cursor-pointer" onClick={() => onSelectProduct(lunaSet.slug)}>
@@ -138,7 +150,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatPrice(lunaSet.price)}
+              {formatKobo(lunaSet.priceInKobo)}
             </span>
           </div>
         </div>
@@ -177,11 +189,12 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatPrice(pleatedMidi.price)}
+              {formatKobo(pleatedMidi.priceInKobo)}
             </span>
           </div>
         </div>
       </div>
+      )}
     </section>
   );
 };

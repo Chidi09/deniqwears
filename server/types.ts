@@ -1,4 +1,7 @@
-export type Category = 'all' | 'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion';
+// Domain shapes returned by the repository layer (server/db.ts).
+// These mirror the Prisma models but present a friendlier, nested shape
+// (e.g. Order.customer, StoreSettings.deliveryZones) so route handlers and
+// the payment layer don't need to know about the relational storage shape.
 
 export type ProductStatus = 'live' | 'draft' | 'archived';
 
@@ -10,9 +13,9 @@ export interface ProductColor {
 export interface ProductVariant {
   id: string;
   color: string;
-  size: 'XS' | 'S' | 'M' | 'L' | 'XL';
-  sku?: string;
-  priceInKobo?: number; // Optional variant price override in kobo
+  size: string;
+  sku?: string | null;
+  priceInKobo?: number | null;
   stock: number;
   active: boolean;
 }
@@ -21,29 +24,29 @@ export interface Product {
   id: string;
   name: string;
   slug: string;
-  priceInKobo: number; // Stored in smallest currency unit (1 NGN = 100 kobo)
+  priceInKobo: number;
   status: ProductStatus;
-  category: 'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion';
-  collection?: string;
+  category: string;
+  collection?: string | null;
   colors: ProductColor[];
-  sizes: Array<'XS' | 'S' | 'M' | 'L' | 'XL'>;
+  sizes: string[];
   variants: ProductVariant[];
   primaryImage: string;
   secondaryImage: string;
   galleryImages: string[];
-  badge?: 'NEW' | 'EXCLUSIVE' | 'LIMITED';
+  badge?: 'NEW' | 'EXCLUSIVE' | 'LIMITED' | null;
   rating: number;
   reviewsCount: number;
-  stockWarning?: string;
+  stockWarning?: string | null;
   description: string;
   fitAndSize: string;
   delivery: string;
   care: string;
-  editorialSubtitle?: string;
+  editorialSubtitle?: string | null;
   isNewArrival?: boolean;
   isSignatureSelection?: boolean;
   isAsymmetricFeature?: boolean;
-  asymmetricRole?: 'large' | 'detail';
+  asymmetricRole?: 'large' | 'detail' | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -67,7 +70,7 @@ export interface OrderItem {
   color: string;
   size: string;
   image: string;
-  unitPriceInKobo: number; // Server-locked price in kobo
+  unitPriceInKobo: number;
   quantity: number;
   totalPriceInKobo: number;
 }
@@ -93,9 +96,11 @@ export interface OrderTimelineEvent {
   timestamp: string;
 }
 
+export type PaymentMethod = 'paystack' | 'flutterwave' | 'stripe' | 'showroom';
+
 export interface Order {
   id: string;
-  orderNumber: string; // e.g. DNQ-18421
+  orderNumber: string;
   idempotencyKey: string;
   status: OrderStatus;
   items: OrderItem[];
@@ -106,18 +111,21 @@ export interface Order {
     phone: string;
   };
   shippingAddress: ShippingAddress;
-  deliveryZoneId: string;
+  deliveryZoneId: string | null;
   deliveryFeeInKobo: number;
   subtotalInKobo: number;
   discountInKobo: number;
-  totalInKobo: number; // Final immutable total
+  /** The promo code redeemed on this order, if any. */
+  discountCodeId?: string | null;
+  totalInKobo: number;
+  refundedInKobo: number;
   currency: 'NGN' | 'USD';
-  paymentMethod: 'paystack' | 'flutterwave' | 'stripe' | 'showroom';
-  paymentReference?: string;
-  paymentId?: string;
-  paidAt?: string;
-  dispatchedAt?: string;
-  notes?: string;
+  paymentMethod: PaymentMethod;
+  paymentReference?: string | null;
+  paymentId?: string | null;
+  paidAt?: string | null;
+  dispatchedAt?: string | null;
+  notes?: string | null;
   timeline: OrderTimelineEvent[];
   createdAt: string;
   updatedAt: string;
@@ -152,8 +160,8 @@ export interface DiscountCode {
   id: string;
   code: string;
   type: 'percentage' | 'fixed';
-  value: number; // percentage (e.g. 10 for 10%) or fixed kobo
-  minSpendInKobo?: number;
+  value: number;
+  minSpendInKobo?: number | null;
   active: boolean;
   usageCount: number;
 }
@@ -164,6 +172,55 @@ export interface AdminActivityLog {
   adminEmail: string;
   action: string;
   entityType: 'product' | 'order' | 'settings' | 'inventory';
-  entityId?: string;
+  entityId?: string | null;
   details: string;
+}
+
+/** Order statuses where money was actually collected at some point. */
+export const COLLECTED_STATUSES = [
+  'PAID',
+  'FULFILLED',
+  'REFUNDED',
+  'PARTIALLY_REFUNDED',
+] as const satisfies readonly OrderStatus[];
+
+export interface FinanceSummary {
+  grossSalesInKobo: number;
+  refundedInKobo: number;
+  netRevenueInKobo: number;
+  merchandiseInKobo: number;
+  deliveryFeesInKobo: number;
+  discountsGivenInKobo: number;
+  paidOrdersCount: number;
+  averageOrderValueInKobo: number;
+  /** Orders placed but not yet paid — money expected, not banked. */
+  pendingCollectionInKobo: number;
+  pendingCollectionCount: number;
+  awaitingDispatchCount: number;
+  failedOrCancelledCount: number;
+}
+
+export interface RevenuePoint {
+  date: string;
+  netRevenueInKobo: number;
+}
+
+export interface PaymentMethodTotal {
+  method: PaymentMethod;
+  netInKobo: number;
+  ordersCount: number;
+}
+
+export interface TopProduct {
+  productId: string;
+  name: string;
+  unitsSold: number;
+  revenueInKobo: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'ADMIN';
 }

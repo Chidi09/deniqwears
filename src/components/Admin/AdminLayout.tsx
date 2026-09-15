@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Order } from '../../types';
 import { api } from '../../services/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAdminProductsQuery, useAdminOrdersQuery, QUERY_KEYS } from '../../hooks/queries';
 import { AdminOverview } from './AdminOverview';
 import { AdminProducts } from './AdminProducts';
 import { AdminOrders } from './AdminOrders';
@@ -18,26 +20,21 @@ import {
   ExternalLink,
   Menu,
   X,
-  Plus,
 } from 'lucide-react';
+
+type AdminTab = 'overview' | 'products' | 'orders' | 'settings' | 'logs';
 
 interface AdminLayoutProps {
   onExitToStore: () => void;
-  initialSection?: 'overview' | 'products' | 'orders' | 'settings' | 'logs';
+  initialSection?: AdminTab;
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onExitToStore,
   initialSection = 'overview',
 }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!api.getAdminToken());
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'settings' | 'logs'>(
-    initialSection
-  );
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialSection);
 
   // Product modal
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -49,36 +46,78 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   // Mobile nav toggle
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const loadData = async () => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    try {
-      const [prods, ords] = await Promise.all([
-        api.getAdminProducts(),
-        api.getAdminOrders(),
-      ]);
-      setProducts(prods);
-      setOrders(ords);
-    } catch (err) {
-      console.error('Failed to fetch admin data:', err);
-    } finally {
-      setLoading(false);
-    }
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    isError: productsError,
+    error: productsErrorObj,
+    refetch: refetchProducts,
+  } = useAdminProductsQuery(!!isAuthenticated);
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    isError: ordersError,
+    refetch: refetchOrders,
+  } = useAdminOrdersQuery(!!isAuthenticated);
+  const loading = productsLoading || ordersLoading;
+  const loadError = productsError || ordersError;
+
+  // A 401 from any admin query means the session is gone. Derived during
+  // render rather than pushed through an effect, so there's no extra
+  // render cycle and no setState-in-effect.
+  const sessionExpired =
+    productsErrorObj instanceof Error && /session expired/i.test(productsErrorObj.message);
+
+  const queryClient = useQueryClient();
+
+  /**
+   * Admin forms call the api layer directly, then call this. Refetching the
+   * admin lists alone left the storefront caches (products, settings, a
+   * specific product page) stale for the rest of the session, so returning to
+   * the store showed old prices, stock or archived products.
+   */
+  const loadData = () => {
+    refetchProducts();
+    refetchOrders();
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.products });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.settings });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminOverview });
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminSettings });
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated]);
+    api
+      .getAdminSession()
+      .then((session) => setIsAuthenticated(session.authenticated))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
-  const handleLogout = () => {
-    api.clearAdminToken();
+  const handleLogout = async () => {
+    await api.adminLogout();
+    // Drop every cached admin/customer record so the next person at this
+    // browser can't read the previous session's orders out of the cache.
+    queryClient.clear();
     setIsAuthenticated(false);
   };
 
-  if (!isAuthenticated) {
-    return <AdminLogin onSuccess={() => setIsAuthenticated(true)} onExit={onExitToStore} />;
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#171714] flex items-center justify-center text-xs text-[#8A8780]">
+        Verifying session...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || sessionExpired) {
+    return (
+      <AdminLogin
+        onSuccess={() => {
+          queryClient.clear();
+          setIsAuthenticated(true);
+        }}
+        onExit={onExitToStore}
+      />
+    );
   }
 
   const pendingOrdersCount = orders.filter((o) => o.status === 'PAID').length;
@@ -126,23 +165,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       {/* Navigation Sub-Bar */}
       <nav className="bg-[#FAF9F6] border-b border-[#D8D4CC] px-4 sm:px-8 overflow-x-auto">
         <div className="flex space-x-8 text-xs uppercase tracking-wider font-semibold">
-          {[
-            { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-            { id: 'products', label: `Garments (${products.length})`, icon: Shirt },
-            {
-              id: 'orders',
-              label: `Orders (${orders.length})`,
-              badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
-              icon: ShoppingBag,
-            },
-            { id: 'settings', label: 'Settings', icon: Settings },
-            { id: 'logs', label: 'Audit Feed', icon: ShieldAlert },
-          ].map((tab) => {
+          {(
+            [
+              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+              { id: 'products', label: `Garments (${products.length})`, icon: Shirt },
+              {
+                id: 'orders',
+                label: `Orders (${orders.length})`,
+                badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
+                icon: ShoppingBag,
+              },
+              { id: 'settings', label: 'Settings', icon: Settings },
+              { id: 'logs', label: 'Audit Feed', icon: ShieldAlert },
+            ] as Array<{ id: AdminTab; label: string; badge?: number; icon: typeof LayoutDashboard }>
+          ).map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`py-3.5 border-b-2 flex items-center space-x-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-[#681F2C] text-[#681F2C]'
@@ -170,7 +211,24 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         )}
 
-        {!loading && activeTab === 'overview' && (
+        {!loading && loadError && (
+          <div className="py-16 text-center space-y-4">
+            <p className="text-sm text-[#681F2C] font-semibold">
+              Could not load the back-office records.
+            </p>
+            <p className="text-xs text-[#56554F]">
+              This is a connection or server problem — the records themselves are fine.
+            </p>
+            <button
+              onClick={loadData}
+              className="px-5 py-2.5 bg-[#171714] text-white text-xs uppercase tracking-wider font-semibold cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {!loading && !loadError && activeTab === 'overview' && (
           <AdminOverview
             onNavigateTab={(t) => setActiveTab(t)}
             onSelectOrder={(ord) => {
@@ -180,7 +238,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           />
         )}
 
-        {!loading && activeTab === 'products' && (
+        {!loading && !loadError && activeTab === 'products' && (
           <AdminProducts
             products={products}
             onRefresh={loadData}
@@ -195,7 +253,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           />
         )}
 
-        {!loading && activeTab === 'orders' && (
+        {!loading && !loadError && activeTab === 'orders' && (
           <AdminOrders
             orders={orders}
             onRefresh={loadData}
@@ -204,9 +262,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           />
         )}
 
-        {!loading && activeTab === 'settings' && <AdminSettings />}
+        {!loading && !loadError && activeTab === 'settings' && <AdminSettings />}
 
-        {!loading && activeTab === 'logs' && <AdminAuditLogs />}
+        {!loading && !loadError && activeTab === 'logs' && <AdminAuditLogs />}
       </main>
 
       {/* Product Create / Edit Modal */}

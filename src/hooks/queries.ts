@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { Product, StoreSettings, Order, Category } from '../types';
-import { PRODUCTS } from '../data/products';
 
 export const QUERY_KEYS = {
   products: ['products'] as const,
@@ -15,24 +14,28 @@ export const QUERY_KEYS = {
   adminAuditLogs: ['admin', 'audit-logs'] as const,
 };
 
+/**
+ * No `initialData` and no demo fallback, deliberately.
+ *
+ * `initialData` marks the cache as fresh, so with the provider's 2-minute
+ * staleTime (and refetchOnWindowFocus disabled) the very first request was
+ * skipped entirely — the storefront rendered fixture products with fixture
+ * variant IDs that real checkout rejects, and never fetched the live catalog.
+ * Substituting fixtures for an empty or failed response hid outages and made
+ * a deliberately empty catalog un-emptyable. Callers get real
+ * loading/error/empty states instead.
+ */
 export function useProductsQuery(category?: Category) {
   return useQuery<Product[]>({
     queryKey: [...QUERY_KEYS.products, category || 'all'],
-    queryFn: async () => {
-      const prods = await api.getProducts();
-      return prods && prods.length > 0 ? prods : PRODUCTS;
-    },
-    initialData: PRODUCTS,
+    queryFn: () => api.getProducts(),
   });
 }
 
 export function useProductQuery(slug: string) {
   return useQuery<Product | null>({
     queryKey: QUERY_KEYS.product(slug),
-    queryFn: async () => {
-      const prod = await api.getProductBySlug(slug);
-      return prod || PRODUCTS.find((p) => p.slug === slug) || null;
-    },
+    queryFn: () => api.getProductBySlug(slug),
     enabled: !!slug,
   });
 }

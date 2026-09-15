@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StoreSettings, DeliveryZone } from '../../types';
 import { api } from '../../services/api';
-import { formatPrice } from '../../data/products';
+import { formatKobo } from '../../lib/money';
+import { getErrorMessage } from '../../lib/errors';
 import { Save, Check, Plus, Trash2, Truck, CreditCard } from 'lucide-react';
 
 export const AdminSettings: React.FC = () => {
@@ -18,12 +19,16 @@ export const AdminSettings: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleUpdateZone = (zoneId: string, field: keyof DeliveryZone, val: any) => {
+  const handleUpdateZone = (
+    zoneId: string,
+    field: keyof DeliveryZone,
+    val: string | number | boolean
+  ) => {
     if (!settings) return;
     setSettings({
       ...settings,
       deliveryZones: settings.deliveryZones.map((z) =>
-        z.id === zoneId ? { ...z, [field]: val } : z
+        z.id === zoneId ? ({ ...z, [field]: val } as DeliveryZone) : z
       ),
     });
   };
@@ -37,8 +42,8 @@ export const AdminSettings: React.FC = () => {
       await api.updateAdminSettings(settings);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to save settings');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Failed to save settings'));
     } finally {
       setSaving(false);
     }

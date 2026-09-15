@@ -1,26 +1,34 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../../types';
-import { formatPrice } from '../../data/products';
+import { formatKobo } from '../../lib/money';
 import { api } from '../../services/api';
-import {
-  Search,
-  PackageCheck,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  Truck,
-  Eye,
-  X,
-  CreditCard,
-  MapPin,
-  Calendar,
-} from 'lucide-react';
+import { getErrorMessage } from '../../lib/errors';
+import { Search, PackageCheck, CheckCircle2, Truck, X, Undo2 } from 'lucide-react';
 
 interface AdminOrdersProps {
   orders: Order[];
   onRefresh: () => void;
   selectedOrder: Order | null;
   onSelectOrder: (order: Order | null) => void;
+}
+
+
+function isRefundedState(status: OrderStatus): boolean {
+  return status === 'REFUNDED' || status === 'PARTIALLY_REFUNDED';
+}
+
+/** What can still be refunded — drives the form instead of a single status. */
+function remainingRefundable(order: Order): number {
+  if (!['PAID', 'FULFILLED', 'PARTIALLY_REFUNDED'].includes(order.status)) return 0;
+  return Math.max(0, order.totalInKobo - (order.refundedInKobo ?? 0));
+}
+
+/**
+ * Goods are still owed on a paid order that hasn't shipped — including one
+ * that was partially refunded, which previously lost its dispatch button.
+ */
+function canDispatch(order: Order): boolean {
+  return (order.status === 'PAID' || order.status === 'PARTIALLY_REFUNDED') && !order.dispatchedAt;
 }
 
 export const AdminOrders: React.FC<AdminOrdersProps> = ({
@@ -32,6 +40,8 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [refundAmount, setRefundAmount] = useState('');
+  const [isRefunding, setIsRefunding] = useState(false);
 
   const filteredOrders = orders.filter((o) => {
     if (filterStatus !== 'all' && o.status !== filterStatus) return false;
@@ -54,10 +64,53 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
       const updated = await api.updateOrderStatus(orderId, nextStatus, reason);
       onSelectOrder(updated);
       onRefresh();
-    } catch (err: any) {
-      alert(err.message || 'Status update failed');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Status update failed'));
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleRecordShowroomPayment = async (order: Order) => {
+    if (!window.confirm(`Confirm you have collected ${formatKobo(order.totalInKobo)} for order #${order.orderNumber}?`)) {
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      const updated = await api.recordShowroomPayment(order.id);
+      onSelectOrder(updated);
+      onRefresh();
+    } catch (err) {
+      alert(getErrorMessage(err, 'Could not record payment'));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleRefund = async (order: Order) => {
+    const trimmed = refundAmount.trim();
+    const amountInKobo = trimmed ? Math.round(parseFloat(trimmed) * 100) : undefined;
+
+    if (trimmed && (!Number.isFinite(amountInKobo) || (amountInKobo as number) <= 0)) {
+      alert('Enter a valid refund amount in Naira, or leave blank to refund the remaining balance.');
+      return;
+    }
+
+    const confirmMsg = amountInKobo
+      ? `Refund ${formatKobo(amountInKobo)} for order #${order.orderNumber}?`
+      : `Refund the remaining ${formatKobo(remainingRefundable(order))} for order #${order.orderNumber}?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsRefunding(true);
+    try {
+      const { order: updated } = await api.refundOrder(order.id, amountInKobo);
+      onSelectOrder(updated);
+      onRefresh();
+      setRefundAmount('');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Refund failed'));
+    } finally {
+      setIsRefunding(false);
     }
   };
 
@@ -161,7 +214,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                     {order.items.reduce((s, i) => s + i.quantity, 0)} units
                   </td>
                   <td className="py-3 px-4 text-right font-medium text-[#171714]">
-                    {formatPrice(order.totalInKobo)}
+                    {formatKobo(order.totalInKobo)}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button
@@ -208,7 +261,30 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
             </div>
 
             {/* Dominant Next Action: MARK AS DISPATCHED */}
-            {selectedOrder.status === 'PAID' && (
+            {selectedOrder.paymentMethod === 'showroom' &&
+              selectedOrder.status !== 'PAID' &&
+              selectedOrder.status !== 'FULFILLED' &&
+              !isRefundedState(selectedOrder.status) && (
+                <div className="p-4 bg-amber-50 border border-amber-300 space-y-3">
+                  <div className="flex items-center space-x-2 text-amber-900 font-semibold text-xs uppercase tracking-wider">
+                    <PackageCheck className="w-4 h-4" />
+                    <span>Awaiting Showroom Collection</span>
+                  </div>
+                  <p className="text-xs text-amber-950 leading-snug">
+                    This order is reserved but unpaid. Record the payment once the client has settled at the counter —
+                    that marks it paid, deducts stock and sends their receipt.
+                  </p>
+                  <button
+                    onClick={() => handleRecordShowroomPayment(selectedOrder)}
+                    disabled={isUpdating}
+                    className="w-full bg-[#171714] hover:bg-[#681F2C] text-white text-xs uppercase tracking-[0.16em] font-semibold py-3 border border-[#171714] transition-colors cursor-pointer"
+                  >
+                    Record Payment Collected
+                  </button>
+                </div>
+              )}
+
+            {canDispatch(selectedOrder) && (
               <div className="p-4 bg-emerald-50 border border-emerald-300 space-y-3">
                 <div className="flex items-center space-x-2 text-emerald-900 font-semibold text-xs uppercase tracking-wider">
                   <PackageCheck className="w-4 h-4" />
@@ -234,6 +310,46 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
               <div className="p-3.5 bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-center space-x-2 font-medium">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Order fulfilled and dispatched ({selectedOrder.dispatchedAt ? new Date(selectedOrder.dispatchedAt).toLocaleDateString() : 'Active'})</span>
+              </div>
+            )}
+
+            {remainingRefundable(selectedOrder) > 0 && (
+              <div className="p-4 bg-[#FAF9F6] border border-[#D8D4CC] space-y-3">
+                <div className="flex items-center space-x-2 text-[#171714] font-semibold text-xs uppercase tracking-wider">
+                  <Undo2 className="w-4 h-4" />
+                  <span>Issue a Refund</span>
+                </div>
+                <p className="text-[11px] text-[#56554F] leading-snug">
+                  Refunds go through {selectedOrder.paymentMethod} directly. Leave the amount blank to
+                  refund the remaining {formatKobo(remainingRefundable(selectedOrder))}, or enter a partial amount in Naira.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-[#56554F]">₦</span>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder={`${Math.round(remainingRefundable(selectedOrder) / 100)} (remaining)`}
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    className="flex-1 bg-white border border-[#D8D4CC] px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#171714]"
+                  />
+                  <button
+                    onClick={() => handleRefund(selectedOrder)}
+                    disabled={isRefunding}
+                    className="px-3.5 py-1.5 bg-[#171714] hover:bg-[#681F2C] text-white text-[11px] uppercase tracking-wider font-semibold border border-[#171714] transition-colors cursor-pointer"
+                  >
+                    {isRefunding ? 'Refunding...' : 'Refund'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(selectedOrder.status === 'REFUNDED' || selectedOrder.status === 'PARTIALLY_REFUNDED') && (
+              <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2 font-medium">
+                <Undo2 className="w-4 h-4" />
+                <span>
+                  {selectedOrder.status === 'REFUNDED' ? 'Fully refunded' : 'Partially refunded'} — see timeline below for details.
+                </span>
               </div>
             )}
 
@@ -284,12 +400,12 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                           {item.color} · Size {item.size} · Qty: {item.quantity}
                         </p>
                         <p className="text-[11px] text-[#8A8780]">
-                          Unit: {formatPrice(item.unitPriceInKobo)}
+                          Unit: {formatKobo(item.unitPriceInKobo)}
                         </p>
                       </div>
                     </div>
                     <span className="font-semibold text-[#171714]">
-                      {formatPrice(item.totalPriceInKobo)}
+                      {formatKobo(item.totalPriceInKobo)}
                     </span>
                   </div>
                 ))}
@@ -300,25 +416,25 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
             <div className="p-4 bg-[#F4F1EB] border border-[#D8D4CC] space-y-2 text-xs uppercase tracking-wider">
               <div className="flex justify-between text-[#56554F]">
                 <span>Subtotal</span>
-                <span>{formatPrice(selectedOrder.subtotalInKobo)}</span>
+                <span>{formatKobo(selectedOrder.subtotalInKobo)}</span>
               </div>
               <div className="flex justify-between text-[#56554F]">
                 <span>Courier Fee</span>
                 <span>
                   {selectedOrder.deliveryFeeInKobo === 0
                     ? 'Complimentary'
-                    : formatPrice(selectedOrder.deliveryFeeInKobo)}
+                    : formatKobo(selectedOrder.deliveryFeeInKobo)}
                 </span>
               </div>
               {selectedOrder.discountInKobo > 0 && (
                 <div className="flex justify-between text-[#681F2C]">
                   <span>Discount</span>
-                  <span>-{formatPrice(selectedOrder.discountInKobo)}</span>
+                  <span>-{formatKobo(selectedOrder.discountInKobo)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-[#171714] text-sm pt-2 border-t border-[#D8D4CC]">
                 <span>Total Settled</span>
-                <span>{formatPrice(selectedOrder.totalInKobo)}</span>
+                <span>{formatKobo(selectedOrder.totalInKobo)}</span>
               </div>
               <div className="pt-2 text-[10px] text-[#56554F] normal-case">
                 Payment Method: <strong className="uppercase">{selectedOrder.paymentMethod}</strong>

@@ -6,11 +6,11 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = requireAdminAuth(req);
+  const auth = await requireAdminAuth(req);
   if (!auth.authorized) return auth.response!;
 
   const { id } = await params;
-  const archived = db.archiveProduct(id, auth.adminEmail!);
+  const archived = await db.archiveProduct(id, auth.adminEmail!);
   if (!archived) {
     return NextResponse.json({ error: 'Product not found' }, { status: 404 });
   }

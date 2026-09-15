@@ -4,11 +4,29 @@ import { ArrowRight, Check } from 'lucide-react';
 export const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Success is only shown once the server has actually stored the address.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
+    if (!email.trim() || submitting) return;
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not subscribe');
       setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not subscribe');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -55,12 +73,18 @@ export const NewsletterSection: React.FC = () => {
                 <button
                   id="newsletter-submit-btn"
                   type="submit"
-                  className="editorial-link p-2 text-[#171714] hover:text-[#681F2C] transition-colors cursor-pointer"
+                  disabled={submitting}
+                  className="editorial-link p-2 text-[#171714] hover:text-[#681F2C] transition-colors cursor-pointer disabled:opacity-50"
                   aria-label="Subscribe to Private Access"
                 >
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
+              {error && (
+                <p role="alert" className="text-[11px] text-[#681F2C] tracking-wide">
+                  {error}
+                </p>
+              )}
               <div className="flex justify-between items-center text-[10px] text-[#56554F] tracking-wide uppercase">
                 <span>Direct correspondence only · No spam</span>
                 <span>Unsubscribe anytime</span>

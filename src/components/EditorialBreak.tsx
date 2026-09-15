@@ -22,7 +22,7 @@ export const EditorialBreak: React.FC = () => {
         <div className="w-8 h-px bg-[#D8D4CC]/60 mb-6" />
 
         <blockquote className="font-serif text-3xl sm:text-4xl md:text-6xl lg:text-7xl leading-[1.08] tracking-tight font-normal text-balance max-w-[820px]">
-          “She doesn't dress for the room. <br className="hidden sm:inline" />
+          “She doesn&apos;t dress for the room. <br className="hidden sm:inline" />
           <span className="italic">She changes it.”</span>
         </blockquote>
 

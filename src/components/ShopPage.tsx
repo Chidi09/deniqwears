@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Product, Category, FilterState } from '../types';
+import { Product, Category, FilterState, GARMENT_SIZES } from '../types';
 import { ProductCard } from './ProductCard';
 import { SlidersHorizontal, X, Check } from 'lucide-react';
 
@@ -49,13 +49,19 @@ export const ShopPage: React.FC<ShopPageProps> = ({
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  const allSizes = ['XS', 'S', 'M', 'L', 'XL'];
-  const allColors = [
-    { name: 'Black', hex: '#171714' },
-    { name: 'Ivory', hex: '#FAF9F6' },
-    { name: 'Oxblood', hex: '#681F2C' },
-    { name: 'Graphite', hex: '#56554F' },
-  ];
+  const allSizes = GARMENT_SIZES;
+
+  // Derived from what's actually in the catalog. The hardcoded list omitted
+  // live colours (Sand, for one), so those pieces were unreachable by filter.
+  const allColors = useMemo(() => {
+    const byName = new Map<string, { name: string; hex: string }>();
+    for (const product of products) {
+      for (const color of product.colors) {
+        if (!byName.has(color.name)) byName.set(color.name, color);
+      }
+    }
+    return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [products]);
 
   const toggleSize = (sz: string) => {
     setSelectedSizes((prev) =>
@@ -82,23 +88,33 @@ export const ShopPage: React.FC<ShopPageProps> = ({
       list = list.filter((p) => p.category === selectedCategory);
     }
 
-    // Size filter
-    if (selectedSizes.length > 0) {
-      list = list.filter((p) => p.sizes.some((sz) => selectedSizes.includes(sz)));
-    }
+    // Size and colour are matched against real variants when we have them, so
+    // filtering by "Oxblood" + "16" can't return a product that sells Oxblood
+    // and 16 only in separate, non-existent combinations.
+    if (selectedSizes.length > 0 || selectedColors.length > 0) {
+      list = list.filter((p) => {
+        const variants = (p.variants ?? []).filter((v) => v.active);
 
-    // Color filter
-    if (selectedColors.length > 0) {
-      list = list.filter((p) =>
-        p.colors.some((col) => selectedColors.includes(col.name))
-      );
+        if (variants.length === 0) {
+          const sizeOk = selectedSizes.length === 0 || p.sizes.some((sz) => selectedSizes.includes(sz));
+          const colorOk =
+            selectedColors.length === 0 || p.colors.some((c) => selectedColors.includes(c.name));
+          return sizeOk && colorOk;
+        }
+
+        return variants.some(
+          (v) =>
+            (selectedSizes.length === 0 || selectedSizes.includes(v.size)) &&
+            (selectedColors.length === 0 || selectedColors.includes(v.color))
+        );
+      });
     }
 
     // Sort
     if (sortBy === 'price-asc') {
-      list.sort((a, b) => a.price - b.price);
+      list.sort((a, b) => a.priceInKobo - b.priceInKobo);
     } else if (sortBy === 'price-desc') {
-      list.sort((a, b) => b.price - a.price);
+      list.sort((a, b) => b.priceInKobo - a.priceInKobo);
     } else if (sortBy === 'newest') {
       list.sort((a, b) => (b.isNewArrival ? 1 : 0) - (a.isNewArrival ? 1 : 0));
     }
@@ -213,7 +229,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             <span className="text-[#56554F] font-semibold hidden sm:inline">SORT:</span>
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) =>
+                setSortBy(e.target.value as 'featured' | 'price-asc' | 'price-desc' | 'newest')
+              }
               className="bg-transparent text-xs uppercase font-semibold text-[#171714] border-none focus:outline-none cursor-pointer"
             >
               <option value="featured">Featured</option>

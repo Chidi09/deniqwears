@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/db';
 import { DiscountValidateSchema } from '@/src/lib/schemas';
+import { getErrorMessage } from '@/src/lib/errors';
+import { calculateDiscountInKobo } from '@/server/pricing';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const { code, subtotalInKobo } = parseResult.data;
 
-    const discount = db.getDiscount(code);
+    const discount = await db.getDiscount(code);
     if (!discount) {
       return NextResponse.json(
         { error: 'Invalid or expired promotional code' },
@@ -33,12 +35,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let discountInKobo = 0;
-    if (discount.type === 'percentage') {
-      discountInKobo = Math.round((subtotalInKobo * discount.value) / 100);
-    } else {
-      discountInKobo = Math.min(discount.value, subtotalInKobo);
-    }
+    const discountInKobo = calculateDiscountInKobo(subtotalInKobo, discount);
 
     return NextResponse.json({
       valid: true,
@@ -46,9 +43,9 @@ export async function POST(req: NextRequest) {
       type: discount.type,
       discountInKobo,
     });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: error.message || 'Error validating promotional code' },
+      { error: getErrorMessage(error, 'Error validating promotional code') },
       { status: 500 }
     );
   }

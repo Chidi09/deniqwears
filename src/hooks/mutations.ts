@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { QUERY_KEYS } from './queries';
-import { Order, Product, StoreSettings } from '../types';
+import { Order, Product, StoreSettings, ProductInput, QuickEditItem } from '../types';
 
 export function useInitiateCheckoutMutation() {
   return useMutation({
@@ -59,7 +59,7 @@ export function useAdminLoginMutation() {
 export function useAdminCreateProductMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (productData: any) => api.createAdminProduct(productData),
+    mutationFn: (productData: ProductInput) => api.createAdminProduct(productData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminProducts });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.products });
@@ -71,7 +71,7 @@ export function useAdminCreateProductMutation() {
 export function useAdminUpdateProductMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, productData }: { id: string; productData: any }) =>
+    mutationFn: ({ id, productData }: { id: string; productData: ProductInput }) =>
       api.updateAdminProduct(id, productData),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminProducts });
@@ -99,8 +99,7 @@ export function useAdminArchiveProductMutation() {
 export function useAdminQuickEditMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (items: Array<{ productId: string; priceInKobo?: number; totalStock?: number; status?: any }>) =>
-      api.quickEditProducts(items),
+    mutationFn: (items: QuickEditItem[]) => api.quickEditProducts(items),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminProducts });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.products });
@@ -120,6 +119,19 @@ export function useAdminUpdateOrderStatusMutation() {
       if (data?.id) {
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.order(data.id) });
       }
+    },
+  });
+}
+
+export function useAdminRefundOrderMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ orderId, amountInKobo }: { orderId: string; amountInKobo?: number }) =>
+      api.refundOrder(orderId, amountInKobo),
+    onSuccess: ({ order }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminOrders });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.adminOverview });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.order(order.id) });
     },
   });
 }

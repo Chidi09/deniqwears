@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { formatPrice } from '../../data/products';
-import { Order } from '../../types';
+import { formatKobo } from '../../lib/money';
+import { Order, AdminActivityLog } from '../../types';
+import { RevenueTrendChart, RevenuePoint } from './RevenueTrendChart';
 import {
   TrendingUp,
   Package,
   AlertTriangle,
   Clock,
   ArrowUpRight,
-  ShieldCheck,
+  Undo2,
 } from 'lucide-react';
 
 interface AdminOverviewProps {
@@ -16,8 +17,65 @@ interface AdminOverviewProps {
   onSelectOrder: (order: Order) => void;
 }
 
+interface LowStockAlert {
+  product: string;
+  color: string;
+  size: string;
+  stock: number;
+}
+
+interface AdminOverviewData {
+  totalRevenueInKobo: number;
+  totalOrdersCount: number;
+  pendingFulfillmentCount: number;
+  lowStockCount: number;
+  lowStockAlerts: LowStockAlert[];
+  recentOrders: Order[];
+  recentActivity: AdminActivityLog[];
+}
+
+interface FinanceSummary {
+  grossSalesInKobo: number;
+  refundedInKobo: number;
+  netRevenueInKobo: number;
+  merchandiseInKobo: number;
+  deliveryFeesInKobo: number;
+  discountsGivenInKobo: number;
+  paidOrdersCount: number;
+  averageOrderValueInKobo: number;
+  pendingCollectionInKobo: number;
+  pendingCollectionCount: number;
+  awaitingDispatchCount: number;
+  failedOrCancelledCount: number;
+}
+
+interface AnalyticsData {
+  period: string;
+  summary: FinanceSummary;
+  series: RevenuePoint[];
+  paymentMethods: Array<{ method: string; netInKobo: number; ordersCount: number }>;
+  topProducts: Array<{ productId: string; name: string; unitsSold: number; revenueInKobo: number }>;
+}
+
+const PERIODS = [
+  { id: 'today', label: 'Today' },
+  { id: '7d', label: '7 Days' },
+  { id: '30d', label: '30 Days' },
+  { id: '90d', label: '90 Days' },
+  { id: 'all', label: 'All Time' },
+];
+
+const PAYMENT_LABELS: Record<string, string> = {
+  paystack: 'Paystack',
+  flutterwave: 'Flutterwave',
+  stripe: 'Stripe',
+  showroom: 'Showroom (cash/POS)',
+};
+
 export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onSelectOrder }) => {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AdminOverviewData | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [period, setPeriod] = useState('30d');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,6 +86,19 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .getAdminAnalytics(period)
+      .then((res) => {
+        if (!cancelled) setAnalytics(res);
+      })
+      .catch((err) => console.error(err));
+    return () => {
+      cancelled = true;
+    };
+  }, [period]);
+
   if (loading || !data) {
     return (
       <div className="py-20 text-center text-xs text-[#8A8780]">
@@ -36,53 +107,210 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
     );
   }
 
+  const summary = analytics?.summary;
+  const maxMethodValue = Math.max(1, ...(analytics?.paymentMethods.map((m) => m.netInKobo) ?? [1]));
+
   return (
     <div className="space-y-8">
-      {/* Metrics Row */}
+      {/* Period filter — one row above the figures it controls */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-2xl text-[#171714]">Money & Flow</h2>
+          <p className="text-[11px] text-[#56554F]">
+            Revenue is counted when payment lands, and always shown net of refunds.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5 text-xs">
+          {PERIODS.map((option) => (
+            <button
+              key={option.id}
+              onClick={() => setPeriod(option.id)}
+              className={`px-3 py-1.5 uppercase tracking-wider font-semibold border transition-colors ${
+                period === option.id
+                  ? 'bg-[#171714] text-white border-[#171714]'
+                  : 'bg-white text-[#56554F] border-[#D8D4CC] hover:text-[#171714]'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Money figures. Net revenue is the headline — it's the number that
+          actually reflects what the business kept. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
-          <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Settled Revenue</span>
-            <TrendingUp className="w-4 h-4 text-[#681F2C]" />
+        <div className="bg-[#171714] text-[#FAF9F6] p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#C4828E]">
+              Net Revenue
+            </span>
+            <TrendingUp className="w-4 h-4 text-[#C4828E]" />
           </div>
-          <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {formatPrice(data.totalRevenueInKobo)}
+          <p className="font-serif text-2xl sm:text-3xl">
+            {summary ? formatKobo(summary.netRevenueInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F] mt-1">Verified bank & card payments</p>
+          <p className="text-[11px] text-[#8A8780] mt-1">
+            {summary ? `${summary.paidOrdersCount} paid orders · avg ${formatKobo(summary.averageOrderValueInKobo)}` : ' '}
+          </p>
         </div>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
           <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Pending Fulfillment</span>
-            <Clock className="w-4 h-4 text-amber-700" />
-          </div>
-          <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {data.pendingFulfillmentCount}
-          </p>
-          <p className="text-[11px] text-[#56554F] mt-1">Paid orders ready to dispatch</p>
-        </div>
-
-        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
-          <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Total Orders</span>
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Gross Sales</span>
             <Package className="w-4 h-4 text-[#171714]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {data.totalOrdersCount}
+            {summary ? formatKobo(summary.grossSalesInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F] mt-1">Lifetime checkout requests</p>
+          <p className="text-[11px] text-[#56554F] mt-1">
+            {summary ? `${formatKobo(summary.deliveryFeesInKobo)} of it delivery fees` : ' '}
+          </p>
         </div>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
           <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Low Stock Alerts</span>
-            <AlertTriangle className="w-4 h-4 text-[#681F2C]" />
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Refunded</span>
+            <Undo2 className="w-4 h-4 text-[#681F2C]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#681F2C]">
-            {data.lowStockCount}
+            {summary ? formatKobo(summary.refundedInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F] mt-1">Variants with ≤ 2 units</p>
+          <p className="text-[11px] text-[#56554F] mt-1">Already deducted from net</p>
         </div>
+
+        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
+          <div className="flex items-center justify-between text-[#56554F] mb-2">
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Awaiting Payment</span>
+            <Clock className="w-4 h-4 text-amber-700" />
+          </div>
+          <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
+            {summary ? formatKobo(summary.pendingCollectionInKobo) : '—'}
+          </p>
+          <p className="text-[11px] text-[#56554F] mt-1">
+            {summary ? `${summary.pendingCollectionCount} orders not yet collected` : ' '}
+          </p>
+        </div>
+      </div>
+
+      {/* Revenue trend */}
+      <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-5 sm:p-6">
+        <div className="flex justify-between items-baseline border-b border-[#D8D4CC] pb-3 mb-4">
+          <div>
+            <h3 className="font-serif text-xl text-[#171714]">Daily Net Revenue</h3>
+            <p className="text-[11px] text-[#56554F]">Hover any day for its exact figure</p>
+          </div>
+        </div>
+        {analytics ? (
+          <RevenueTrendChart series={analytics.series} />
+        ) : (
+          <div className="h-[132px] flex items-center text-xs text-[#8A8780]">Loading…</div>
+        )}
+      </div>
+
+      {/* Where money came in + what sold */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-5 sm:p-6">
+          <h3 className="font-serif text-xl text-[#171714] border-b border-[#D8D4CC] pb-3 mb-4">
+            Where the Money Came In
+          </h3>
+          {analytics && analytics.paymentMethods.length > 0 ? (
+            <div className="space-y-3">
+              {analytics.paymentMethods.map((method) => (
+                <div key={method.method}>
+                  <div className="flex justify-between items-baseline text-xs mb-1.5">
+                    <span className="text-[#171714] font-medium">
+                      {PAYMENT_LABELS[method.method] ?? method.method}
+                    </span>
+                    <span className="text-[#171714] font-semibold">
+                      {formatKobo(method.netInKobo)}
+                      <span className="text-[#8A8780] font-normal ml-1.5">· {method.ordersCount}</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-[#E6E1D7]">
+                    <div
+                      className="h-full bg-[#681F2C]"
+                      style={{ width: `${Math.max((method.netInKobo / maxMethodValue) * 100, 2)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <p className="text-[11px] text-[#8A8780] pt-2">
+                Showroom totals are cash or POS taken in person — reconcile these against the till.
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-[#8A8780]">No payments collected in this period.</p>
+          )}
+        </div>
+
+        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-5 sm:p-6">
+          <h3 className="font-serif text-xl text-[#171714] border-b border-[#D8D4CC] pb-3 mb-4">
+            Best Sellers
+          </h3>
+          {analytics && analytics.topProducts.length > 0 ? (
+            <table className="w-full text-xs">
+              <tbody className="divide-y divide-[#D8D4CC]">
+                {analytics.topProducts.map((product) => (
+                  <tr key={product.productId}>
+                    <td className="py-2.5 text-[#171714] font-medium">{product.name}</td>
+                    <td className="py-2.5 text-right text-[#56554F] whitespace-nowrap">
+                      {product.unitsSold} {product.unitsSold === 1 ? 'unit' : 'units'}
+                    </td>
+                    <td className="py-2.5 text-right text-[#171714] font-semibold whitespace-nowrap pl-3">
+                      {formatKobo(product.revenueInKobo)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="text-xs text-[#8A8780]">Nothing sold in this period yet.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Fulfilment flow */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <button
+          onClick={() => onNavigateTab('orders')}
+          className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 text-left hover:border-[#171714] transition-colors"
+        >
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+            Awaiting Dispatch
+          </span>
+          <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.awaitingDispatchCount ?? '—'}</p>
+          <p className="text-[11px] text-[#56554F]">Paid, needs packing</p>
+        </button>
+
+        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4">
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+            Discounts Given
+          </span>
+          <p className="font-serif text-2xl text-[#171714] mt-1">
+            {summary ? formatKobo(summary.discountsGivenInKobo) : '—'}
+          </p>
+          <p className="text-[11px] text-[#56554F]">Promo codes redeemed</p>
+        </div>
+
+        <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4">
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+            Failed / Cancelled
+          </span>
+          <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.failedOrCancelledCount ?? '—'}</p>
+          <p className="text-[11px] text-[#56554F]">Checkouts that fell through</p>
+        </div>
+
+        <button
+          onClick={() => onNavigateTab('products')}
+          className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 text-left hover:border-[#171714] transition-colors"
+        >
+          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+            Low Stock Alerts
+          </span>
+          <p className="font-serif text-2xl text-[#681F2C] mt-1">{data.lowStockCount}</p>
+          <p className="text-[11px] text-[#56554F]">Variants with ≤ 2 units</p>
+        </button>
       </div>
 
       {/* Low Stock Callout if exists */}
@@ -95,7 +323,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
             </span>
           </div>
           <div className="flex flex-wrap gap-2 pt-1">
-            {data.lowStockAlerts.map((alert: any, idx: number) => (
+            {data.lowStockAlerts.map((alert: LowStockAlert, idx: number) => (
               <span
                 key={idx}
                 className="inline-flex items-center px-2.5 py-1 bg-white border border-amber-300 text-xs text-amber-950"
@@ -171,7 +399,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                       {order.items.reduce((s, i) => s + i.quantity, 0)} garments
                     </td>
                     <td className="py-3 px-3 text-right font-medium text-[#171714]">
-                      {formatPrice(order.totalInKobo)}
+                      {formatKobo(order.totalInKobo)}
                     </td>
                     <td className="py-3 px-3 text-right">
                       <button
@@ -204,7 +432,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
           </div>
 
           <div className="space-y-3">
-            {data.recentActivity?.map((log: any) => (
+            {data.recentActivity?.map((log: AdminActivityLog) => (
               <div key={log.id} className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-xs space-y-1">
                 <div className="flex justify-between items-center text-[10px] text-[#56554F]">
                   <span className="uppercase tracking-wider font-semibold text-[#171714]">

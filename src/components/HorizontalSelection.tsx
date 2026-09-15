@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Product } from '../types';
-import { formatPrice } from '../data/products';
+import { formatKobo } from '../lib/money';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HorizontalSelectionProps {
@@ -105,7 +105,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
                 </p>
               </div>
               <span className="font-sans text-sm font-semibold text-[#171714]">
-                {formatPrice(product.price)}
+                {formatKobo(product.priceInKobo)}
               </span>
             </div>
           </div>
