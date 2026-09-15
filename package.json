@@ -45,6 +45,7 @@
     "msw": "^2.11.6",
     "prisma": "^6.16.3",
     "typescript": "~5.8.2",
+    "vercel": "^59.17.0",
     "vitest": "^4"
   },
   "prisma": {
