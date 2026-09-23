@@ -86,7 +86,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-contain p-1 bg-[#FAF9F6]"
                     />
                   </div>
 

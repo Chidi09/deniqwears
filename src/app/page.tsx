@@ -12,8 +12,6 @@ import { PromoBanner } from '../components/PromoBanner';
 import { AsymmetricShowcase } from '../components/AsymmetricShowcase';
 import { EditorialBreak } from '../components/EditorialBreak';
 import { HorizontalSelection } from '../components/HorizontalSelection';
-import { LookbookSection } from '../components/LookbookSection';
-import { CommunitySection } from '../components/CommunitySection';
 import { NewsletterSection } from '../components/NewsletterSection';
 
 export default function HomePage() {
@@ -23,7 +21,6 @@ export default function HomePage() {
     handleSelectProduct,
     handleCategoryNavigate,
     setQuickAddProduct,
-    setSelectedLook,
     setSizeGuideOpen,
   } = useStore();
   const { data: settings } = useStoreSettingsQuery();
@@ -45,7 +42,7 @@ export default function HomePage() {
         onOpenSizeGuide={() => setSizeGuideOpen(true)}
       />
 
-      <CategoryShowcase onNavigateCategory={handleCategoryNavigate} />
+      <CategoryShowcase products={productsList} onNavigateCategory={handleCategoryNavigate} />
 
       <ProductGrid
         products={featured}
@@ -72,10 +69,6 @@ export default function HomePage() {
         onSelectProduct={handleSelectProduct}
         onQuickAdd={(p) => setQuickAddProduct(p)}
       />
-
-      <LookbookSection onOpenLookModal={(look) => setSelectedLook(look)} />
-
-      <CommunitySection />
 
       <NewsletterSection />
     </>

@@ -39,16 +39,15 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onNavigate, pr
     >
       <div className="relative overflow-hidden bg-[#171714] text-[#FAF9F6] grid md:grid-cols-2 min-h-[380px]">
         {/* Image */}
-        <div className="relative promo-grain order-1 md:order-2 min-h-[240px]">
+        <div className="relative order-1 md:order-2 min-h-[300px] bg-gradient-to-br from-[#2A2420] to-[#171714]">
           {banner.image && (
             <img
               src={banner.image}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-contain p-6 md:p-10"
               loading="lazy"
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#171714] via-[#171714]/20 to-transparent" />
         </div>
 
         {/* Copy */}

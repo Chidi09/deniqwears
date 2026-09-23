@@ -73,7 +73,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
               <img
                 src={product.primaryImage}
                 alt={product.name}
-                className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.025]"
+                className="w-full h-full object-contain p-3 transition-transform duration-700 ease-out group-hover:scale-[1.025]"
                 loading="lazy"
               />
 

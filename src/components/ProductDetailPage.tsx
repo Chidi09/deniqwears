@@ -124,7 +124,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <img
                     src={img}
                     alt={`${product.name} view ${idx + 1}`}
-                    className="w-full h-full object-cover object-top hover:scale-[1.02] transition-transform duration-700 ease-out"
+                    className="w-full h-full object-contain p-3 hover:scale-[1.02] transition-transform duration-700 ease-out"
                     loading={idx === 0 ? 'eager' : 'lazy'}
                   />
                 </div>
@@ -137,7 +137,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                 <img
                   src={imagesToDisplay[activeMobileImageIndex] || product.primaryImage}
                   alt={product.name}
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-contain p-3"
                 />
 
                 {/* Mobile Counter 1 / N */}
@@ -158,7 +158,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                         : 'border-[#D8D4CC]'
                     }`}
                   >
-                    <img src={img} alt="thumbnail" className="w-full h-full object-cover" />
+                    <img src={img} alt="thumbnail" className="w-full h-full object-contain p-1" />
                   </button>
                 ))}
               </div>
@@ -189,16 +189,21 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   {formatMoney(productPrice)}
                 </span>
 
-                {/* Rating review */}
-                <div className="flex items-center space-x-1 text-xs text-[#56554F]">
-                  <div className="flex text-[#681F2C]">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-current" />
-                    ))}
+                {/* Rating: only once real reviews exist */}
+                {product.reviewsCount > 0 && (
+                  <div className="flex items-center space-x-1 text-xs text-[#56554F]">
+                    <div className="flex text-[#681F2C]">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-3.5 h-3.5 ${i < Math.round(product.rating) ? 'fill-current' : ''}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-medium text-[#171714] ml-1">{product.rating.toFixed(1)}</span>
+                    <span className="text-[#56554F]">({product.reviewsCount})</span>
                   </div>
-                  <span className="font-medium text-[#171714] ml-1">{product.rating}</span>
-                  <span className="text-[#56554F]">({product.reviewsCount})</span>
-                </div>
+                )}
               </div>
             </div>
 

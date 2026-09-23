@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { CartItem, LookbookItem, Product, ShippingAddress } from '../types';
+import { CartItem, Product, ShippingAddress } from '../types';
 
 interface CartState {
   cartItems: CartItem[];
@@ -21,8 +21,6 @@ interface UIState {
   setAccountOpen: (open: boolean) => void;
   sizeGuideOpen: boolean;
   setSizeGuideOpen: (open: boolean) => void;
-  selectedLook: LookbookItem | null;
-  setSelectedLook: (look: LookbookItem | null) => void;
   quickAddProduct: Product | null;
   setQuickAddProduct: (product: Product | null) => void;
 }
@@ -143,8 +141,6 @@ export const useUIStore = create<UIState>((set) => ({
   setAccountOpen: (open) => set({ accountOpen: open }),
   sizeGuideOpen: false,
   setSizeGuideOpen: (open) => set({ sizeGuideOpen: open }),
-  selectedLook: null,
-  setSelectedLook: (look) => set({ selectedLook: look }),
   quickAddProduct: null,
   setQuickAddProduct: (product) => set({ quickAddProduct: product }),
 }));

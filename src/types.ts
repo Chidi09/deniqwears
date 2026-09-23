@@ -190,21 +190,6 @@ export interface AdminActivityLog {
   details: string;
 }
 
-export interface LookbookItem {
-  id: string;
-  title: string;
-  caption: string;
-  editorialNote: string;
-  image: string;
-  aspectRatio: 'portrait' | 'tall' | 'wide' | 'square';
-  /**
-   * Slugs, not database IDs. Seeded products get generated CUIDs, so the old
-   * fixture IDs matched nothing and "Shop the Look" always came up empty.
-   * Slugs are stable, human-checkable and actually present in the catalog.
-   */
-  productSlugs: string[];
-}
-
 export interface PaymentSession {
   provider: string;
   reference: string;
@@ -240,7 +225,6 @@ export type ActivePage =
   | { type: 'home' }
   | { type: 'shop'; category?: Category; newOnly?: boolean }
   | { type: 'product'; slug: string }
-  | { type: 'lookbook' }
   | { type: 'about' }
   | { type: 'checkout' }
   | { type: 'order-confirmed'; orderNumber: string }

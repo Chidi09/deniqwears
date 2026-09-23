@@ -1,52 +1,44 @@
 import React from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { Category } from '../types';
+import { Category, Product } from '../types';
 
 interface CategoryShowcaseProps {
+  products: Product[];
   onNavigateCategory: (category: Category) => void;
 }
 
-interface CategoryItem {
-  id: Exclude<Category, 'all'>;
-  label: string;
-  caption: string;
-  image: string;
-}
+type ShopCategory = Exclude<Category, 'all'>;
 
-const CATEGORIES: CategoryItem[] = [
-  {
-    id: 'dresses',
-    label: 'Dresses',
-    caption: 'Everyday to evening',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=900&auto=format&fit=crop',
-  },
-  {
-    id: 'sets',
-    label: 'Sets',
-    caption: 'Matching two-pieces',
-    image: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=900&auto=format&fit=crop',
-  },
-  {
-    id: 'tops',
-    label: 'Tops',
-    caption: 'Shirts & blouses',
-    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=900&auto=format&fit=crop',
-  },
-  {
-    id: 'bottoms',
-    label: 'Bottoms',
-    caption: 'Trousers & skirts',
-    image: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?q=80&w=900&auto=format&fit=crop',
-  },
-  {
-    id: 'occasion',
-    label: 'Occasion',
-    caption: 'For the big days',
-    image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?q=80&w=900&auto=format&fit=crop',
-  },
+const CATEGORY_ORDER: { id: ShopCategory; label: string }[] = [
+  { id: 'sets', label: 'Sets' },
+  { id: 'dresses', label: 'Dresses' },
+  { id: 'occasion', label: 'Occasion' },
+  { id: 'tops', label: 'Tops' },
+  { id: 'bottoms', label: 'Bottoms' },
 ];
 
-export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onNavigateCategory }) => {
+// Static class names so Tailwind can see them.
+const DESKTOP_COLUMNS: Record<number, string> = {
+  1: 'lg:grid-cols-1',
+  2: 'lg:grid-cols-2',
+  3: 'lg:grid-cols-3',
+  4: 'lg:grid-cols-4',
+  5: 'lg:grid-cols-5',
+};
+
+/**
+ * One tile per category that actually has pieces, pictured with a real
+ * product from it — so the tiles always match the catalogue and never lead to
+ * an empty page.
+ */
+export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ products, onNavigateCategory }) => {
+  const tiles = CATEGORY_ORDER.map((cat) => {
+    const inCategory = products.filter((p) => p.category === cat.id);
+    return { ...cat, count: inCategory.length, image: inCategory[0]?.primaryImage };
+  }).filter((tile) => tile.count > 0);
+
+  if (tiles.length === 0) return null;
+
   return (
     <section id="category-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 py-16 md:py-24">
       <div className="flex items-end justify-between mb-8 md:mb-10">
@@ -62,36 +54,32 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onNavigateCa
         </button>
       </div>
 
-      {/* 2 up on phones (Occasion spans the last row), 5 across on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-5">
-        {CATEGORIES.map((cat, i) => (
+      <div className={`grid grid-cols-2 ${DESKTOP_COLUMNS[tiles.length]} gap-3 md:gap-5`}>
+        {tiles.map((tile, i) => (
           <button
-            key={cat.id}
-            onClick={() => onNavigateCategory(cat.id)}
-            className={`group relative overflow-hidden bg-[#FAF9F6] text-left ${
-              i === CATEGORIES.length - 1 ? 'col-span-2 lg:col-span-1' : ''
-            }`}
+            key={tile.id}
+            onClick={() => onNavigateCategory(tile.id)}
+            className={`group text-left ${tiles.length % 2 === 1 && i === tiles.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}
           >
-            <div
-              className={`w-full overflow-hidden ${
-                i === CATEGORIES.length - 1 ? 'aspect-[2/1] lg:aspect-[3/4]' : 'aspect-[3/4]'
-              }`}
-            >
-              <img
-                src={cat.image}
-                alt=""
-                className="w-full h-full object-cover object-[center_30%] transition-transform duration-700 ease-editorial group-hover:scale-[1.05]"
-                loading="lazy"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#171714]/75 via-[#171714]/10 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 md:p-5 flex items-end justify-between text-[#FAF9F6]">
-              <div>
-                <h3 className="font-serif text-2xl md:text-3xl leading-none">{cat.label}</h3>
-                <p className="text-xs tracking-wide text-[#FAF9F6]/80 mt-1.5">{cat.caption}</p>
-              </div>
-              <span className="w-9 h-9 rounded-full border border-[#FAF9F6]/60 flex items-center justify-center transition-colors group-hover:bg-[#FAF9F6] group-hover:text-[#171714]">
+            <div className="relative aspect-[4/5] overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC]">
+              {tile.image && (
+                <img
+                  src={tile.image}
+                  alt=""
+                  className="w-full h-full object-contain p-5 transition-transform duration-700 ease-editorial group-hover:scale-[1.04]"
+                  loading="lazy"
+                />
+              )}
+              <span className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#171714] text-[#FAF9F6] flex items-center justify-center transition-colors group-hover:bg-[#681F2C]">
                 <ArrowUpRight className="w-4 h-4" />
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between mt-3">
+              <h3 className="font-serif text-2xl md:text-3xl text-[#171714] group-hover:text-[#681F2C] transition-colors">
+                {tile.label}
+              </h3>
+              <span className="text-xs text-[#56554F]">
+                {tile.count} {tile.count === 1 ? 'piece' : 'pieces'}
               </span>
             </div>
           </button>

@@ -27,7 +27,12 @@ export const PromoBannerSchema = z.object({
   body: z.string().trim().max(240),
   ctaLabel: z.string().trim().min(1, 'The banner button needs a label').max(30),
   ctaTarget: z.enum(PROMO_LINK_TARGETS),
-  image: z.string().trim().url('Banner image must be a full web address (https://…)').max(1000),
+  // A full web address, or a photo hosted on the site itself (/products/…).
+  image: z
+    .string()
+    .trim()
+    .max(1000)
+    .refine((v) => v === '' || v.startsWith('/') || /^https?:\/\//.test(v), 'Banner photo must be a web address (https://…)'),
   discountCode: z.string().trim().toUpperCase().max(30),
 });
 
@@ -52,7 +57,7 @@ export const DEFAULT_PROMOTIONS: StorePromotions = {
     body: 'Discover linen, Ankara cotton and amwete pieces cut for sizes 10 to 20. Use the code at checkout.',
     ctaLabel: 'Shop new in',
     ctaTarget: 'new',
-    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1600&auto=format&fit=crop',
+    image: '/products/bloom-cape-set.webp',
     discountCode: 'WELCOME10',
   },
 };

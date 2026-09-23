@@ -56,18 +56,10 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <button
-                  onClick={() => onNavigateCategory('tops')}
+                  onClick={() => onNavigateCategory('occasion')}
                   className="hover:text-[#171714] transition-colors text-left"
                 >
-                  Tops & Corsets
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigateCategory('bottoms')}
-                  className="hover:text-[#171714] transition-colors text-left"
-                >
-                  Bottoms
+                  Occasion
                 </button>
               </li>
               <li>
@@ -147,14 +139,6 @@ export const Footer: React.FC<FooterProps> = ({
                 >
                   Instagram (@deniqwears)
                 </a>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigate({ type: 'lookbook' })}
-                  className="hover:text-[#171714] transition-colors text-left"
-                >
-                  Worn Deniq Archive
-                </button>
               </li>
             </ul>
           </div>

@@ -62,30 +62,30 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           </div>
 
           <button
-            onClick={() => onExploreProduct('the-amara-dress')}
+            onClick={() => onExploreProduct('iris-gown')}
             className="w-fit text-xs tracking-[0.14em] uppercase text-[#56554F] hover:text-[#171714] border-b border-[#D8D4CC] pb-0.5"
           >
-            Featured: The Amara Dress
+            Featured: The Iris Gown
           </button>
         </div>
 
         {/* Right Asymmetric Editorial Photography */}
         <div className="lg:col-span-6 xl:col-span-7 order-1 lg:order-2 flex justify-center lg:justify-end">
           <div 
-            onClick={() => onExploreProduct('the-amara-dress')}
+            onClick={() => onExploreProduct('iris-gown')}
             className="relative w-full max-w-[580px] aspect-[3/4] overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC] cursor-pointer group"
           >
             <img
-              src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1400&auto=format&fit=crop"
+              src="/products/iris-gown.webp"
               alt="The Deniq Edit — campaign image"
-              className="w-full h-full object-cover object-center image-subtle-zoom transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              className="w-full h-full object-contain p-6 pb-20 transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               loading="eager"
             />
             
             {/* Subtle photographic metadata badge */}
             <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end text-xs uppercase tracking-[0.16em] text-white mix-blend-difference bg-[#171714]/30 backdrop-blur-xs p-3 border border-white/20">
               <div>
-                <p className="font-semibold">Fig 01. The Amara Dress</p>
+                <p className="font-semibold">Fig 01. The Iris Gown</p>
               </div>
               <span className="font-serif italic text-sm">Shop now →</span>
             </div>

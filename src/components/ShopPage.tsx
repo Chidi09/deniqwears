@@ -164,7 +164,10 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             New In
           </button>
           <span className="w-px h-5 bg-[#D8D4CC] mx-1 shrink-0" />
-          {(['all', 'dresses', 'sets', 'tops', 'bottoms', 'occasion'] as Category[]).map((cat) => (
+          {(['all', 'dresses', 'sets', 'tops', 'bottoms', 'occasion'] as Category[])
+            // Hide categories with nothing in them, unless it's the one being viewed.
+            .filter((cat) => cat === 'all' || cat === selectedCategory || products.some((p) => p.category === cat))
+            .map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}

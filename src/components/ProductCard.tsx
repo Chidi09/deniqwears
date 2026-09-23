@@ -27,7 +27,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
         <img
           src={product.primaryImage}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 ease-editorial group-hover:scale-[1.03]"
+          className="absolute inset-0 w-full h-full object-contain p-3 transition-transform duration-700 ease-editorial group-hover:scale-[1.03]"
           loading="lazy"
         />
         {/* Second photo cross-fades in on hover */}
@@ -35,7 +35,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
           <img
             src={product.secondaryImage}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover object-top opacity-0 transition-opacity duration-500 ease-editorial group-hover:opacity-100"
+            className="absolute inset-0 w-full h-full object-contain p-3 opacity-0 transition-opacity duration-500 ease-editorial group-hover:opacity-100"
             loading="lazy"
           />
         )}

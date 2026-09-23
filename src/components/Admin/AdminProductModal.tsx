@@ -52,10 +52,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       ? [product.primaryImage, product.secondaryImage, ...product.galleryImages].filter(
           (v, i, a) => v && a.indexOf(v) === i
         )
-      : [
-          'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1200&auto=format&fit=crop',
-          'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-        ]
+      : []
   );
   const [primaryImageIdx, setPrimaryImageIdx] = useState(0);
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -355,7 +352,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             <div className="flex justify-between items-baseline">
               <h3 className="font-serif text-lg text-[#171714]">Product photos</h3>
               <span className="text-xs text-[#56554F]">
-                First image is Primary Cover on lookbook & cards
+                The first photo is the main one shown on the website
               </span>
             </div>
 

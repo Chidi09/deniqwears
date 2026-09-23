@@ -20,7 +20,10 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     setSizeGuideOpen,
     handleNavigate,
     handleCategoryNavigate,
+    productsList,
   } = useStore();
+  const availableCategories =
+    productsList.length > 0 ? Array.from(new Set(productsList.map((p) => p.category))) : undefined;
   const { data: settings } = useStoreSettingsQuery();
   const announcements = (settings?.promotions ?? DEFAULT_PROMOTIONS).announcements;
 
@@ -37,8 +40,6 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     activePage = { type: 'shop' };
   } else if (pathname?.startsWith('/product/')) {
     activePage = { type: 'product', slug: pathname.replace('/product/', '') };
-  } else if (pathname === '/lookbook') {
-    activePage = { type: 'lookbook' };
   } else if (pathname === '/about') {
     activePage = { type: 'about' };
   }
@@ -50,6 +51,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
         onNavigate={handleNavigate}
         cartCount={totalCartCount}
         announcements={announcements}
+        availableCategories={availableCategories}
         onOpenCart={() => setCartOpen(true)}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenAccount={() => setAccountOpen(true)}

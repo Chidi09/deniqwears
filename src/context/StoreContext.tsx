@@ -2,13 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { ActivePage, CartItem, Category, LookbookItem, Product } from '../types';
+import { ActivePage, CartItem, Category, Product } from '../types';
 import { useCartStore, useUIStore } from '../store/useStore';
 import { useProductsQuery, useStoreSettingsQuery } from '../hooks/queries';
 import { CartDrawer } from '../components/CartDrawer';
 import { SearchOverlay } from '../components/SearchOverlay';
 import { SizeGuideModal } from '../components/SizeGuideModal';
-import { LookbookModal } from '../components/LookbookModal';
 import { QuickAddModal } from '../components/QuickAddModal';
 import { AccountDrawer } from '../components/AccountDrawer';
 
@@ -25,8 +24,6 @@ interface StoreContextType {
   setAccountOpen: (open: boolean) => void;
   sizeGuideOpen: boolean;
   setSizeGuideOpen: (open: boolean) => void;
-  selectedLook: LookbookItem | null;
-  setSelectedLook: (look: LookbookItem | null) => void;
   quickAddProduct: Product | null;
   setQuickAddProduct: (product: Product | null) => void;
   totalCartCount: number;
@@ -63,8 +60,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setAccountOpen,
     sizeGuideOpen,
     setSizeGuideOpen,
-    selectedLook,
-    setSelectedLook,
     quickAddProduct,
     setQuickAddProduct,
   } = useUIStore();
@@ -115,8 +110,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     } else if (page.type === 'product') {
       router.push(`/product/${page.slug}`);
-    } else if (page.type === 'lookbook') {
-      router.push('/lookbook');
     } else if (page.type === 'about') {
       router.push('/about');
     } else if (page.type === 'checkout') {
@@ -177,8 +170,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setAccountOpen,
         sizeGuideOpen,
         setSizeGuideOpen,
-        selectedLook,
-        setSelectedLook,
         quickAddProduct,
         setQuickAddProduct,
         totalCartCount,
@@ -217,14 +208,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       <SizeGuideModal
         isOpen={sizeGuideOpen}
         onClose={() => setSizeGuideOpen(false)}
-      />
-
-      <LookbookModal
-        look={selectedLook}
-        onClose={() => setSelectedLook(null)}
-        products={productsList}
-        onSelectProduct={handleSelectProduct}
-        onQuickAdd={(p) => setQuickAddProduct(p)}
       />
 
       <QuickAddModal

@@ -141,7 +141,7 @@ const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
                       <img
                         src={p.primaryImage}
                         alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                     <div className="text-xs">
@@ -180,7 +180,7 @@ const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
                       <img
                         src={product.primaryImage}
                         alt={product.name}
-                        className="w-full h-full object-cover object-top"
+                        className="w-full h-full object-contain p-3"
                       />
                     </div>
                     <div className="flex-1 min-w-0">

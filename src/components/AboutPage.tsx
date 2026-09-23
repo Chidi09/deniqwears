@@ -65,9 +65,9 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
           <div className="lg:col-span-6">
             <div className="relative aspect-[4/5] bg-[#FAF9F6] border border-[#D8D4CC] overflow-hidden">
               <img
-                src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop"
-                alt="A Deniqwears look"
-                className="w-full h-full object-cover"
+                src="/products/ember-circle-kaftan.webp"
+                alt="The Ember Circle Kaftan by Deniqwears"
+                className="w-full h-full object-contain p-8"
               />
             </div>
           </div>

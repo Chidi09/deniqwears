@@ -34,7 +34,8 @@ function toLineItems(order: Order): EmailLineItem[] {
     name: item.name,
     meta: `${item.color} · Size ${item.size} · Qty ${item.quantity}`,
     amount: formatAmount(item.totalPriceInKobo),
-    image: item.image,
+    // Product photos are served from the site itself; mail clients need a full URL.
+    image: item.image?.startsWith('/') ? `${appUrl()}${item.image}` : item.image,
   }));
 }
 

@@ -11,6 +11,8 @@ interface NavbarProps {
   onOpenSearch: () => void;
   onOpenAccount: () => void;
   onOpenSizeGuide: () => void;
+  /** Categories that currently have products; empty ones are hidden from the menu. */
+  availableCategories?: Category[];
 }
 
 interface NavLink {
@@ -99,6 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSearch,
   onOpenAccount,
   onOpenSizeGuide,
+  availableCategories,
 }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -133,7 +136,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const isActive = (label: string) =>
     (label === 'Shop All' && activePage.type === 'shop') ||
-    (label === 'Lookbook' && activePage.type === 'lookbook') ||
     (label === 'About' && activePage.type === 'about');
 
   const desktopLinkClass = (label: string) =>
@@ -167,8 +169,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {link.label}
               </button>
             ))}
-            <button onClick={() => onNavigate({ type: 'lookbook' })} className={desktopLinkClass('Lookbook')}>
-              Lookbook
+            <button onClick={() => onNavigate({ type: 'about' })} className={desktopLinkClass('About')}>
+              About
             </button>
           </nav>
 
@@ -288,7 +290,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   Shop by category
                 </p>
                 <ul className="divide-y divide-[#D8D4CC] border-y border-[#D8D4CC]">
-                  {MOBILE_CATEGORIES.map((item) => (
+                  {MOBILE_CATEGORIES.filter(
+                    (item) => !availableCategories || availableCategories.includes(item.category)
+                  ).map((item) => (
                     <li key={item.category}>
                       <button
                         onClick={() => go({ type: 'shop', category: item.category })}
@@ -305,11 +309,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] font-semibold text-[#681F2C] mb-2">Discover</p>
                 <ul className="space-y-1 text-base text-[#171714]">
-                  <li>
-                    <button onClick={() => go({ type: 'lookbook' })} className="py-2.5 hover:text-[#681F2C]">
-                      Lookbook
-                    </button>
-                  </li>
                   <li>
                     <button onClick={() => go({ type: 'about' })} className="py-2.5 hover:text-[#681F2C]">
                       About Deniqwears

@@ -38,7 +38,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
             <img
               src={biasDress.primaryImage}
               alt={biasDress.name}
-              className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+              className="w-full h-full object-contain p-3 transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               loading="lazy"
             />
             {biasDress.badge && (
@@ -78,7 +78,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
             <img
               src={sculptedCorset.primaryImage}
               alt={sculptedCorset.name}
-              className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+              className="w-full h-full object-contain p-4 transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               loading="lazy"
             />
             {sculptedCorset.badge && (
@@ -122,7 +122,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
             <img
               src={lunaSet.primaryImage}
               alt={lunaSet.name}
-              className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+              className="w-full h-full object-contain p-4 transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               loading="lazy"
             />
             {lunaSet.badge && (
@@ -161,7 +161,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
             <img
               src={pleatedMidi.primaryImage}
               alt={pleatedMidi.name}
-              className="w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+              className="w-full h-full object-contain p-3 transition-transform duration-700 ease-out group-hover:scale-[1.02]"
               loading="lazy"
             />
             {pleatedMidi.badge && (

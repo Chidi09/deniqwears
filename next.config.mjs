@@ -1,12 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-    ],
+  async redirects() {
+    // The lookbook was retired until real campaign photography exists.
+    return [{ source: '/lookbook', destination: '/shop', permanent: false }];
   },
 };
 

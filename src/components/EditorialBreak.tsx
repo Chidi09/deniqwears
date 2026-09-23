@@ -4,17 +4,14 @@ export const EditorialBreak: React.FC = () => {
   return (
     <section 
       id="editorial-break"
-      className="relative w-full min-h-[640px] md:min-h-[720px] flex items-center justify-center overflow-hidden my-12 border-y border-[#D8D4CC]"
+      className="relative w-full min-h-[440px] md:min-h-[520px] flex items-center justify-center overflow-hidden my-12 border-y border-[#D8D4CC]"
     >
-      {/* Background Photography with deep contrast tint */}
-      <div className="absolute inset-0">
-        <img
-          src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1800&auto=format&fit=crop"
-          alt="Deniqwears Brand Campaign Editorial Note"
-          className="w-full h-full object-cover object-[center_30%] filter brightness-[0.78] contrast-[1.08]"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-[#171714]/30" />
+      {/* Typographic backdrop — no photography needed */}
+      <div className="absolute inset-0 bg-[#171714]" aria-hidden>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(104,31,44,0.55),transparent_70%)]" />
+        <span className="absolute -right-10 -bottom-24 font-serif italic text-[420px] md:text-[620px] leading-none text-[#FAF9F6]/[0.04] select-none">
+          D
+        </span>
       </div>
 
       {/* Floating Content Box */}

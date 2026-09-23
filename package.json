@@ -15,6 +15,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "bun prisma/seed.ts",
     "db:seed:demo": "bun scripts/seed-demo-orders.ts",
+    "db:import-catalog": "bun scripts/import-catalog.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

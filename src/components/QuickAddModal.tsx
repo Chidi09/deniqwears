@@ -80,7 +80,7 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
 
         {/* Thumbnail Preview */}
         <div className="aspect-[16/10] bg-[#F4F1EB] border border-[#D8D4CC] overflow-hidden">
-          <img src={product.primaryImage} alt={product.name} className="w-full h-full object-cover object-top" />
+          <img src={product.primaryImage} alt={product.name} className="w-full h-full object-contain p-3" />
         </div>
 
         {/* Colors */}
