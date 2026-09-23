@@ -11,7 +11,7 @@ export const TrustStrip: React.FC<TrustStripProps> = ({ returnPeriodDays, onOpen
   const items = [
     {
       icon: Ruler,
-      title: 'Sizes 10 – 20',
+      title: 'Sizes 10–20',
       text: 'In every design',
       action: { label: 'See size chart', onClick: onOpenSizeGuide },
     },

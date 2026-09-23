@@ -24,7 +24,7 @@ const CATEGORY_EDITORIALS: Record<Category, { title: string; subtitle: string }>
   },
   sets: {
     title: 'Sets',
-    subtitle: 'Matching two-piece sets — one decision, a complete look.',
+    subtitle: 'Matching two-piece sets. One decision, a complete look.',
   },
   tops: {
     title: 'Tops',
@@ -192,7 +192,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               {filteredProducts.length} {filteredProducts.length === 1 ? 'piece' : 'pieces'}
             </span>
             <span>·</span>
-            <span>Sizes 10 – 20</span>
+            <span>Sizes 10–20</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl text-[#171714] leading-[1.05]">
@@ -305,7 +305,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
         {filteredProducts.length === 0 ? (
           <div className="py-24 text-center space-y-4">
             <p className="font-serif text-3xl text-[#171714]">Nothing matches those filters yet.</p>
-            <p className="text-sm text-[#56554F]">Try another size or colour — new designs arrive every month.</p>
+            <p className="text-sm text-[#56554F]">Try another size or colour. New designs arrive every month.</p>
             <button
               onClick={() => {
                 clearFilters();

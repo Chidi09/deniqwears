@@ -119,7 +119,7 @@ export class PaymentService {
       await db.updateOrderStatus(
         order.id,
         'PAYMENT_FAILED',
-        `Payment mismatch — provider reported ${verification.currency} ${verification.amountInKobo / 100}, order is ${order.currency} ${order.totalInKobo / 100}`
+        `Payment mismatch: provider reported ${verification.currency} ${verification.amountInKobo / 100}, order is ${order.currency} ${order.totalInKobo / 100}`
       );
       throw new PaymentVerificationError(
         'Payment security violation: the amount or currency confirmed by the provider does not match this order'
@@ -177,7 +177,7 @@ export class PaymentService {
 
     if (order.paymentMethod !== 'showroom') {
       throw new PaymentVerificationError(
-        `Order #${order.orderNumber} is a ${order.paymentMethod} order — confirm it through the gateway, not by hand.`
+        `Order #${order.orderNumber} is a ${order.paymentMethod} order. Confirm it through the gateway, not by hand.`
       );
     }
 
@@ -192,7 +192,7 @@ export class PaymentService {
         order.id,
         'PAID',
         note?.trim()
-          ? `Payment collected at the showroom by ${adminEmail} — ${note.trim()}`
+          ? `Payment collected at the showroom by ${adminEmail}: ${note.trim()}`
           : `Payment collected at the showroom by ${adminEmail}`,
         adminEmail
       ))!;

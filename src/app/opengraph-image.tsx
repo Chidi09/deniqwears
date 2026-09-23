@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Deniqwears — The Deniq Edit';
+export const alt = 'Deniqwears: The Deniq Edit';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -42,7 +42,7 @@ export default function OpenGraphImage() {
             </div>
           </div>
           <div style={{ color: '#F4F1EB', display: 'flex', fontSize: 23, letterSpacing: 2 }}>
-            CONTEMPORARY WOMENSWEAR · SIZES 10 – 20
+            CONTEMPORARY WOMENSWEAR · SIZES 10–20
           </div>
         </div>
       </div>

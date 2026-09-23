@@ -86,7 +86,7 @@ export const AdminPromotions: React.FC<AdminPromotionsProps> = ({ onSaved }) => 
         <h2 className="font-serif text-3xl text-[#171714]">Promotions</h2>
         <p className="text-sm text-[#56554F] mt-1">
           Change the messages at the top of your website and the sale banner on your homepage. Press{' '}
-          <strong>Save</strong> when you are done — changes go live straight away.
+          <strong>Save</strong> when you are done. Changes go live straight away.
         </p>
       </div>
 
@@ -164,7 +164,7 @@ export const AdminPromotions: React.FC<AdminPromotionsProps> = ({ onSaved }) => 
           <div>
             <h3 className="font-serif text-xl text-[#171714]">Homepage banner</h3>
             <p className="text-sm text-[#56554F]">
-              A large banner on your homepage — great for a sale, a new drop or a discount code.
+              A large banner on your homepage. Great for a sale, a new drop or a discount code.
             </p>
           </div>
           <button
@@ -293,7 +293,7 @@ export const AdminPromotions: React.FC<AdminPromotionsProps> = ({ onSaved }) => 
           {error && <p className="text-sm text-[#681F2C] mr-auto">{error}</p>}
           {saved && (
             <p className="text-sm text-emerald-700 flex items-center gap-1.5 mr-auto">
-              <Check className="w-4 h-4" /> Saved — your website is updated.
+              <Check className="w-4 h-4" /> Saved. Your website is updated.
             </p>
           )}
           <button

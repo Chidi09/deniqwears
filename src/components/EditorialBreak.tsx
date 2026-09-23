@@ -24,7 +24,7 @@ export const EditorialBreak: React.FC = () => {
 
         <div className="mt-8 flex items-center space-x-3 text-xs uppercase tracking-[0.3em] text-[#FAF9F6]/90 font-medium">
           <AdireMark className="text-[#FAF9F6]/80" />
-          <span>DENIQ NOTES — ISSUE 01</span>
+          <span>DENIQ NOTES · ISSUE 01</span>
         </div>
       </div>
     </section>

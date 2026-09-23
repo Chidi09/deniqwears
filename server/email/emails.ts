@@ -87,7 +87,7 @@ function deliveryAndPayment(order: Order, paymentStatus: string): string {
 /** Payment verified — the standard receipt. */
 export function orderConfirmationEmail(order: Order, store?: StoreContact): BuiltEmail {
   return {
-    subject: `Payment confirmed — Order ${order.orderNumber}`,
+    subject: `Payment confirmed: Order ${order.orderNumber}`,
     html: renderEmailLayout({
       store,
       preheader: `Order ${order.orderNumber} confirmed · ${formatAmount(order.totalInKobo)}`,
@@ -109,14 +109,14 @@ export function orderConfirmationEmail(order: Order, store?: StoreContact): Buil
 /** Placed with in-person showroom collection — payment still outstanding. */
 export function showroomReservationEmail(order: Order, store?: StoreContact): BuiltEmail {
   return {
-    subject: `Reserved — Order ${order.orderNumber}`,
+    subject: `Reserved: Order ${order.orderNumber}`,
     html: renderEmailLayout({
       store,
       preheader: `Order ${order.orderNumber} reserved · pay at the showroom`,
       eyebrow: 'Order Reserved',
       headline: `Reserved for you, ${escapeHtml(order.customer.firstName)}.`,
       intro:
-        'Your pieces are set aside pending payment. Visit the showroom to settle and collect, or arrange a fitting — the team will confirm availability when you arrive.',
+        'Your pieces are set aside pending payment. Visit the showroom to settle and collect, or arrange a fitting. The team will confirm availability when you arrive.',
       blocks: [
         notice(
           'This order is <strong>not yet paid</strong>. Bring your order number to the showroom and our team will complete the transaction at the counter. Stock is confirmed at the counter, so do come by soon.',
@@ -135,14 +135,14 @@ export function showroomReservationEmail(order: Order, store?: StoreContact): Bu
 /** Admin marked the order dispatched. */
 export function orderDispatchedEmail(order: Order, store?: StoreContact): BuiltEmail {
   return {
-    subject: `On its way — Order ${order.orderNumber}`,
+    subject: `On its way: Order ${order.orderNumber}`,
     html: renderEmailLayout({
       store,
       preheader: `Order ${order.orderNumber} has left the atelier`,
       eyebrow: 'Out for Delivery',
       headline: `On its way, ${escapeHtml(order.customer.firstName)}.`,
       intro:
-        'Your order has been packed and handed to our courier. Keep your phone close — the driver will call ahead before arriving.',
+        'Your order has been packed and handed to our courier. Keep your phone close; the driver will call ahead before arriving.',
       blocks: [
         notice(
           `Dispatched ${order.dispatchedAt ? formatDate(order.dispatchedAt) : formatDate(new Date().toISOString())} from our studio.`
@@ -170,7 +170,7 @@ export function refundIssuedEmail(
   const remainingInKobo = Math.max(0, order.totalInKobo - cumulativeRefunded);
 
   return {
-    subject: `Refund issued — Order ${order.orderNumber}`,
+    subject: `Refund issued: Order ${order.orderNumber}`,
     html: renderEmailLayout({
       store,
       preheader: `${formatAmount(refundedInKobo)} refunded for order ${order.orderNumber}`,

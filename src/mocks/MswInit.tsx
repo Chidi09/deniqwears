@@ -22,7 +22,7 @@ export function MswInit({ children }: { children: React.ReactNode }) {
     if (process.env.NEXT_PUBLIC_API_MOCKING === 'enabled' && process.env.NODE_ENV === 'production') {
       // Belt and braces with the server-side guard in instrumentation.ts: mock
       // checkout must never replace real checkout for a real customer.
-      console.error('NEXT_PUBLIC_API_MOCKING is enabled in a production build — refusing to start mocks.');
+      console.error('NEXT_PUBLIC_API_MOCKING is enabled in a production build; refusing to start mocks.');
       return;
     }
     if (!MOCKING_ENABLED) return;

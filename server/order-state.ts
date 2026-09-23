@@ -35,8 +35,8 @@ export function assertAdminTransition(from: OrderStatus, to: OrderStatus): void 
   if (ADMIN_FORBIDDEN.includes(to)) {
     const how =
       to === 'PAID'
-        ? 'Record the payment instead — an order becomes PAID when payment is verified or collection is confirmed.'
-        : 'Issue a refund instead — refund states follow an actual refund.';
+        ? 'Record the payment instead. An order becomes PAID when payment is verified or collection is confirmed.'
+        : 'Issue a refund instead. Refund states follow an actual refund.';
     throw new InvalidOrderTransitionError(from, to, how);
   }
 

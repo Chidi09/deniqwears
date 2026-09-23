@@ -153,7 +153,7 @@ export const Footer: React.FC<FooterProps> = ({
             <div className="text-xs text-[#56554F] leading-relaxed space-y-2">
               <p className="text-[#171714] font-medium">Based in the USA</p>
               <p>Shipping across the United States.</p>
-              <p>Sizes 10 – 20 in every design.</p>
+              <p>Sizes 10–20 in every design.</p>
             </div>
           </div>
         </div>

@@ -232,8 +232,8 @@ export const AdminSettings: React.FC = () => {
             <p className="font-semibold text-[#171714]">Card & wallet payments (Stripe)</p>
             <p className="text-xs text-[#56554F]">
               {settings.paymentProviders.stripe
-                ? 'On — customers can check out.'
-                : 'Off — customers cannot pay online. Turn this on to take orders.'}
+                ? 'On: customers can check out.'
+                : 'Off: customers cannot pay online. Turn this on to take orders.'}
             </p>
           </div>
         </label>

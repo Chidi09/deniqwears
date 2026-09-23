@@ -43,8 +43,8 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
               Made for women who love to be seen.
             </h1>
             <p className="text-[#FAF9F6]/80 text-lg md:text-xl font-light max-w-[620px] mt-6 leading-relaxed">
-              Deniqwears designs easy, beautiful pieces for women of every age — from their first job to their
-              seventieth birthday and beyond — in sizes 10 to 20.
+              Deniqwears designs easy, beautiful pieces for women of every age, from their first job to their
+              seventieth birthday and beyond, in sizes 10 to 20.
             </p>
           </div>
         </div>
@@ -58,7 +58,7 @@ export const AboutPage: React.FC<AboutPageProps> = ({ onNavigate }) => {
               only to find it stops a size short.
             </p>
             <p>
-              We work in fabrics that feel as good as they look, and add new designs regularly — follow us on TikTok
+              We work in fabrics that feel as good as they look, and add new designs regularly. Follow us on TikTok
               and Instagram to see them first.
             </p>
             <ul className="flex flex-wrap gap-2 pt-2">

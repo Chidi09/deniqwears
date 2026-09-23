@@ -143,7 +143,7 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
             ) : (
               <span>
                 {isAvailable
-                  ? `Add to Bag — ${formatMoney(selectedVariant?.priceInKobo ?? product.priceInKobo)}`
+                  ? `Add to Bag · ${formatMoney(selectedVariant?.priceInKobo ?? product.priceInKobo)}`
                   : 'Unavailable in this size'}
               </span>
             )}

@@ -53,7 +53,7 @@ export async function POST(
     }
     if (err instanceof InsufficientStockError) {
       return NextResponse.json(
-        { error: 'Stock ran out for one of these garments — adjust inventory before recording payment.' },
+        { error: 'Stock ran out for one of these garments. Adjust inventory before recording payment.' },
         { status: 409 }
       );
     }

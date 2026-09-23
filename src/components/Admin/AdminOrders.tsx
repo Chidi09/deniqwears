@@ -271,7 +271,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                     <span>Awaiting Showroom Collection</span>
                   </div>
                   <p className="text-xs text-amber-950 leading-snug">
-                    This order is reserved but unpaid. Record the payment once the client has settled at the counter —
+                    This order is reserved but unpaid. Record the payment once the client has settled at the counter:
                     that marks it paid, deducts stock and sends their receipt.
                   </p>
                   <button
@@ -349,7 +349,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
               <div className="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center space-x-2 font-medium">
                 <Undo2 className="w-4 h-4" />
                 <span>
-                  {selectedOrder.status === 'REFUNDED' ? 'Fully refunded' : 'Partially refunded'} — see timeline below for details.
+                  {selectedOrder.status === 'REFUNDED' ? 'Fully refunded' : 'Partially refunded'}. See the timeline below for details.
                 </span>
               </div>
             )}

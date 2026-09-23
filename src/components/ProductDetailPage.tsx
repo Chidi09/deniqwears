@@ -321,7 +321,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <span>ADDED ✓</span>
                   </>
                 ) : (
-                  <span>ADD TO BAG — {formatMoney(productPrice)}</span>
+                  <span>ADD TO BAG · {formatMoney(productPrice)}</span>
                 )}
               </button>
             </div>
@@ -429,7 +429,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           <div className="max-w-[1344px] mx-auto px-5 md:px-12 pt-14">
             <div className="flex items-end justify-between mb-8">
               <h2 className="font-serif text-3xl md:text-4xl text-[#171714]">You may also like</h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-[#56554F]">Sizes 10 – 20</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-[#56554F]">Sizes 10–20</span>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-10">
               {related.map((p) => (

@@ -19,16 +19,13 @@ interface NavbarProps {
 interface NavLink {
   label: string;
   page: ActivePage;
-  /** Only shown from the lg breakpoint, to keep the md bar uncluttered. */
-  wide?: boolean;
 }
 
+// Categories aren't repeated here: the shop page has its own category
+// buttons, the homepage has category tiles, and the phone menu lists them.
 const SHOP_LINKS: NavLink[] = [
   { label: 'New In', page: { type: 'shop', newOnly: true } },
-  { label: 'Shop All', page: { type: 'shop', category: 'all' } },
-  { label: 'Dresses', page: { type: 'shop', category: 'dresses' }, wide: true },
-  { label: 'Sets', page: { type: 'shop', category: 'sets' }, wide: true },
-  { label: 'Occasion', page: { type: 'shop', category: 'occasion' }, wide: true },
+  { label: 'Shop', page: { type: 'shop', category: 'all' } },
 ];
 
 const MOBILE_CATEGORIES: { label: string; category: Category }[] = [
@@ -137,7 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const isActive = (label: string) =>
-    (label === 'Shop All' && activePage.type === 'shop') ||
+    (label === 'Shop' && activePage.type === 'shop') ||
     (label === 'About' && activePage.type === 'about');
 
   const desktopLinkClass = (label: string) =>
@@ -166,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={link.label}
                 onClick={() => onNavigate(link.page)}
-                className={`${desktopLinkClass(link.label)} ${link.wide ? 'hidden lg:inline-flex' : ''}`}
+                className={desktopLinkClass(link.label)}
               >
                 {link.label}
               </button>

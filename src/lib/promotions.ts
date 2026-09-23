@@ -46,7 +46,7 @@ export type StorePromotions = z.infer<typeof PromotionsSchema>;
 
 export const DEFAULT_PROMOTIONS: StorePromotions = {
   announcements: [
-    'Sizes 10 – 20 in every design',
+    'Sizes 10–20 in every design',
     'New pieces added every month',
     'Easy returns & exchanges',
   ],

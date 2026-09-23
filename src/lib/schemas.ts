@@ -41,7 +41,7 @@ export const CheckoutPayloadSchema = z.object({
   items: z
     .array(OrderItemInputSchema)
     .min(1, 'Your shopping bag is empty')
-    .max(MAX_ITEMS_PER_ORDER, 'Too many items in one order — please split it or contact us'),
+    .max(MAX_ITEMS_PER_ORDER, 'Too many items in one order. Please split it or contact us'),
   customer: CustomerInputSchema,
   shippingAddress: ShippingAddressInputSchema,
   deliveryZoneId: z.string().min(1, 'Delivery zone is required'),

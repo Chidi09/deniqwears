@@ -69,7 +69,7 @@ export const AccountDrawer: React.FC<AccountDrawerProps> = ({
                 <p className="font-semibold text-[#171714] mb-1">Checkout is guest-only for now</p>
                 <p>
                   You don’t need an account to order. Your confirmation email carries your order
-                  number and receipt — keep it, and quote that number for anything you need.
+                  number and receipt. Keep it, and quote that number for anything you need.
                 </p>
               </div>
             </div>

@@ -36,7 +36,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
         <div className="lg:col-span-6 xl:col-span-5 flex flex-col justify-center order-2 lg:order-1 space-y-6">
           <div className="space-y-2">
             <span className="text-xs uppercase tracking-[0.28em] font-semibold text-[#681F2C]">
-              New Season — Deniq ’26
+              New Season · Deniq ’26
             </span>
             <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[80px] leading-[0.96] text-[#171714] tracking-tight">
               Clothes for the <br />
@@ -45,7 +45,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           </div>
 
           <p className="text-[#56554F] text-base md:text-lg font-normal max-w-[440px] leading-relaxed">
-            Statement pieces in linen, Ankara cotton and amwete — designed for women who love to be seen, in sizes 10 to 20.
+            Statement pieces in linen, Ankara cotton and amwete, designed for women who love to be seen, in sizes 10 to 20.
           </p>
 
           <div className="pt-4 flex flex-wrap items-center gap-3">
@@ -84,7 +84,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
             <AdireBand height={22} className="absolute top-0 inset-x-0 text-[#1E2656] opacity-70 border-b border-[#1E2656]/20 bg-[#F4F1EB]" />
             <img
               src="/products/iris-gown.webp"
-              alt="The Deniq Edit — campaign image"
+              alt="The Iris Gown by Deniqwears"
               className="relative w-full h-full object-contain p-6 pt-10 pb-20 transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               loading="eager"
             />
@@ -108,7 +108,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           <span>SHIPPING ACROSS THE USA</span>
         </div>
         <div className="flex items-center space-x-6 tracking-wider">
-          <span>SIZES 10 – 20</span>
+          <span>SIZES 10–20</span>
           <span>·</span>
           <span>NEW DESIGNS MONTHLY</span>
         </div>

@@ -42,7 +42,7 @@ export const NewsletterSection: React.FC = () => {
             Private access.
           </h3>
           <p className="text-[#56554F] text-base md:text-lg font-light leading-relaxed max-w-[440px]">
-            New designs, restocks and subscriber-only offers — before everyone else.
+            New designs, restocks and subscriber-only offers, before everyone else.
           </p>
         </div>
 

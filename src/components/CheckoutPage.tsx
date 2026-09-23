@@ -728,7 +728,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <span>
                   {isSubmitting || verifyPaymentMutation.isPending
                     ? 'Securing Transaction...'
-                    : `Authorize Payment — ${formatMoney(totalInKobo)}`}
+                    : `Pay ${formatMoney(totalInKobo)}`}
                 </span>
               </button>
 
@@ -798,7 +798,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 )}
                 {appliedPromo && !promoStillValid && (
                   <p className="text-xs text-[#56554F]">
-                    Your bag or code changed — re-apply the code to use it.
+                    Your bag or code changed. Re-apply the code to use it.
                   </p>
                 )}
               </form>

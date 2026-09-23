@@ -223,7 +223,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
               Could not load your store data.
             </p>
             <p className="text-xs text-[#56554F]">
-              This is usually a connection problem — your products and orders are safe. Please try again.
+              This is usually a connection problem. Your products and orders are safe. Please try again.
             </p>
             <button
               onClick={loadData}

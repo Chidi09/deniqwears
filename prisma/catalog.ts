@@ -10,7 +10,7 @@ const SIZES = ['10', '12', '14', '16', '18', '20'];
 const PLACEHOLDER_STOCK_PER_SIZE = 5;
 
 const DELIVERY = 'Ships within 1–2 business days. Free standard US shipping on orders over $150.';
-const FIT = 'Relaxed, easy fit. Available in sizes 10 to 20 — check the size chart for bust, waist, hip and length measurements.';
+const FIT = 'Relaxed, easy fit. Available in sizes 10 to 20. Check the size chart for bust, waist, hip and length measurements.';
 
 interface CatalogEntry {
   name: string;

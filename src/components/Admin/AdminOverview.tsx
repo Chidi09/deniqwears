@@ -208,7 +208,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             <TrendingUp className="w-4 h-4 text-[#C4828E]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl">
-            {summary ? formatMoney(summary.netRevenueInKobo) : '—'}
+            {summary ? formatMoney(summary.netRevenueInKobo) : '…'}
           </p>
           <p className="text-xs text-[#8A8780] mt-1">
             {summary ? `${summary.paidOrdersCount} paid orders · avg ${formatMoney(summary.averageOrderValueInKobo)}` : ' '}
@@ -221,7 +221,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             <Package className="w-4 h-4 text-[#171714]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {summary ? formatMoney(summary.grossSalesInKobo) : '—'}
+            {summary ? formatMoney(summary.grossSalesInKobo) : '…'}
           </p>
           <p className="text-xs text-[#56554F] mt-1">
             {summary ? `${formatMoney(summary.deliveryFeesInKobo)} of it delivery fees` : ' '}
@@ -234,7 +234,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             <Undo2 className="w-4 h-4 text-[#681F2C]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#681F2C]">
-            {summary ? formatMoney(summary.refundedInKobo) : '—'}
+            {summary ? formatMoney(summary.refundedInKobo) : '…'}
           </p>
           <p className="text-xs text-[#56554F] mt-1">Already deducted from net</p>
         </div>
@@ -245,7 +245,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             <Clock className="w-4 h-4 text-amber-700" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {summary ? formatMoney(summary.pendingCollectionInKobo) : '—'}
+            {summary ? formatMoney(summary.pendingCollectionInKobo) : '…'}
           </p>
           <p className="text-xs text-[#56554F] mt-1">
             {summary ? `${summary.pendingCollectionCount} orders not yet collected` : ' '}
@@ -296,7 +296,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
                 </div>
               ))}
               <p className="text-xs text-[#8A8780] pt-2">
-                Showroom totals are cash or POS taken in person — reconcile these against the till.
+                Showroom totals are cash or POS taken in person. Reconcile these against the till.
               </p>
             </div>
           ) : (
@@ -339,7 +339,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
             Awaiting Dispatch
           </span>
-          <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.awaitingDispatchCount ?? '—'}</p>
+          <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.awaitingDispatchCount ?? '…'}</p>
           <p className="text-xs text-[#56554F]">Paid, needs packing</p>
         </button>
 
@@ -348,7 +348,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
             Discounts Given
           </span>
           <p className="font-serif text-2xl text-[#171714] mt-1">
-            {summary ? formatMoney(summary.discountsGivenInKobo) : '—'}
+            {summary ? formatMoney(summary.discountsGivenInKobo) : '…'}
           </p>
           <p className="text-xs text-[#56554F]">Promo codes redeemed</p>
         </div>
@@ -357,7 +357,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({
           <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
             Failed / Cancelled
           </span>
-          <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.failedOrCancelledCount ?? '—'}</p>
+          <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.failedOrCancelledCount ?? '…'}</p>
           <p className="text-xs text-[#56554F]">Checkouts that fell through</p>
         </div>
 

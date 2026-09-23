@@ -19,12 +19,12 @@ const bodyFont = Jost({ subsets: ['latin'], variable: '--font-body' });
 const siteUrl = process.env.APP_URL?.trim().replace(/\/+$/, '') || 'http://localhost:3000';
 const siteName = 'Deniqwears';
 const siteDescription =
-  'Contemporary womenswear in sizes 10 to 20 — statement dresses, sets and occasion pieces in linen, Ankara cotton and amwete. Shipping across the USA.';
+  'Contemporary womenswear in sizes 10 to 20. Statement dresses, sets and occasion pieces in linen, Ankara cotton and amwete. Shipping across the USA.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'Deniqwears — The Deniq Edit',
+    default: 'Deniqwears | The Deniq Edit',
     template: '%s | Deniqwears',
   },
   description: siteDescription,
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   robots: { index: true, follow: true },
   openGraph: {
-    title: 'Deniqwears — The Deniq Edit',
+    title: 'Deniqwears | The Deniq Edit',
     description: siteDescription,
     url: '/',
     siteName,
