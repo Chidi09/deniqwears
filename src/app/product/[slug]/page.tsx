@@ -6,6 +6,8 @@ import { useStore } from '../../../context/StoreContext';
 import { useProductQuery } from '../../../hooks/queries';
 import { ProductDetailPage as PDPComponent } from '../../../components/ProductDetailPage';
 import { ArrowLeft } from 'lucide-react';
+import { AdirePattern } from '../../../components/Adire';
+import type { Product } from '../../../types';
 
 export default function ProductPage({
   params,
@@ -14,7 +16,7 @@ export default function ProductPage({
 }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { handleAddToCart, setSizeGuideOpen } = useStore();
+  const { handleAddToCart, setSizeGuideOpen, productsList, handleSelectProduct, setQuickAddProduct } = useStore();
 
   // Resolve the slug against the authoritative single-product API rather than
   // scanning a cached list and falling back to demo fixtures — that fallback
@@ -62,8 +64,19 @@ export default function ProductPage({
       onBack={() => router.push('/shop')}
       onAddToCart={handleAddToCart}
       onOpenSizeGuide={() => setSizeGuideOpen(true)}
+      related={relatedProducts(productsList, product)}
+      onSelectProduct={handleSelectProduct}
+      onQuickAdd={(p) => setQuickAddProduct(p)}
     />
   );
+}
+
+/** Same-category pieces first, then the rest of the catalogue; four at most. */
+function relatedProducts(all: Product[], current: Product): Product[] {
+  const others = all.filter((p) => p.id !== current.id);
+  const same = others.filter((p) => p.category === current.category);
+  const rest = others.filter((p) => p.category !== current.category);
+  return [...same, ...rest].slice(0, 4);
 }
 
 function StatusPanel({
@@ -80,15 +93,16 @@ function StatusPanel({
   onAction: () => void;
 }) {
   return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center px-6 text-center bg-[#F4F1EB]">
-      <span className="text-xs uppercase tracking-[0.3em] text-[#681F2C] font-semibold mb-3">
+    <div className="relative overflow-hidden min-h-[70vh] flex flex-col items-center justify-center px-6 text-center bg-[#F4F1EB]">
+      <AdirePattern motif="dots" size={40} className="absolute inset-0 text-[#1E2656] opacity-[0.05]" />
+      <span className="relative text-xs uppercase tracking-[0.3em] text-[#681F2C] font-semibold mb-3">
         {eyebrow}
       </span>
-      <h1 className="font-serif text-3xl md:text-5xl text-[#171714] mb-6">{title}</h1>
-      <p className="text-[#56554F] text-sm max-w-md mb-8">{body}</p>
+      <h1 className="relative font-serif text-3xl md:text-5xl text-[#171714] mb-6">{title}</h1>
+      <p className="relative text-[#56554F] text-sm max-w-md mb-8">{body}</p>
       <button
         onClick={onAction}
-        className="inline-flex items-center space-x-2 text-xs uppercase tracking-widest bg-[#171714] text-[#FAF9F6] px-6 py-3.5 hover:bg-[#681F2C] transition-colors cursor-pointer"
+        className="relative inline-flex items-center space-x-2 text-xs uppercase tracking-widest bg-[#171714] text-[#FAF9F6] px-6 py-3.5 hover:bg-[#681F2C] transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>{actionLabel}</span>

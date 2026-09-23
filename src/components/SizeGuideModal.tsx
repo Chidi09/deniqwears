@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { GARMENT_SIZES, GarmentSize } from '../types';
 import { useDialog } from '../hooks/useDialog';
+import { AdireBand } from './Adire';
 
 interface SizeGuideModalProps {
   isOpen: boolean;
@@ -59,8 +60,9 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ isOpen, onClose 
         aria-modal="true"
         aria-label="Size chart"
         tabIndex={-1}
-        className="relative w-full max-w-3xl bg-[#FAF9F6] border border-[#D8D4CC] p-6 sm:p-8 shadow-xl"
+        className="relative w-full max-w-3xl bg-[#FAF9F6] border border-[#D8D4CC] p-6 sm:p-8 pt-10 sm:pt-12 shadow-xl overflow-hidden"
       >
+        <AdireBand height={16} className="absolute top-0 inset-x-0 text-[#FAF9F6] bg-[#1E2656]" />
         <div className="flex justify-between items-start border-b border-[#D8D4CC] pb-4 mb-6">
           <h3 className="font-serif text-3xl text-[#171714]">Size Chart</h3>
           <button onClick={onClose} className="p-1 text-[#171714] hover:text-[#681F2C]" aria-label="Close size chart">

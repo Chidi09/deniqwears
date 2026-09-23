@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Product, Category, FilterState, GARMENT_SIZES } from '../types';
 import { ProductCard } from './ProductCard';
 import { SlidersHorizontal, X, Check } from 'lucide-react';
+import { AdirePattern } from './Adire';
 
 interface ShopPageProps {
   products: Product[];
@@ -183,8 +184,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           ))}
         </div>
 
-        {/* Editorial Collection Header */}
-        <div className="py-12 md:py-16 max-w-[720px] space-y-3">
+        {/* Editorial Collection Header, with a patchwork swatch like a cloth sample card */}
+        <div className="py-12 md:py-16 flex items-center justify-between gap-10">
+        <div className="max-w-[720px] space-y-3">
           <div className="flex items-center space-x-3 text-xs tracking-[0.22em] uppercase text-[#681F2C] font-semibold">
             <span>
               {filteredProducts.length} {filteredProducts.length === 1 ? 'piece' : 'pieces'}
@@ -200,6 +202,22 @@ export const ShopPage: React.FC<ShopPageProps> = ({
           <p className="text-[#56554F] text-base md:text-lg font-light leading-relaxed pt-1">
             {currentEditorial.subtitle}
           </p>
+        </div>
+
+        <div aria-hidden className="hidden md:grid grid-cols-2 shrink-0 w-44 h-44 lg:w-52 lg:h-52 rotate-3 shadow-[0_12px_30px_rgba(23,23,20,0.12)]">
+          <div className="relative bg-[#1E2656] text-[#FAF9F6]">
+            <AdirePattern motif="rings" size={36} className="absolute inset-0 opacity-25" />
+          </div>
+          <div className="relative bg-[#E7DFD2] text-[#1E2656]">
+            <AdirePattern motif="waves" size={26} className="absolute inset-0 opacity-40" />
+          </div>
+          <div className="relative bg-[#681F2C] text-[#FAF9F6]">
+            <AdirePattern motif="dots" size={30} className="absolute inset-0 opacity-25" />
+          </div>
+          <div className="relative bg-[#1E2656] text-[#FAF9F6]">
+            <AdirePattern motif="lattice" size={34} className="absolute inset-0 opacity-25" />
+          </div>
+        </div>
         </div>
 
         {/* Desktop Filter & Sort Bar */}

@@ -3,6 +3,7 @@ import { useDialog } from '../hooks/useDialog';
 import { CartItem } from '../types';
 import { formatMoney } from '../lib/money';
 import { X, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
+import { AdireMark, AdirePattern } from './Adire';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -48,7 +49,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {/* Header */}
           <div className="p-6 border-b border-[#D8D4CC] flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="font-serif text-2xl text-[#171714]">YOUR BAG</span>
+              <AdireMark className="text-[#1E2656]" />
+              <span className="font-serif text-2xl text-[#171714]">Your Bag</span>
               <span className="text-xs uppercase font-sans tracking-wider text-[#681F2C] font-semibold">
                 ({items.reduce((sum, i) => sum + i.quantity, 0)})
               </span>
@@ -66,16 +68,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           <div className="flex-1 overflow-y-auto p-6 divide-y divide-[#D8D4CC]">
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-4 text-[#56554F] py-16">
-                <ShoppingBag className="w-10 h-10 stroke-[1.25] text-[#56554F]" />
-                <p className="font-serif text-xl text-[#171714]">Your bag is presently empty.</p>
-                <p className="text-xs max-w-[240px] leading-relaxed">
-                  Discover refined silhouettes created for the entrance in Collection 01.
+                <div className="relative w-24 h-24 rounded-full overflow-hidden bg-[#E7DFD2] text-[#1E2656] flex items-center justify-center">
+                  <AdirePattern motif="waves" size={24} className="absolute inset-0 opacity-30" />
+                  <ShoppingBag className="relative w-9 h-9 stroke-[1.25]" />
+                </div>
+                <p className="font-serif text-2xl text-[#171714]">Your bag is empty</p>
+                <p className="text-sm max-w-[260px] leading-relaxed">
+                  New designs arrive every month, in sizes 10 to 20.
                 </p>
                 <button
                   onClick={onClose}
                   className="editorial-link text-xs uppercase tracking-widest font-semibold text-[#681F2C] pt-2"
                 >
-                  Explore The Collection →
+                  Shop New In →
                 </button>
               </div>
             ) : (

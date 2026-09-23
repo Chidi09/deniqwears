@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../../services/api';
 import { getErrorMessage } from '../../lib/errors';
 import { Lock, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { AdireBand, AdirePattern } from '../Adire';
 
 interface AdminLoginProps {
   onSuccess: () => void;
@@ -30,8 +31,11 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
   };
 
   return (
-    <div className="min-h-screen bg-[#171714] text-[#FAF9F6] flex flex-col justify-center items-center px-4 py-12">
-      <div className="w-full max-w-md bg-[#22221E] border border-[#3A3935] p-8 shadow-xl">
+    <div className="relative overflow-hidden min-h-screen bg-[#171714] text-[#FAF9F6] flex flex-col justify-center items-center px-4 py-12">
+      <AdirePattern motif="lattice" size={56} className="absolute inset-0 text-[#FAF9F6] opacity-[0.05]" />
+      <div className="relative w-full max-w-md bg-[#22221E] border border-[#3A3935] shadow-xl overflow-hidden">
+        <AdireBand height={18} className="text-[#FAF9F6]/70 bg-[#681F2C]" />
+        <div className="p-8">
         <button
           onClick={onExit}
           className="inline-flex items-center space-x-2 text-xs text-[#8A8780] hover:text-[#FAF9F6] transition-colors mb-6"
@@ -44,7 +48,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
           <div className="flex items-center space-x-2 text-[#C4828E]">
             <Lock className="w-4 h-4" />
             <span className="text-xs uppercase tracking-[0.2em] font-semibold">
-              Restricted Back-Office
+              Store Admin
             </span>
           </div>
           <h1 className="font-serif text-2xl text-[#FAF9F6]">Deniqwears Store Admin</h1>
@@ -93,10 +97,11 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
               disabled={loading}
               className="w-full bg-[#FAF9F6] text-[#171714] hover:bg-[#C4828E] hover:text-white text-xs font-semibold uppercase tracking-[0.16em] py-3 transition-colors cursor-pointer"
             >
-              {loading ? 'Authenticating...' : 'Sign In to Back-Office'}
+              {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

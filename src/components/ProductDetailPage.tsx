@@ -3,12 +3,18 @@ import { Product, ProductColor } from '../types';
 import { formatMoney } from '../lib/money';
 import { useStoreSettingsQuery } from '../hooks/queries';
 import { ArrowLeft, Star, ChevronDown, ChevronUp, Check, ShieldCheck, Truck } from 'lucide-react';
+import { AdireBand, AdireMark } from './Adire';
+import { ProductCard } from './ProductCard';
 
 interface ProductDetailPageProps {
   product: Product;
   onBack: () => void;
   onAddToCart: (product: Product, color: string, size: string) => void;
   onOpenSizeGuide: () => void;
+  /** Other pieces to suggest below the product. */
+  related?: Product[];
+  onSelectProduct?: (slug: string) => void;
+  onQuickAdd?: (product: Product) => void;
 }
 
 export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
@@ -16,6 +22,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   onBack,
   onAddToCart,
   onOpenSizeGuide,
+  related = [],
+  onSelectProduct,
+  onQuickAdd,
 }) => {
   // Empty colours/sizes are valid create payloads for drafts, and these were
   // dereferenced unconditionally (`selectedColor.name`), crashing the page.
@@ -170,7 +179,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             {/* Collection eyebrow & Title */}
             <div className="space-y-1.5 border-b border-[#D8D4CC] pb-5">
               <div className="flex justify-between items-center">
-                <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+                <span className="inline-flex items-center gap-2 text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+                  <AdireMark />
                   {product.collection || 'NEW COLLECTION'}
                 </span>
                 {product.badge && (
@@ -411,6 +421,24 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* You may also like — an oxblood adire trim leads into it */}
+      {related.length > 0 && onSelectProduct && onQuickAdd && (
+        <section className="mt-24 md:mt-32">
+          <AdireBand height={24} className="text-[#FAF9F6] bg-[#681F2C]" />
+          <div className="max-w-[1344px] mx-auto px-5 md:px-12 pt-14">
+            <div className="flex items-end justify-between mb-8">
+              <h2 className="font-serif text-3xl md:text-4xl text-[#171714]">You may also like</h2>
+              <span className="text-xs uppercase tracking-[0.2em] text-[#56554F]">Sizes 10 – 20</span>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-10">
+              {related.map((p) => (
+                <ProductCard key={p.id} product={p} onSelect={onSelectProduct} onQuickAdd={onQuickAdd} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Mobile PDP Sticky Bottom Bar with format: `₦48,000 | ADD TO BAG` */}
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F6] border-t border-[#D8D4CC] p-3 flex items-center justify-between shadow-lg">

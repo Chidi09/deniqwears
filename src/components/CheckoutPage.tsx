@@ -16,6 +16,7 @@ import {
   Building,
   ChevronRight,
 } from 'lucide-react';
+import { AdirePattern } from './Adire';
 
 // All 50 states plus DC, by postal abbreviation (what couriers expect).
 const US_STATES: [string, string][] = [
@@ -293,20 +294,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       <div className="min-h-screen bg-[#F4F1EB] pt-12 pb-32">
         <div className="max-w-[760px] mx-auto px-5">
           <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-8 sm:p-12 shadow-sm space-y-8 animate-in fade-in duration-300">
-            {/* Top Success Badge */}
-            <div className="flex items-center space-x-3 text-[#681F2C]">
-              <CheckCircle2 className="w-8 h-8 stroke-[1.5]" />
-              <span className="text-xs uppercase tracking-[0.25em] font-semibold">
-                Order Confirmed · #{confirmedOrder.orderNumber}
-              </span>
+            {/* Celebration panel: indigo adire, and a thank-you in Yoruba */}
+            <div className="relative overflow-hidden -mx-8 -mt-8 sm:-mx-12 sm:-mt-12 px-8 sm:px-12 py-10 bg-[#1E2656] text-[#FAF9F6]">
+              <AdirePattern motif="rings" size={52} className="absolute inset-0 text-[#FAF9F6] opacity-[0.1]" />
+              <div className="relative space-y-3">
+                <div className="flex items-center space-x-3 text-[#E9C9A0]">
+                  <CheckCircle2 className="w-7 h-7 stroke-[1.5]" />
+                  <span className="text-xs uppercase tracking-[0.25em] font-semibold">
+                    Order Confirmed · #{confirmedOrder.orderNumber}
+                  </span>
+                </div>
+                <p className="font-serif italic text-2xl text-[#E9C9A0]">Ẹ ṣé o!</p>
+                <h1 className="font-serif text-3xl sm:text-4xl">Thank you, {confirmedOrder.customer.firstName}.</h1>
+              </div>
             </div>
 
             <div className="space-y-2">
-              <h1 className="font-serif text-3xl sm:text-4xl text-[#171714]">
-                Thank you, {confirmedOrder.customer.firstName}.
-              </h1>
               <p className="text-sm text-[#56554F] leading-relaxed">
-                Your order is confirmed and entered into production. A receipt has been sent to{' '}
+                Your order is confirmed and we&rsquo;re getting it ready. A receipt has been sent to{' '}
                 <span className="font-medium text-[#171714]">{confirmedOrder.customer.email}</span>.
               </p>
             </div>
