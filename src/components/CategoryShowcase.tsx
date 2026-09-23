@@ -9,39 +9,37 @@ interface CategoryShowcaseProps {
 
 type ShopCategory = Exclude<Category, 'all'>;
 
-const CATEGORY_ORDER: { id: ShopCategory; label: string }[] = [
-  { id: 'sets', label: 'Sets' },
-  { id: 'dresses', label: 'Dresses' },
-  { id: 'occasion', label: 'Occasion' },
-  { id: 'tops', label: 'Tops' },
-  { id: 'bottoms', label: 'Bottoms' },
+// Typographic tiles in brand colours — the product photos already appear in
+// New In, so repeating them here only made the page feel cluttered.
+const CATEGORY_TILES: { id: ShopCategory; label: string; caption: string; tone: string }[] = [
+  { id: 'sets', label: 'Sets', caption: 'Matching two-pieces', tone: 'bg-[#171714] text-[#FAF9F6]' },
+  { id: 'dresses', label: 'Dresses', caption: 'Gowns & kaftans', tone: 'bg-[#681F2C] text-[#FAF9F6]' },
+  { id: 'occasion', label: 'Occasion', caption: 'For the big days', tone: 'bg-[#E7DFD2] text-[#171714]' },
+  { id: 'tops', label: 'Tops', caption: 'Shirts & blouses', tone: 'bg-[#FAF9F6] text-[#171714] border border-[#D8D4CC]' },
+  { id: 'bottoms', label: 'Bottoms', caption: 'Trousers & skirts', tone: 'bg-[#56554F] text-[#FAF9F6]' },
 ];
 
 // Static class names so Tailwind can see them.
 const DESKTOP_COLUMNS: Record<number, string> = {
-  1: 'lg:grid-cols-1',
-  2: 'lg:grid-cols-2',
-  3: 'lg:grid-cols-3',
-  4: 'lg:grid-cols-4',
-  5: 'lg:grid-cols-5',
+  1: 'md:grid-cols-1',
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3',
+  4: 'md:grid-cols-4',
+  5: 'md:grid-cols-5',
 };
 
-/**
- * One tile per category that actually has pieces, pictured with a real
- * product from it — so the tiles always match the catalogue and never lead to
- * an empty page.
- */
+/** One tile per category that actually has pieces, so no tile leads to an empty page. */
 export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ products, onNavigateCategory }) => {
-  const tiles = CATEGORY_ORDER.map((cat) => {
-    const inCategory = products.filter((p) => p.category === cat.id);
-    return { ...cat, count: inCategory.length, image: inCategory[0]?.primaryImage };
-  }).filter((tile) => tile.count > 0);
+  const tiles = CATEGORY_TILES.map((tile) => ({
+    ...tile,
+    count: products.filter((p) => p.category === tile.id).length,
+  })).filter((tile) => tile.count > 0);
 
   if (tiles.length === 0) return null;
 
   return (
-    <section id="category-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 py-16 md:py-24">
-      <div className="flex items-end justify-between mb-8 md:mb-10">
+    <section id="category-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 py-14 md:py-20">
+      <div className="flex items-end justify-between mb-6 md:mb-8">
         <div className="space-y-1">
           <span className="text-xs uppercase tracking-[0.25em] font-semibold text-[#681F2C]">Find your piece</span>
           <h2 className="font-serif text-4xl md:text-5xl text-[#171714]">Shop by Category</h2>
@@ -54,33 +52,30 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ products, on
         </button>
       </div>
 
-      <div className={`grid grid-cols-2 ${DESKTOP_COLUMNS[tiles.length]} gap-3 md:gap-5`}>
-        {tiles.map((tile, i) => (
+      <div className={`grid grid-cols-1 ${DESKTOP_COLUMNS[tiles.length]} gap-3 md:gap-4`}>
+        {tiles.map((tile) => (
           <button
             key={tile.id}
             onClick={() => onNavigateCategory(tile.id)}
-            className={`group text-left ${tiles.length % 2 === 1 && i === tiles.length - 1 ? 'col-span-2 lg:col-span-1' : ''}`}
+            className={`group relative overflow-hidden text-left p-6 md:p-8 min-h-[150px] md:min-h-[220px] flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1 ${tile.tone}`}
           >
-            <div className="relative aspect-[4/5] overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC]">
-              {tile.image && (
-                <img
-                  src={tile.image}
-                  alt=""
-                  className="w-full h-full object-contain p-5 transition-transform duration-700 ease-editorial group-hover:scale-[1.04]"
-                  loading="lazy"
-                />
-              )}
-              <span className="absolute top-3 right-3 w-9 h-9 rounded-full bg-[#171714] text-[#FAF9F6] flex items-center justify-center transition-colors group-hover:bg-[#681F2C]">
+            <span
+              aria-hidden
+              className="absolute -right-4 -bottom-10 font-serif italic text-[160px] leading-none opacity-[0.07] select-none"
+            >
+              {tile.label.charAt(0)}
+            </span>
+            <div className="flex items-start justify-between">
+              <span className="text-xs uppercase tracking-[0.2em] opacity-70">
+                {tile.count} {tile.count === 1 ? 'piece' : 'pieces'}
+              </span>
+              <span className="w-10 h-10 rounded-full border border-current/30 flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
                 <ArrowUpRight className="w-4 h-4" />
               </span>
             </div>
-            <div className="flex items-baseline justify-between mt-3">
-              <h3 className="font-serif text-2xl md:text-3xl text-[#171714] group-hover:text-[#681F2C] transition-colors">
-                {tile.label}
-              </h3>
-              <span className="text-xs text-[#56554F]">
-                {tile.count} {tile.count === 1 ? 'piece' : 'pieces'}
-              </span>
+            <div>
+              <h3 className="font-serif text-4xl md:text-5xl leading-none">{tile.label}</h3>
+              <p className="text-sm opacity-75 mt-2">{tile.caption}</p>
             </div>
           </button>
         ))}

@@ -2,6 +2,9 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ActivePage } from '../types';
 
+/** The one piece pictured in the hero; the homepage leaves it out of New In. */
+export const HERO_PRODUCT_SLUG = 'iris-gown';
+
 interface EditorialHeroProps {
   onNavigate: (page: ActivePage) => void;
   onExploreProduct: (slug: string) => void;
@@ -62,7 +65,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           </div>
 
           <button
-            onClick={() => onExploreProduct('iris-gown')}
+            onClick={() => onExploreProduct(HERO_PRODUCT_SLUG)}
             className="w-fit text-xs tracking-[0.14em] uppercase text-[#56554F] hover:text-[#171714] border-b border-[#D8D4CC] pb-0.5"
           >
             Featured: The Iris Gown
@@ -72,7 +75,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
         {/* Right Asymmetric Editorial Photography */}
         <div className="lg:col-span-6 xl:col-span-7 order-1 lg:order-2 flex justify-center lg:justify-end">
           <div 
-            onClick={() => onExploreProduct('iris-gown')}
+            onClick={() => onExploreProduct(HERO_PRODUCT_SLUG)}
             className="relative w-full max-w-[580px] aspect-[3/4] overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC] cursor-pointer group"
           >
             <img

@@ -57,7 +57,7 @@ export const DEFAULT_PROMOTIONS: StorePromotions = {
     body: 'Discover linen, Ankara cotton and amwete pieces cut for sizes 10 to 20. Use the code at checkout.',
     ctaLabel: 'Shop new in',
     ctaTarget: 'new',
-    image: '/products/bloom-cape-set.webp',
+    image: '',
     discountCode: 'WELCOME10',
   },
 };

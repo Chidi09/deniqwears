@@ -19,6 +19,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onNavigate, pr
   const [copied, setCopied] = useState(false);
 
   if (!banner.enabled && !preview) return null;
+  const hasImage = !!banner.image;
 
   const copyCode = async () => {
     if (preview || !banner.discountCode) return;
@@ -37,21 +38,36 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onNavigate, pr
       className={preview ? '' : 'max-w-[1344px] mx-auto px-5 md:px-12 py-10 md:py-16'}
       aria-label="Current promotion"
     >
-      <div className="relative overflow-hidden bg-[#171714] text-[#FAF9F6] grid md:grid-cols-2 min-h-[380px]">
-        {/* Image */}
-        <div className="relative order-1 md:order-2 min-h-[300px] bg-gradient-to-br from-[#2A2420] to-[#171714]">
-          {banner.image && (
+      <div
+        className={`relative overflow-hidden bg-[#171714] text-[#FAF9F6] min-h-[320px] ${
+          hasImage ? 'grid md:grid-cols-2' : 'flex'
+        }`}
+      >
+        {/* Oxblood glow gives the text-only version depth without a photo */}
+        {!hasImage && (
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_50%,rgba(104,31,44,0.7),transparent_60%)]"
+          />
+        )}
+
+        {hasImage && (
+          <div className="relative order-1 md:order-2 min-h-[300px] bg-gradient-to-br from-[#2A2420] to-[#171714]">
             <img
               src={banner.image}
               alt=""
               className="absolute inset-0 w-full h-full object-contain p-6 md:p-10"
               loading="lazy"
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Copy */}
-        <div className="relative order-2 md:order-1 p-7 sm:p-10 lg:p-14 flex flex-col justify-center gap-5">
+        <div
+          className={`relative order-2 md:order-1 p-7 sm:p-10 lg:p-14 flex flex-col justify-center gap-5 ${
+            hasImage ? '' : 'max-w-[760px]'
+          }`}
+        >
           <span
             aria-hidden
             className="absolute -left-6 -top-10 font-serif italic text-[180px] leading-none text-[#FAF9F6]/[0.04] select-none pointer-events-none"

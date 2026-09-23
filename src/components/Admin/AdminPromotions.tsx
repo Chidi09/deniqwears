@@ -262,7 +262,7 @@ export const AdminPromotions: React.FC<AdminPromotionsProps> = ({ onSaved }) => 
               </p>
             </div>
             <div>
-              <label className={labelClass} htmlFor="promo-image">Banner photo link</label>
+              <label className={labelClass} htmlFor="promo-image">Banner photo link (optional)</label>
               <input
                 id="promo-image"
                 value={banner.image}
@@ -270,7 +270,7 @@ export const AdminPromotions: React.FC<AdminPromotionsProps> = ({ onSaved }) => 
                 placeholder="https://…"
                 className={inputClass}
               />
-              <p className={hintClass}>Paste the web address of a photo. Portrait or landscape both work.</p>
+              <p className={hintClass}>Optional. Paste a photo web address, or leave empty for a clean text-only banner.</p>
             </div>
           </div>
 

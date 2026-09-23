@@ -4,14 +4,12 @@ import React from 'react';
 import { useStore } from '../context/StoreContext';
 import { useStoreSettingsQuery } from '../hooks/queries';
 import { DEFAULT_PROMOTIONS } from '../lib/promotions';
-import { EditorialHero } from '../components/EditorialHero';
+import { EditorialHero, HERO_PRODUCT_SLUG } from '../components/EditorialHero';
 import { TrustStrip } from '../components/TrustStrip';
 import { CategoryShowcase } from '../components/CategoryShowcase';
 import { ProductGrid } from '../components/ProductGrid';
 import { PromoBanner } from '../components/PromoBanner';
-import { AsymmetricShowcase } from '../components/AsymmetricShowcase';
 import { EditorialBreak } from '../components/EditorialBreak';
-import { HorizontalSelection } from '../components/HorizontalSelection';
 import { NewsletterSection } from '../components/NewsletterSection';
 
 export default function HomePage() {
@@ -26,9 +24,11 @@ export default function HomePage() {
   const { data: settings } = useStoreSettingsQuery();
   const promotions = settings?.promotions ?? DEFAULT_PROMOTIONS;
 
-  // Show new arrivals first; fall back to the catalog if none are flagged yet.
-  const newArrivals = productsList.filter((p) => p.isNewArrival);
-  const featured = (newArrivals.length > 0 ? newArrivals : productsList).slice(0, 8);
+  // Each piece appears once on the homepage: the hero piece is left out of
+  // New In. New arrivals first, falling back to the catalogue if none are flagged.
+  const rest = productsList.filter((p) => p.slug !== HERO_PRODUCT_SLUG);
+  const newArrivals = rest.filter((p) => p.isNewArrival);
+  const featured = (newArrivals.length > 0 ? newArrivals : rest).slice(0, 8);
 
   // Ordered so a shopper can act within the first scroll: see the brand,
   // get reassured, pick a category or a new piece — the editorial storytelling
@@ -56,19 +56,7 @@ export default function HomePage() {
 
       <PromoBanner banner={promotions.banner} onNavigate={handleNavigate} />
 
-      <AsymmetricShowcase
-        products={productsList}
-        onSelectProduct={handleSelectProduct}
-        onQuickAdd={(p) => setQuickAddProduct(p)}
-      />
-
       <EditorialBreak />
-
-      <HorizontalSelection
-        products={productsList}
-        onSelectProduct={handleSelectProduct}
-        onQuickAdd={(p) => setQuickAddProduct(p)}
-      />
 
       <NewsletterSection />
     </>
