@@ -78,12 +78,13 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationJsonLd) }}
         />
-        <MswInit />
-        <QueryProvider>
-          <StoreProvider>
-            <StoreLayout>{children}</StoreLayout>
-          </StoreProvider>
-        </QueryProvider>
+        <MswInit>
+          <QueryProvider>
+            <StoreProvider>
+              <StoreLayout>{children}</StoreLayout>
+            </StoreProvider>
+          </QueryProvider>
+        </MswInit>
       </body>
     </html>
   );

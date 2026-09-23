@@ -280,7 +280,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="e.g. The Amara Dress"
+                placeholder="e.g. The Iris Gown"
                 className="w-full bg-[#F4F1EB] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
               />
             </div>

@@ -51,7 +51,7 @@ const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
             .some((field) => field.toLowerCase().includes(term))
         );
 
-  const trendingTerms = ['Dresses', 'Sets', 'Evening', 'Corset', 'Oxblood', 'Tailored'];
+  const trendingTerms = ['Sets', 'Kaftan', 'Gown', 'Fringe', 'Satin', 'Print'];
 
   return (
     <div
