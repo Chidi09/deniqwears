@@ -6,44 +6,62 @@ import { SlidersHorizontal, X, Check } from 'lucide-react';
 interface ShopPageProps {
   products: Product[];
   initialCategory?: Category;
+  /** Arrived via "New In": show only pieces marked as new arrivals. */
+  newOnly?: boolean;
   onSelectProduct: (slug: string) => void;
   onQuickAdd: (product: Product) => void;
 }
 
 const CATEGORY_EDITORIALS: Record<Category, { title: string; subtitle: string }> = {
   all: {
-    title: 'THE COMPLETE EDIT',
-    subtitle: 'Every silhouette from Collection 01 and seasonal showroom editions.',
+    title: 'Shop All',
+    subtitle: 'Every Deniqwears design, cut in sizes 10 to 20 from linen, Ankara cotton, amwete and more.',
   },
   dresses: {
-    title: 'DRESSES',
-    subtitle: 'Pieces for dinners, celebrations and everything that wasn’t supposed to become an occasion.',
+    title: 'Dresses',
+    subtitle: 'Easy, flattering dresses for everyday, church, dinners and celebrations.',
   },
   sets: {
-    title: 'TAILORED SETS',
-    subtitle: 'Coordinated proportions that remove guesswork without diminishing impact.',
+    title: 'Sets',
+    subtitle: 'Matching two-piece sets — one decision, a complete look.',
   },
   tops: {
-    title: 'TOPS & CORSETRY',
-    subtitle: 'Internal boning, raw hems, and architectural lines engineered to layer or stand solitary.',
+    title: 'Tops',
+    subtitle: 'Shirts, blouses and statement tops to wear with what you already love.',
   },
   bottoms: {
-    title: 'TROUSERS & SKIRTS',
-    subtitle: 'Deep double-front pleats, dramatic hems, and high waist rises with sweeping movement.',
+    title: 'Trousers & Skirts',
+    subtitle: 'Wide-leg trousers and skirts with room to move.',
   },
   occasion: {
-    title: 'ATELIER OCCASION',
-    subtitle: 'Heavyweight columns and backless gowns created for indelible entrances.',
+    title: 'Occasion',
+    subtitle: 'Pieces for weddings, birthdays and the days you want to be remembered.',
   },
+};
+
+const NEW_IN_EDITORIAL = {
+  title: 'New In',
+  subtitle: 'The latest designs, just added. Every piece available in sizes 10 to 20.',
+};
+
+const CATEGORY_LABELS: Record<Category, string> = {
+  all: 'All',
+  dresses: 'Dresses',
+  sets: 'Sets',
+  tops: 'Tops',
+  bottoms: 'Bottoms',
+  occasion: 'Occasion',
 };
 
 export const ShopPage: React.FC<ShopPageProps> = ({
   products,
   initialCategory = 'all',
+  newOnly: initialNewOnly = false,
   onSelectProduct,
   onQuickAdd,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<Category>(initialCategory);
+  const [newOnly, setNewOnly] = useState(initialNewOnly);
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'newest'>('featured');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -87,6 +105,9 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     if (selectedCategory !== 'all') {
       list = list.filter((p) => p.category === selectedCategory);
     }
+    if (newOnly) {
+      list = list.filter((p) => p.isNewArrival);
+    }
 
     // Size and colour are matched against real variants when we have them, so
     // filtering by "Oxblood" + "16" can't return a product that sells Oxblood
@@ -120,36 +141,53 @@ export const ShopPage: React.FC<ShopPageProps> = ({
     }
 
     return list;
-  }, [products, selectedCategory, selectedSizes, selectedColors, sortBy]);
+  }, [products, selectedCategory, newOnly, selectedSizes, selectedColors, sortBy]);
 
-  const currentEditorial = CATEGORY_EDITORIALS[selectedCategory];
+  const currentEditorial =
+    newOnly && selectedCategory === 'all' ? NEW_IN_EDITORIAL : CATEGORY_EDITORIALS[selectedCategory];
+  const activeFilterCount = selectedSizes.length + selectedColors.length;
 
   return (
     <div id="shop-catalog-page" className="min-h-screen bg-[#F4F1EB] pt-8 pb-32">
       <div className="max-w-[1344px] mx-auto px-5 md:px-12">
         {/* Category Navigation Pills */}
-        <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar pb-4 border-b border-[#D8D4CC] text-xs font-semibold tracking-[0.16em] uppercase">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-4 border-b border-[#D8D4CC] text-xs font-semibold tracking-[0.14em] uppercase">
+          <button
+            onClick={() => setNewOnly((v) => !v)}
+            aria-pressed={newOnly}
+            className={`px-4 py-2 rounded-full border transition-colors whitespace-nowrap ${
+              newOnly
+                ? 'bg-[#681F2C] border-[#681F2C] text-[#FAF9F6]'
+                : 'border-[#681F2C]/40 text-[#681F2C] hover:bg-[#681F2C]/5'
+            }`}
+          >
+            New In
+          </button>
+          <span className="w-px h-5 bg-[#D8D4CC] mx-1 shrink-0" />
           {(['all', 'dresses', 'sets', 'tops', 'bottoms', 'occasion'] as Category[]).map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 transition-colors whitespace-nowrap ${
+              aria-pressed={selectedCategory === cat}
+              className={`px-4 py-2 rounded-full border transition-colors whitespace-nowrap ${
                 selectedCategory === cat
-                  ? 'bg-[#171714] text-[#FAF9F6]'
-                  : 'text-[#56554F] hover:text-[#171714] hover:bg-[#FAF9F6]'
+                  ? 'bg-[#171714] border-[#171714] text-[#FAF9F6]'
+                  : 'border-[#D8D4CC] text-[#56554F] hover:text-[#171714] hover:border-[#171714]'
               }`}
             >
-              {cat === 'all' ? 'All Pieces' : cat}
+              {CATEGORY_LABELS[cat]}
             </button>
           ))}
         </div>
 
         {/* Editorial Collection Header */}
         <div className="py-12 md:py-16 max-w-[720px] space-y-3">
-          <div className="flex items-center space-x-3 text-xs tracking-[0.25em] uppercase text-[#681F2C] font-semibold">
-            <span>COLLECTION 01</span>
+          <div className="flex items-center space-x-3 text-xs tracking-[0.22em] uppercase text-[#681F2C] font-semibold">
+            <span>
+              {filteredProducts.length} {filteredProducts.length === 1 ? 'piece' : 'pieces'}
+            </span>
             <span>·</span>
-            <span>{filteredProducts.length} PIECES</span>
+            <span>Sizes 10 – 20</span>
           </div>
 
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl text-[#171714] leading-[1.05]">
@@ -171,7 +209,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
               className="lg:hidden flex items-center space-x-2 text-[#171714] font-semibold"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filters {selectedSizes.length + selectedColors.length > 0 && `(${selectedSizes.length + selectedColors.length})`}</span>
+              <span>Filter{activeFilterCount > 0 && ` (${activeFilterCount})`}</span>
             </button>
 
             {/* Desktop Quick Size Filter */}
@@ -181,7 +219,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <button
                   key={sz}
                   onClick={() => toggleSize(sz)}
-                  className={`w-7 h-7 flex items-center justify-center border text-[10px] font-semibold transition-colors ${
+                  className={`w-8 h-8 flex items-center justify-center border text-xs font-semibold transition-colors ${
                     selectedSizes.includes(sz)
                       ? 'bg-[#171714] text-[#FAF9F6] border-[#171714]'
                       : 'bg-[#FAF9F6] text-[#56554F] border-[#D8D4CC] hover:border-[#171714]'
@@ -199,7 +237,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
                 <button
                   key={col.name}
                   onClick={() => toggleColor(col.name)}
-                  className={`flex items-center space-x-1 px-2 py-1 border text-[11px] ${
+                  className={`flex items-center space-x-1 px-2 py-1 border text-xs ${
                     selectedColors.includes(col.name)
                       ? 'border-[#171714] bg-[#FAF9F6]'
                       : 'border-transparent text-[#56554F] hover:text-[#171714]'
@@ -217,7 +255,7 @@ export const ShopPage: React.FC<ShopPageProps> = ({
             {(selectedSizes.length > 0 || selectedColors.length > 0) && (
               <button
                 onClick={clearFilters}
-                className="hidden lg:inline-block text-[#681F2C] text-[11px] underline hover:text-[#171714]"
+                className="hidden lg:inline-block text-[#681F2C] text-xs underline hover:text-[#171714]"
               >
                 Clear all
               </button>
@@ -245,12 +283,17 @@ export const ShopPage: React.FC<ShopPageProps> = ({
         {/* Product Cards Grid: 4 columns desktop / 2 columns mobile */}
         {filteredProducts.length === 0 ? (
           <div className="py-24 text-center space-y-4">
-            <p className="font-serif text-2xl text-[#171714]">No pieces match the selected filter combination.</p>
+            <p className="font-serif text-3xl text-[#171714]">Nothing matches those filters yet.</p>
+            <p className="text-sm text-[#56554F]">Try another size or colour — new designs arrive every month.</p>
             <button
-              onClick={clearFilters}
-              className="text-xs uppercase tracking-widest text-[#681F2C] underline"
+              onClick={() => {
+                clearFilters();
+                setNewOnly(false);
+                setSelectedCategory('all');
+              }}
+              className="px-6 py-3 bg-[#171714] text-[#FAF9F6] text-xs uppercase tracking-widest font-semibold"
             >
-              Reset filters
+              Show everything
             </button>
           </div>
         ) : (

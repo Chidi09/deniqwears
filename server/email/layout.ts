@@ -10,8 +10,8 @@ export interface StoreContact {
 
 export const DEFAULT_STORE: StoreContact = {
   storeName: 'Deniqwears',
-  supportEmail: 'concierge@deniqwears.com',
-  supportWhatsApp: '+234 818 000 3344',
+  supportEmail: 'hello@deniqwears.com',
+  supportWhatsApp: '+1 (555) 010-0000',
 };
 
 export interface EmailLayoutOptions {
@@ -105,12 +105,12 @@ export function renderEmailLayout(options: EmailLayoutOptions): string {
         <tr>
           <td style="padding:28px 8px 0 8px;">
             <p style="margin:0 0 10px 0;font-family:${t.sans};font-size:12px;line-height:1.7;color:${t.graphite};">
-              Questions about this order? Reach the concierge at
+              Questions about this order? Reach us at
               <a href="mailto:${escapeHtml(store.supportEmail)}" style="color:${t.oxblood};text-decoration:none;">${escapeHtml(store.supportEmail)}</a>
               or WhatsApp ${escapeHtml(store.supportWhatsApp)}.
             </p>
             <p style="margin:0;font-family:${t.sans};font-size:11px;line-height:1.6;color:${t.muted};">
-              ${escapeHtml(store.storeName)} &middot; Victoria Island Atelier, Lagos &middot; Nigeria
+              ${escapeHtml(store.storeName)} &middot; United States
             </p>
           </td>
         </tr>

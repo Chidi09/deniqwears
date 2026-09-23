@@ -10,11 +10,11 @@ import { PrismaClient, OrderStatus, PaymentMethod } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const CUSTOMERS = [
-  { firstName: 'Ada', lastName: 'Okafor', email: 'ada.okafor@example.com', phone: '+234 803 123 4567', city: 'Lekki Phase 1', state: 'Lagos' },
-  { firstName: 'Tolu', lastName: 'James', email: 'tolu.james@example.com', phone: '+234 818 998 7766', city: 'Maitama', state: 'Abuja' },
-  { firstName: 'Chidinma', lastName: 'Eze', email: 'chidinma.eze@example.com', phone: '+234 701 555 1212', city: 'Ikoyi', state: 'Lagos' },
-  { firstName: 'Zainab', lastName: 'Bello', email: 'zainab.bello@example.com', phone: '+234 909 222 3344', city: 'Port Harcourt', state: 'Rivers' },
-  { firstName: 'Funke', lastName: 'Adeyemi', email: 'funke.adeyemi@example.com', phone: '+234 802 777 8899', city: 'Victoria Island', state: 'Lagos' },
+  { firstName: 'Ada', lastName: 'Okafor', email: 'ada.okafor@example.com', phone: '(713) 555-0142', city: 'Houston', state: 'TX', postalCode: '77002' },
+  { firstName: 'Tolu', lastName: 'James', email: 'tolu.james@example.com', phone: '(404) 555-0178', city: 'Atlanta', state: 'GA', postalCode: '30303' },
+  { firstName: 'Chidinma', lastName: 'Eze', email: 'chidinma.eze@example.com', phone: '(301) 555-0115', city: 'Silver Spring', state: 'MD', postalCode: '20910' },
+  { firstName: 'Zainab', lastName: 'Bello', email: 'zainab.bello@example.com', phone: '(718) 555-0193', city: 'Brooklyn', state: 'NY', postalCode: '11201' },
+  { firstName: 'Funke', lastName: 'Adeyemi', email: 'funke.adeyemi@example.com', phone: '(972) 555-0167', city: 'Dallas', state: 'TX', postalCode: '75201' },
 ];
 
 const PAYMENT_METHODS: PaymentMethod[] = ['paystack', 'paystack', 'paystack', 'flutterwave', 'showroom'];
@@ -32,7 +32,7 @@ async function main() {
     where: { status: 'live' },
     include: { variants: { where: { active: true } } },
   });
-  const zones = await prisma.deliveryZone.findMany();
+  const zones = await prisma.deliveryZone.findMany({ where: { active: true } });
   const settings = await prisma.storeSettings.findUniqueOrThrow({ where: { id: 'singleton' } });
 
   if (products.length === 0 || zones.length === 0) {
@@ -133,10 +133,11 @@ async function main() {
           lastName: customer.lastName,
           email: customer.email,
           phone: customer.phone,
-          address: '14 Admiralty Way',
+          address: '120 Main Street',
           city: customer.city,
           state: customer.state,
-          country: 'Nigeria',
+          postalCode: customer.postalCode,
+          country: 'United States',
         },
         deliveryZoneId: zone.id,
         deliveryFeeInKobo,
@@ -144,7 +145,7 @@ async function main() {
         discountInKobo: 0,
         totalInKobo,
         refundedInKobo,
-        currency: 'NGN',
+        currency: 'USD',
         paymentMethod,
         paymentReference: `demo_ref_${i}`,
         paymentId: isCollected ? `demo_txn_${i}` : null,

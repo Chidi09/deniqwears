@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Product, ProductColor } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
+import { useStoreSettingsQuery } from '../hooks/queries';
 import { ArrowLeft, Star, ChevronDown, ChevronUp, Check, ShieldCheck, Truck } from 'lucide-react';
 
 interface ProductDetailPageProps {
@@ -18,6 +19,8 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 }) => {
   // Empty colours/sizes are valid create payloads for drafts, and these were
   // dereferenced unconditionally (`selectedColor.name`), crashing the page.
+  const { data: settings } = useStoreSettingsQuery();
+  const returnPeriodDays = settings?.returnPeriodDays ?? 5;
   const [selectedColor, setSelectedColor] = useState<ProductColor | undefined>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
     product.sizes[1] || product.sizes[0]
@@ -48,7 +51,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         </span>
         <h1 className="font-serif text-3xl text-[#171714] mb-4">{product.name}</h1>
         <p className="text-[#56554F] text-sm max-w-md mb-8">
-          This piece hasn’t been configured for sale yet. Contact the concierge if you would like to
+          This piece hasn’t been configured for sale yet. Contact us if you would like to
           be told when it is released.
         </p>
         <button
@@ -167,11 +170,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             {/* Collection eyebrow & Title */}
             <div className="space-y-1.5 border-b border-[#D8D4CC] pb-5">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+                <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
                   {product.collection || 'NEW COLLECTION'}
                 </span>
                 {product.badge && (
-                  <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#171714] bg-[#FAF9F6] px-2 py-0.5 border border-[#D8D4CC]">
+                  <span className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[#171714] bg-[#FAF9F6] px-2 py-0.5 border border-[#D8D4CC]">
                     {product.badge}
                   </span>
                 )}
@@ -183,7 +186,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
 
               <div className="flex justify-between items-center pt-1">
                 <span className="font-sans text-2xl font-medium text-[#171714]">
-                  {formatKobo(productPrice)}
+                  {formatMoney(productPrice)}
                 </span>
 
                 {/* Rating review */}
@@ -237,7 +240,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   onClick={onOpenSizeGuide}
                   className="editorial-link font-medium text-[#681F2C] hover:underline cursor-pointer"
                 >
-                  Size Guide
+                  Size Chart
                 </button>
               </div>
 
@@ -303,20 +306,20 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     <span>ADDED ✓</span>
                   </>
                 ) : (
-                  <span>ADD TO BAG — {formatKobo(productPrice)}</span>
+                  <span>ADD TO BAG — {formatMoney(productPrice)}</span>
                 )}
               </button>
             </div>
 
             {/* Reassurance pills */}
-            <div className="grid grid-cols-2 gap-3 py-3 border-y border-[#D8D4CC] text-[11px] text-[#56554F]">
+            <div className="grid grid-cols-2 gap-3 py-3 border-y border-[#D8D4CC] text-xs text-[#56554F]">
               <div className="flex items-center space-x-2">
                 <Truck className="w-3.5 h-3.5 text-[#681F2C]" />
-                <span>Next-Day Lagos Delivery</span>
+                <span>Ships across the USA</span>
               </div>
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#681F2C]" />
-                <span>Private Showroom Fitting</span>
+                <span>{returnPeriodDays}-day returns</span>
               </div>
             </div>
 
@@ -378,7 +381,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                   <div className="pt-3 text-sm text-[#56554F] font-light leading-relaxed">
                     <p>{product.delivery}</p>
                     <p className="text-xs text-[#56554F] pt-2">
-                      Exchanges accepted within 7 days for unworn garments with tags intact.
+                      Returns and exchanges accepted within {returnPeriodDays} days for unworn pieces with tags attached.
                     </p>
                   </div>
                 )}
@@ -407,7 +410,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       {/* Mobile PDP Sticky Bottom Bar with format: `₦48,000 | ADD TO BAG` */}
       <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F6] border-t border-[#D8D4CC] p-3 flex items-center justify-between shadow-lg">
         <div className="flex flex-col">
-          <span className="text-[10px] uppercase text-[#56554F] tracking-wider truncate max-w-[150px]">
+          <span className="text-[11px] uppercase text-[#56554F] tracking-wider truncate max-w-[150px]">
             {product.name}
           </span>
           <span className="font-sans text-sm font-semibold text-[#171714]">
@@ -430,7 +433,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
             ? 'Sold Out'
             : isButtonMorphed
             ? 'Added ✓'
-            : `${formatKobo(productPrice)} | ADD TO BAG`}
+            : `${formatMoney(productPrice)} | ADD TO BAG`}
         </button>
       </div>
     </div>

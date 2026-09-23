@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { MOCK_PRODUCTS, MOCK_SETTINGS, MOCK_DISCOUNTS } from './fixtures';
 import type { Order, ShippingAddress } from '../../server/types';
+import { formatMoney } from '../lib/money';
 
 interface MockCheckoutBody {
   items: Array<{ productId: string; variantId: string; quantity: number }>;
@@ -74,7 +75,7 @@ export const apiHandlers = [
     }
     if (discount.minSpendInKobo && subtotalInKobo < discount.minSpendInKobo) {
       return HttpResponse.json(
-        { error: `Promotion requires a minimum bag value of ₦${(discount.minSpendInKobo / 100).toLocaleString()}` },
+        { error: `Promotion requires a minimum bag value of ${formatMoney(discount.minSpendInKobo)}` },
         { status: 400 }
       );
     }
@@ -124,14 +125,14 @@ export const apiHandlers = [
       status: 'PENDING_PAYMENT',
       items,
       customer: body.customer,
-      shippingAddress: { ...body.shippingAddress, country: body.shippingAddress.country || 'Nigeria' },
+      shippingAddress: { ...body.shippingAddress, country: body.shippingAddress.country || 'United States' },
       deliveryZoneId: body.deliveryZoneId,
       deliveryFeeInKobo,
       subtotalInKobo,
       discountInKobo: 0,
       totalInKobo,
       refundedInKobo: 0,
-      currency: 'NGN',
+      currency: 'USD',
       paymentMethod: body.paymentMethod,
       timeline: [
         {
@@ -156,7 +157,7 @@ export const apiHandlers = [
           reference: `mock_ref_${Date.now()}`,
           authorizationUrl: `/checkout?reference=mock_ref_${Date.now()}&orderId=${id}&simulated=true`,
           amountInKobo: totalInKobo,
-          currency: 'NGN',
+          currency: 'USD',
           expiresAt: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
         },
       },

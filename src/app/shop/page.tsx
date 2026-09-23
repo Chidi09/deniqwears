@@ -19,12 +19,14 @@ function ShopContent() {
   // a Record lookup, so a malformed URL crashed the whole shop page.
   const rawCategory = searchParams.get('category');
   const categoryParam: Category = isCategory(rawCategory) ? rawCategory : 'all';
+  const newOnly = searchParams.get('new') === '1';
 
   return (
     <ShopComponent
-      key={categoryParam}
+      key={`${categoryParam}-${newOnly}`}
       products={productsList}
       initialCategory={categoryParam}
+      newOnly={newOnly}
       onSelectProduct={handleSelectProduct}
       onQuickAdd={(p) => setQuickAddProduct(p)}
     />

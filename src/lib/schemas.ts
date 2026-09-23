@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { GARMENT_SIZES } from '../types';
+import { PromotionsSchema } from './promotions';
 
 // Bounded on purpose: unbounded arrays/strings let an anonymous caller drive
 // arbitrary database work and gateway calls from a single request.
@@ -32,7 +33,7 @@ export const ShippingAddressInputSchema = z.object({
   apartment: z.string().trim().max(100).optional(),
   city: z.string().trim().min(1, 'City is required').max(80),
   state: z.string().trim().min(1, 'State is required').max(80),
-  country: z.string().trim().default('Nigeria'),
+  country: z.string().trim().default('United States'),
   postalCode: z.string().trim().optional(),
 });
 
@@ -40,14 +41,14 @@ export const CheckoutPayloadSchema = z.object({
   items: z
     .array(OrderItemInputSchema)
     .min(1, 'Your shopping bag is empty')
-    .max(MAX_ITEMS_PER_ORDER, 'Too many items in one order — please split it or contact the concierge'),
+    .max(MAX_ITEMS_PER_ORDER, 'Too many items in one order — please split it or contact us'),
   customer: CustomerInputSchema,
   shippingAddress: ShippingAddressInputSchema,
   deliveryZoneId: z.string().min(1, 'Delivery zone is required'),
   discountCode: z.string().trim().max(40).optional(),
   paymentMethod: z
     .enum(['paystack', 'flutterwave', 'stripe', 'showroom'])
-    .default('paystack'),
+    .default('stripe'),
   idempotencyKey: z.string().max(100).optional(),
 });
 
@@ -202,7 +203,7 @@ export const StoreSettingsUpdateSchema = z.object({
   storeName: z.string().min(1).optional(),
   supportEmail: z.string().email().optional(),
   supportWhatsApp: z.string().optional(),
-  currency: z.literal('NGN').optional(),
+  currency: z.literal('USD').optional(),
   freeDeliveryThresholdInKobo: z.number().int().positive().optional(),
   returnPeriodDays: z.number().int().positive().optional(),
   deliveryZones: z
@@ -225,4 +226,5 @@ export const StoreSettingsUpdateSchema = z.object({
       showroomCollection: z.boolean().optional(),
     })
     .optional(),
+  promotions: PromotionsSchema.optional(),
 });

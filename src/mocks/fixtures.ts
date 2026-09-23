@@ -2,13 +2,14 @@
 // Deliberately independent from prisma/seed.ts: this only needs to be
 // representative, not byte-identical to the real seeded catalog.
 import type { Product, StoreSettings, DiscountCode } from '../../server/types';
+import { DEFAULT_PROMOTIONS } from '../lib/promotions';
 
 export const MOCK_PRODUCTS: Product[] = [
   {
     id: 'mock-prod-amara-dress',
     name: 'The Amara Dress',
     slug: 'the-amara-dress',
-    priceInKobo: 4_800_000,
+    priceInKobo: 12_800,
     status: 'live',
     category: 'dresses',
     collection: 'COLLECTION 01',
@@ -29,7 +30,7 @@ export const MOCK_PRODUCTS: Product[] = [
     reviewsCount: 28,
     description: 'A floor-sweeping column dress cut from heavy double-faced satin.',
     fitAndSize: 'Tailored architectural fit. True to size.',
-    delivery: 'Complimentary express dispatch across Lagos.',
+    delivery: 'Ships within 1–2 business days.',
     care: 'Dry clean only.',
     isNewArrival: true,
     isSignatureSelection: true,
@@ -42,7 +43,7 @@ export const MOCK_PRODUCTS: Product[] = [
     id: 'mock-prod-pleated-trousers',
     name: 'Wide-Leg Pleated Trousers',
     slug: 'wide-leg-pleated-trousers',
-    priceInKobo: 3_800_000,
+    priceInKobo: 9_800,
     status: 'live',
     category: 'bottoms',
     collection: 'COLLECTION 01',
@@ -69,37 +70,38 @@ export const MOCK_PRODUCTS: Product[] = [
 
 export const MOCK_SETTINGS: StoreSettings = {
   storeName: 'Deniqwears',
-  supportEmail: 'concierge@deniqwears.com',
-  supportWhatsApp: '+234 818 000 3344',
-  currency: 'NGN',
-  freeDeliveryThresholdInKobo: 10_000_000,
-  returnPeriodDays: 7,
+  supportEmail: 'hello@deniqwears.com',
+  supportWhatsApp: '+1 (555) 010-0000',
+  currency: 'USD',
+  freeDeliveryThresholdInKobo: 15_000,
+  returnPeriodDays: 5,
   deliveryZones: [
     {
-      id: 'zone-lagos-island',
-      name: 'Lagos Island (Victoria Island, Ikoyi, Lekki 1)',
-      feeInKobo: 0,
-      estimatedDelivery: 'Same Day / Next Day (by 14:00)',
-      description: 'Private concierge express courier from our VI Flagship atelier',
+      id: 'zone-us-standard',
+      name: 'Standard Shipping',
+      feeInKobo: 795,
+      estimatedDelivery: '3 – 7 business days',
+      description: 'Tracked delivery anywhere in the United States',
       active: true,
     },
     {
-      id: 'zone-nationwide',
-      name: 'Other Nationwide (Nigeria)',
-      feeInKobo: 450_000,
-      estimatedDelivery: '3 – 4 Business Days',
-      description: 'Insured nationwide express courier',
+      id: 'zone-us-express',
+      name: 'Express Shipping',
+      feeInKobo: 1_995,
+      estimatedDelivery: '1 – 3 business days',
+      description: 'Priority tracked delivery',
       active: true,
     },
   ],
   paymentProviders: {
-    paystack: true,
-    flutterwave: true,
-    stripe: false,
-    showroomCollection: true,
+    paystack: false,
+    flutterwave: false,
+    stripe: true,
+    showroomCollection: false,
   },
+  promotions: DEFAULT_PROMOTIONS,
 };
 
 export const MOCK_DISCOUNTS: DiscountCode[] = [
-  { id: 'mock-disc-welcome10', code: 'WELCOME10', type: 'percentage', value: 10, minSpendInKobo: 3_000_000, active: true, usageCount: 0 },
+  { id: 'mock-disc-welcome10', code: 'WELCOME10', type: 'percentage', value: 10, minSpendInKobo: 7_500, active: true, usageCount: 0 },
 ];

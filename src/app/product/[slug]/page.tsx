@@ -24,7 +24,7 @@ export default function ProductPage({
   if (isLoading) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-[#F4F1EB] text-xs uppercase tracking-[0.25em] text-[#56554F]">
-        Loading garment…
+        Loading…
       </div>
     );
   }
@@ -33,8 +33,8 @@ export default function ProductPage({
     return (
       <StatusPanel
         eyebrow="Connection Issue"
-        title="We couldn’t load this garment"
-        body="Something went wrong reaching the atelier. Please try again in a moment."
+        title="We couldn’t load this piece"
+        body="Something went wrong on our side. Please try again in a moment."
         actionLabel="Retry"
         onAction={() => window.location.reload()}
       />
@@ -44,9 +44,9 @@ export default function ProductPage({
   if (!product) {
     return (
       <StatusPanel
-        eyebrow="Garment Not Found"
+        eyebrow="Not Found"
         title="Silhouette Unavailable"
-        body="The garment you are looking for may have been archived or returned to the atelier vault."
+        body="This piece may have sold out or been removed. Have a look at what’s new instead."
         actionLabel="Return to Collection"
         onAction={() => router.push('/shop')}
       />

@@ -7,7 +7,7 @@ export const CommunitySection: React.FC = () => {
     <section id="community-section" className="max-w-[1344px] mx-auto px-5 md:px-12 py-20 md:py-28 border-t border-[#D8D4CC]">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 pb-4 border-b border-[#D8D4CC]">
         <div>
-          <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+          <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
             COMMUNITY ARCHIVE
           </span>
           <h3 className="font-serif text-3xl md:text-4xl text-[#171714] mt-1">
@@ -40,13 +40,13 @@ export const CommunitySection: React.FC = () => {
             />
             {/* Subtle Overlay on hover */}
             <div className="absolute inset-0 bg-[#171714]/60 opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end text-[#FAF9F6]">
-              <span className="text-[11px] font-medium tracking-wide">
+              <span className="text-xs font-medium tracking-wide">
                 {post.handle}
               </span>
-              <span className="text-[9px] uppercase tracking-wider text-[#D8D4CC]">
+              <span className="text-[10px] uppercase tracking-wider text-[#D8D4CC]">
                 {post.location}
               </span>
-              <span className="text-[9px] text-[#B78D91] mt-0.5 truncate">
+              <span className="text-[10px] text-[#B78D91] mt-0.5 truncate">
                 {post.product}
               </span>
             </div>

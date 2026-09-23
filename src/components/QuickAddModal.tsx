@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product, ProductColor } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { X, Check } from 'lucide-react';
 
 interface QuickAddModalProps {
@@ -67,11 +67,11 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
       <div className="relative w-full max-w-md bg-[#FAF9F6] border border-[#D8D4CC] p-6 shadow-2xl space-y-5">
         <div className="flex justify-between items-start">
           <div>
-            <span className="text-[10px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+            <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
               Quick Selection
             </span>
             <h3 className="font-serif text-2xl text-[#171714] mt-0.5">{product.name}</h3>
-            <p className="font-sans text-sm font-semibold text-[#171714] mt-1">{formatKobo(product.priceInKobo)}</p>
+            <p className="font-sans text-sm font-semibold text-[#171714] mt-1">{formatMoney(product.priceInKobo)}</p>
           </div>
           <button onClick={onClose} className="p-1 text-[#171714] hover:text-[#681F2C]" aria-label="Close">
             <X className="w-5 h-5" />
@@ -85,7 +85,7 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
 
         {/* Colors */}
         <div className="space-y-2">
-          <span className="text-[11px] uppercase tracking-wider text-[#56554F] block font-semibold">
+          <span className="text-xs uppercase tracking-wider text-[#56554F] block font-semibold">
             COLOUR: {selectedColor.name}
           </span>
           <div className="flex space-x-2">
@@ -108,7 +108,7 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
 
         {/* Sizes */}
         <div className="space-y-2">
-          <span className="text-[11px] uppercase tracking-wider text-[#56554F] block font-semibold">
+          <span className="text-xs uppercase tracking-wider text-[#56554F] block font-semibold">
             SIZE: {selectedSize}
           </span>
           <div className="grid grid-cols-5 gap-2">
@@ -143,7 +143,7 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
             ) : (
               <span>
                 {isAvailable
-                  ? `Add to Bag — ${formatKobo(selectedVariant?.priceInKobo ?? product.priceInKobo)}`
+                  ? `Add to Bag — ${formatMoney(selectedVariant?.priceInKobo ?? product.priceInKobo)}`
                   : 'Unavailable in this size'}
               </span>
             )}
@@ -156,7 +156,7 @@ const QuickAddModalContent: React.FC<QuickAddModalContentProps> = ({
             }}
             className="w-full text-center text-xs tracking-wider uppercase text-[#56554F] hover:text-[#171714] py-1 underline"
           >
-            View Full Garment Details
+            View full details
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { formatKobo } from '../../lib/money';
+import { formatMoney } from '../../lib/money';
 
 export interface RevenuePoint {
   date: string;
@@ -23,7 +23,7 @@ interface RevenueTrendChartProps {
 const HEIGHT = 132;
 
 function formatDay(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
 }
 
 export const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({ series }) => {
@@ -52,12 +52,12 @@ export const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({ series }) 
       <div className="h-7 flex items-baseline space-x-2">
         {active ? (
           <>
-            <span className="text-sm font-semibold text-[#171714]">{formatKobo(active.netRevenueInKobo)}</span>
-            <span className="text-[11px] text-[#56554F]">{formatDay(active.date)}</span>
+            <span className="text-sm font-semibold text-[#171714]">{formatMoney(active.netRevenueInKobo)}</span>
+            <span className="text-xs text-[#56554F]">{formatDay(active.date)}</span>
           </>
         ) : (
-          <span className="text-[11px] text-[#8A8780]">
-            Peak {formatKobo(max)} on {formatDay(peak?.date ?? series[0].date)}
+          <span className="text-xs text-[#8A8780]">
+            Peak {formatMoney(max)} on {formatDay(peak?.date ?? series[0].date)}
           </span>
         )}
       </div>
@@ -67,7 +67,7 @@ export const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({ series }) 
         style={{ height: HEIGHT }}
         onMouseLeave={() => setHovered(null)}
         role="img"
-        aria-label={`Daily net revenue over ${series.length} days. Total ${formatKobo(total)}, peak ${formatKobo(max)} on ${formatDay(peak?.date ?? series[0].date)}.`}
+        aria-label={`Daily net revenue over ${series.length} days. Total ${formatMoney(total)}, peak ${formatMoney(max)} on ${formatDay(peak?.date ?? series[0].date)}.`}
       >
         {series.map((point, index) => {
           const heightPct = (point.netRevenueInKobo / max) * 100;
@@ -90,7 +90,7 @@ export const RevenueTrendChart: React.FC<RevenueTrendChartProps> = ({ series }) 
         })}
       </div>
 
-      <div className="flex justify-between pt-2 text-[10px] text-[#8A8780]">
+      <div className="flex justify-between pt-2 text-[11px] text-[#8A8780]">
         <span>{formatDay(series[0].date)}</span>
         <span>{formatDay(series[series.length - 1].date)}</span>
       </div>

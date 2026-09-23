@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CartItem, Order, StoreSettings } from '../types';
 import { api } from '../services/api';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { useGuestCheckoutStore } from '../store/useStore';
 import { useVerifyPaymentMutation } from '../hooks/mutations';
 import { getErrorMessage } from '../lib/errors';
@@ -17,13 +17,31 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
-// Full list so customers outside Lagos can actually give their real state.
-const NIGERIAN_STATES = [
-  'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-  'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT - Abuja', 'Gombe',
-  'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-  'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto',
-  'Taraba', 'Yobe', 'Zamfara',
+// All 50 states plus DC, by postal abbreviation (what couriers expect).
+const US_STATES: [string, string][] = [
+  ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
+  ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'], ['DC', 'District of Columbia'],
+  ['FL', 'Florida'], ['GA', 'Georgia'], ['HI', 'Hawaii'], ['ID', 'Idaho'], ['IL', 'Illinois'],
+  ['IN', 'Indiana'], ['IA', 'Iowa'], ['KS', 'Kansas'], ['KY', 'Kentucky'], ['LA', 'Louisiana'],
+  ['ME', 'Maine'], ['MD', 'Maryland'], ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'],
+  ['MS', 'Mississippi'], ['MO', 'Missouri'], ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'],
+  ['NH', 'New Hampshire'], ['NJ', 'New Jersey'], ['NM', 'New Mexico'], ['NY', 'New York'],
+  ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'], ['OK', 'Oklahoma'], ['OR', 'Oregon'],
+  ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'], ['SD', 'South Dakota'],
+  ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'], ['VT', 'Vermont'], ['VA', 'Virginia'],
+  ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
+];
+
+const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
+
+type CheckoutPaymentMethod = 'stripe' | 'paystack' | 'flutterwave' | 'showroom';
+
+// Listed in display order; only the ones switched on in Settings are shown.
+const PAYMENT_OPTIONS: { id: CheckoutPaymentMethod; title: string; detail: string; icon: typeof CreditCard }[] = [
+  { id: 'stripe', title: 'Card or Wallet', detail: 'Visa, Mastercard, Amex, Apple Pay, Google Pay & more', icon: CreditCard },
+  { id: 'paystack', title: 'Paystack', detail: 'Cards, bank transfer', icon: CreditCard },
+  { id: 'flutterwave', title: 'Flutterwave', detail: 'Card payments', icon: CreditCard },
+  { id: 'showroom', title: 'Pay on collection', detail: 'Pay in person when you pick up your order', icon: Building },
 ];
 
 interface CheckoutPageProps {
@@ -45,7 +63,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   } = useGuestCheckoutStore();
 
   const [settings, setSettings] = useState<StoreSettings | null>(null);
-  const [selectedZoneId, setSelectedZoneId] = useState<string>('zone-lagos-island');
+  const [selectedZoneId, setSelectedZoneId] = useState<string>('');
 
   // Form State (hydrated from Zustand guest checkout store)
   const [contact, setContact] = useState({
@@ -58,17 +76,19 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [address, setAddress] = useState({
     address: guestShippingAddress?.address || '',
     apartment: guestShippingAddress?.apartment || '',
-    city: guestShippingAddress?.city || 'Victoria Island',
-    state: guestShippingAddress?.state || 'Lagos',
-    country: guestShippingAddress?.country || 'Nigeria',
+    city: guestShippingAddress?.city || '',
+    state: guestShippingAddress?.state || '',
+    postalCode: guestShippingAddress?.postalCode || '',
+    country: 'United States',
   });
 
-  const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'flutterwave' | 'showroom'>('paystack');
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('stripe');
 
   // Only offer what the store has switched on. The server rejects disabled
   // methods regardless, but they should never have been shown as options.
-  const providerEnabled = {
-    paystack: settings?.paymentProviders.paystack ?? true,
+  const providerEnabled: Record<CheckoutPaymentMethod, boolean> = {
+    stripe: settings?.paymentProviders.stripe ?? true,
+    paystack: settings?.paymentProviders.paystack ?? false,
     flutterwave: settings?.paymentProviders.flutterwave ?? false,
     showroom: settings?.paymentProviders.showroomCollection ?? false,
   };
@@ -77,7 +97,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // back to one that is actually available.
   useEffect(() => {
     if (!providerEnabled[paymentMethod]) {
-      const firstEnabled = (['paystack', 'flutterwave', 'showroom'] as const).find(
+      const firstEnabled = (['stripe', 'paystack', 'flutterwave', 'showroom'] as const).find(
         (method) => providerEnabled[method]
       );
       if (firstEnabled) setPaymentMethod(firstEnabled);
@@ -173,7 +193,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       const res = await api.validateDiscount(promoCode, subtotalInKobo);
       setPromoDiscount(res.discountInKobo);
       setAppliedPromo({ code: promoCode.trim(), subtotalInKobo });
-      setPromoSuccess(`Discount applied: -${formatKobo(res.discountInKobo)}`);
+      setPromoSuccess(`Discount applied: -${formatMoney(res.discountInKobo)}`);
     } catch (err) {
       setPromoError(getErrorMessage(err, 'Invalid promo code'));
       setPromoDiscount(0);
@@ -195,8 +215,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       return;
     }
 
-    if (!address.address || !address.city) {
-      setErrorMsg('Please provide your complete delivery street address.');
+    if (!address.address || !address.city || !address.state) {
+      setErrorMsg('Please provide your complete delivery address, including your state.');
+      return;
+    }
+
+    if (!ZIP_PATTERN.test(address.postalCode.trim())) {
+      setErrorMsg('Please enter a valid 5-digit ZIP code.');
       return;
     }
 
@@ -289,7 +314,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* Order Items Snapshot */}
             <div className="border-y border-[#D8D4CC] py-6 space-y-4">
               <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                Reserved Garments ({confirmedOrder.items.length})
+                Your items ({confirmedOrder.items.length})
               </span>
               <div className="divide-y divide-[#D8D4CC]">
                 {confirmedOrder.items.map((item) => (
@@ -308,7 +333,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       </div>
                     </div>
                     <span className="font-medium text-[#171714]">
-                      {formatKobo(item.totalPriceInKobo)}
+                      {formatMoney(item.totalPriceInKobo)}
                     </span>
                   </div>
                 ))}
@@ -328,7 +353,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <p className="text-[#56554F]">
                 {confirmedOrder.shippingAddress.city}, {confirmedOrder.shippingAddress.state}
               </p>
-              <p className="text-[11px] text-[#56554F] pt-1">
+              <p className="text-xs text-[#56554F] pt-1">
                 Dispatch status: <span className="text-[#681F2C] font-semibold">{confirmedOrder.status}</span>
               </p>
             </div>
@@ -416,7 +441,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
           <div className="flex items-center space-x-2 text-xs uppercase tracking-[0.2em] font-semibold text-[#171714]">
             <Lock className="w-3.5 h-3.5 text-[#681F2C]" />
-            <span>Secure Atelier Checkout</span>
+            <span>Secure Checkout</span>
           </div>
         </div>
       </div>
@@ -438,12 +463,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <h3 className="font-serif text-2xl text-[#171714]">
                   1. Contact Information
                 </h3>
-                <span className="text-[11px] uppercase tracking-wider text-[#56554F]">Guest Checkout</span>
+                <span className="text-xs uppercase tracking-wider text-[#56554F]">Guest Checkout</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                     First Name
                   </label>
                   <input
@@ -456,7 +481,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                     Last Name
                   </label>
                   <input
@@ -469,7 +494,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                     Email for Dispatch Notes
                   </label>
                   <input
@@ -482,13 +507,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
-                    Phone (Courier Contact)
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
+                    Phone (for delivery updates)
                   </label>
                   <input
                     required
                     type="tel"
-                    placeholder="+234 80 0000 0000"
+                    placeholder="(555) 123-4567"
                     value={contact.phone}
                     onChange={(e) => setContact({ ...contact, phone: e.target.value })}
                     className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
@@ -507,7 +532,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
               {/* Delivery Zone Selector */}
               <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                   Select Region / Courier Route
                 </label>
                 <div className="space-y-2">
@@ -531,14 +556,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                         />
                         <div>
                           <p className="text-xs font-semibold text-[#171714]">{zone.name}</p>
-                          <p className="text-[11px] text-[#56554F]">{zone.description} · {zone.estimatedDelivery}</p>
+                          <p className="text-xs text-[#56554F]">{zone.description} · {zone.estimatedDelivery}</p>
                         </div>
                       </div>
                       <span className="text-xs font-semibold text-[#171714]">
                         {zone.feeInKobo === 0 ? (
                           <span className="text-[#681F2C]">Complimentary</span>
                         ) : (
-                          formatKobo(zone.feeInKobo)
+                          formatMoney(zone.feeInKobo)
                         )}
                       </span>
                     </label>
@@ -549,38 +574,39 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               {/* Street Address */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                     Street Address
                   </label>
                   <input
                     required
                     type="text"
-                    placeholder="e.g. 14A Admiralty Way, Lekki Phase 1"
+                    placeholder="e.g. 123 Main Street"
                     value={address.address}
                     onChange={(e) => setAddress({ ...address, address: e.target.value })}
                     className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                     Apartment / Suite (Optional)
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Penthouse 4"
+                    placeholder="e.g. Apt 4B"
                     value={address.apartment}
                     onChange={(e) => setAddress({ ...address, apartment: e.target.value })}
                     className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
-                    City / District
+                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
+                    City
                   </label>
                   <input
                     required
                     type="text"
-                    placeholder="Victoria Island"
+                    placeholder="e.g. Houston"
+                    autoComplete="address-level2"
                     value={address.city}
                     onChange={(e) => setAddress({ ...address, city: e.target.value })}
                     className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
@@ -588,49 +614,54 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </div>
               </div>
 
-              {/* State was fixed at "Lagos" and not editable, so an Abuja
-                  customer submitted an Abuja city with a Lagos state. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label
                     htmlFor="checkout-state"
-                    className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]"
+                    className="text-xs uppercase tracking-wider font-semibold text-[#56554F]"
                   >
                     State
                   </label>
                   <select
                     id="checkout-state"
                     required
+                    autoComplete="address-level1"
                     value={address.state}
                     onChange={(e) => setAddress({ ...address, state: e.target.value })}
                     className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
                   >
-                    {NIGERIAN_STATES.map((state) => (
-                      <option key={state} value={state}>
-                        {state}
+                    <option value="" disabled>
+                      Select your state
+                    </option>
+                    {US_STATES.map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1">
                   <label
-                    htmlFor="checkout-country"
-                    className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]"
+                    htmlFor="checkout-zip"
+                    className="text-xs uppercase tracking-wider font-semibold text-[#56554F]"
                   >
-                    Country
+                    ZIP Code
                   </label>
                   <input
-                    id="checkout-country"
+                    id="checkout-zip"
+                    required
                     type="text"
-                    value={address.country}
-                    readOnly
-                    className="w-full bg-[#F4F1EB] border border-[#D8D4CC] px-3.5 py-2.5 text-xs text-[#56554F]"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    maxLength={10}
+                    placeholder="e.g. 77002"
+                    value={address.postalCode}
+                    onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
+                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
                   />
-                  <p className="text-[10px] text-[#8A8780]">
-                    We currently deliver within Nigeria only.
-                  </p>
                 </div>
               </div>
+              <p className="text-xs text-[#8A8780]">We currently ship within the United States only.</p>
             </div>
 
             {/* STEP 3: PAYMENT METHOD */}
@@ -642,80 +673,40 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
 
               <div className="space-y-2.5">
-                {providerEnabled.paystack && (
-                <label
-                  onClick={() => setPaymentMethod('paystack')}
-                  className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
-                    paymentMethod === 'paystack'
-                      ? 'border-[#171714] bg-[#FAF9F6]'
-                      : 'border-[#D8D4CC] bg-transparent hover:border-[#56554F]'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'paystack'}
-                      onChange={() => setPaymentMethod('paystack')}
-                      className="accent-[#681F2C]"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-[#171714]">Paystack Secure</p>
-                      <p className="text-[11px] text-[#56554F]">Cards (Mastercard, Visa, Verve), Bank Transfer, USSD</p>
-                    </div>
-                  </div>
-                  <CreditCard className="w-4 h-4 text-[#56554F]" />
-                </label>
-                )}
-                {providerEnabled.flutterwave && (
-                <label
-                  onClick={() => setPaymentMethod('flutterwave')}
-                  className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
-                    paymentMethod === 'flutterwave'
-                      ? 'border-[#171714] bg-[#FAF9F6]'
-                      : 'border-[#D8D4CC] bg-transparent hover:border-[#56554F]'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'flutterwave'}
-                      onChange={() => setPaymentMethod('flutterwave')}
-                      className="accent-[#681F2C]"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-[#171714]">Flutterwave</p>
-                      <p className="text-[11px] text-[#56554F]">African & Global Card Payments, Mobile Money</p>
-                    </div>
-                  </div>
-                  <CreditCard className="w-4 h-4 text-[#56554F]" />
-                </label>
-                )}
-                {providerEnabled.showroom && (
-                <label
-                  onClick={() => setPaymentMethod('showroom')}
-                  className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
-                    paymentMethod === 'showroom'
-                      ? 'border-[#171714] bg-[#FAF9F6]'
-                      : 'border-[#D8D4CC] bg-transparent hover:border-[#56554F]'
-                  }`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      name="payment"
-                      checked={paymentMethod === 'showroom'}
-                      onChange={() => setPaymentMethod('showroom')}
-                      className="accent-[#681F2C]"
-                    />
-                    <div>
-                      <p className="text-xs font-semibold text-[#171714]">Victoria Island Showroom Fitting / POS</p>
-                      <p className="text-[11px] text-[#56554F]">Try on at Plot 14 Oko Awo Street with private styling concierge</p>
-                    </div>
-                  </div>
-                  <Building className="w-4 h-4 text-[#56554F]" />
-                </label>
+                {PAYMENT_OPTIONS.filter((option) => providerEnabled[option.id]).map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <label
+                      key={option.id}
+                      onClick={() => setPaymentMethod(option.id)}
+                      className={`flex items-center justify-between p-3.5 border cursor-pointer transition-colors ${
+                        paymentMethod === option.id
+                          ? 'border-[#171714] bg-[#FAF9F6]'
+                          : 'border-[#D8D4CC] bg-transparent hover:border-[#56554F]'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          name="payment"
+                          checked={paymentMethod === option.id}
+                          onChange={() => setPaymentMethod(option.id)}
+                          className="accent-[#681F2C]"
+                        />
+                        <div>
+                          <p className="text-xs font-semibold text-[#171714]">{option.title}</p>
+                          <p className="text-xs text-[#56554F]">{option.detail}</p>
+                        </div>
+                      </div>
+                      <Icon className="w-4 h-4 text-[#56554F]" />
+                    </label>
+                  );
+                })}
+                {paymentMethod === 'stripe' && providerEnabled.stripe && (
+                  <p className="text-xs text-[#8A8780] flex items-center gap-1.5">
+                    <Lock className="w-3 h-3" />
+                    You&rsquo;ll finish paying on Stripe&rsquo;s secure page, then come straight back here.
+                  </p>
                 )}
               </div>
             </div>
@@ -732,11 +723,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <span>
                   {isSubmitting || verifyPaymentMutation.isPending
                     ? 'Securing Transaction...'
-                    : `Authorize Payment — ${formatKobo(totalInKobo)}`}
+                    : `Authorize Payment — ${formatMoney(totalInKobo)}`}
                 </span>
               </button>
 
-              <div className="flex items-center justify-center space-x-4 pt-3 text-[11px] text-[#56554F]">
+              <div className="flex items-center justify-center space-x-4 pt-3 text-xs text-[#56554F]">
                 <span>SSL Encrypted</span>
                 <span>·</span>
                 <span>PCI-DSS Compliant</span>
@@ -753,7 +744,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <span className="text-xs uppercase tracking-wider font-semibold text-[#171714]">
                   Bag Summary ({items.reduce((sum, i) => sum + i.quantity, 0)} items)
                 </span>
-                <span className="text-[11px] text-[#56554F]">Live Server Verification</span>
+                <span className="text-xs text-[#56554F]">Live Server Verification</span>
               </div>
 
               {/* Items List */}
@@ -770,9 +761,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                       <p className="text-[#56554F] mt-0.5">
                         {item.selectedColor} · Size {item.selectedSize}
                       </p>
-                      <p className="text-[#56554F] text-[11px] mt-0.5">Qty: {item.quantity}</p>
+                      <p className="text-[#56554F] text-xs mt-0.5">Qty: {item.quantity}</p>
                       <p className="font-semibold text-[#171714] mt-1">
-                        {formatKobo(item.priceInKobo * item.quantity)}
+                        {formatMoney(item.priceInKobo * item.quantity)}
                       </p>
                     </div>
                   </div>
@@ -796,12 +787,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     Apply
                   </button>
                 </div>
-                {promoError && <p className="text-[11px] text-red-600">{promoError}</p>}
+                {promoError && <p className="text-xs text-red-600">{promoError}</p>}
                 {promoSuccess && promoStillValid && (
-                  <p className="text-[11px] text-[#681F2C] font-medium">{promoSuccess}</p>
+                  <p className="text-xs text-[#681F2C] font-medium">{promoSuccess}</p>
                 )}
                 {appliedPromo && !promoStillValid && (
-                  <p className="text-[11px] text-[#56554F]">
+                  <p className="text-xs text-[#56554F]">
                     Your bag or code changed — re-apply the code to use it.
                   </p>
                 )}
@@ -811,7 +802,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <div className="border-t border-[#D8D4CC] pt-4 space-y-2 text-xs uppercase tracking-wider">
                 <div className="flex justify-between text-[#56554F]">
                   <span>Subtotal</span>
-                  <span className="text-[#171714] font-medium">{formatKobo(subtotalInKobo)}</span>
+                  <span className="text-[#171714] font-medium">{formatMoney(subtotalInKobo)}</span>
                 </div>
 
                 <div className="flex justify-between text-[#56554F]">
@@ -820,7 +811,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     {deliveryFeeInKobo === 0 ? (
                       <span className="text-[#681F2C]">Complimentary</span>
                     ) : (
-                      formatKobo(deliveryFeeInKobo)
+                      formatMoney(deliveryFeeInKobo)
                     )}
                   </span>
                 </div>
@@ -828,20 +819,20 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 {effectiveDiscount > 0 && (
                   <div className="flex justify-between text-[#681F2C] font-semibold">
                     <span>Promotion Discount</span>
-                    <span>-{formatKobo(effectiveDiscount)}</span>
+                    <span>-{formatMoney(effectiveDiscount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-sm font-semibold text-[#171714] pt-3 border-t border-[#D8D4CC]">
                   <span>Total (Server Verified)</span>
-                  <span className="text-base font-bold">{formatKobo(totalInKobo)}</span>
+                  <span className="text-base font-bold">{formatMoney(totalInKobo)}</span>
                 </div>
               </div>
 
               {/* Free delivery threshold callout */}
               {settings?.freeDeliveryThresholdInKobo && subtotalInKobo < settings.freeDeliveryThresholdInKobo && (
-                <div className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-[11px] text-[#56554F]">
-                  Add {formatKobo(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more to unlock complimentary nationwide delivery.
+                <div className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-xs text-[#56554F]">
+                  Add {formatMoney(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more to unlock complimentary nationwide delivery.
                 </div>
               )}
             </div>
@@ -852,8 +843,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <ShieldCheck className="w-4 h-4 text-[#681F2C]" />
                 <span>The Deniq Guarantee</span>
               </div>
-              <p className="text-[11px] leading-relaxed">
-                Every piece is hand-inspected in our Victoria Island atelier and packed in archival tissue and branded garment packaging. Private exchanges accommodated within 7 days.
+              <p className="text-xs leading-relaxed">
+                Every piece is checked by hand and carefully packed. Returns and exchanges accepted within {settings?.returnPeriodDays ?? 5} days.
               </p>
             </div>
           </div>

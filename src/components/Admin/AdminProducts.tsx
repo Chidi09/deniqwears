@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Product } from '../../types';
-import { formatKobo } from '../../lib/money';
+import { formatMoney } from '../../lib/money';
 import { api } from '../../services/api';
 import { getErrorMessage } from '../../lib/errors';
 import {
@@ -63,18 +63,18 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   // Handle inline price click
   const handleStartInlinePrice = (product: Product) => {
     setEditingPriceId(product.id);
-    setInlinePriceInput(String(Math.round(product.priceInKobo / 100)));
+    setInlinePriceInput(String(product.priceInKobo / 100));
   };
 
   const handleSaveInlinePrice = async (productId: string) => {
-    const num = parseInt(inlinePriceInput, 10);
+    const num = parseFloat(inlinePriceInput);
     if (isNaN(num) || num <= 0) {
       setEditingPriceId(null);
       return;
     }
 
     try {
-      await api.updateAdminProduct(productId, { priceInKobo: num * 100 });
+      await api.updateAdminProduct(productId, { priceInKobo: Math.round(num * 100) });
       setNotice('Price updated successfully');
       setTimeout(() => setNotice(null), 3000);
       onRefresh();
@@ -121,7 +121,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       await api.quickEditProducts(items);
       setModifiedItems({});
       setQuickEditMode(false);
-      setNotice(`Saved batch updates for ${items.length} garments`);
+      setNotice(`Saved batch updates for ${items.length} products`);
       setTimeout(() => setNotice(null), 3500);
       onRefresh();
     } catch (err) {
@@ -132,12 +132,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
   };
 
   const handleArchive = async (productId: string) => {
-    if (!window.confirm('Archive this garment? It will be removed from the storefront while preserving past order history.')) {
+    if (!window.confirm('Remove this product from the website? Past orders will be kept.')) {
       return;
     }
     try {
       await api.archiveAdminProduct(productId);
-      setNotice('Garment archived');
+      setNotice('Product removed from the website');
       setTimeout(() => setNotice(null), 3000);
       onRefresh();
     } catch (err) {
@@ -165,7 +165,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
           <Search className="w-3.5 h-3.5 text-[#56554F] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search garment name or category..."
+            placeholder="Search products by name or category…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#F4F1EB] border border-[#D8D4CC] pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-[#171714]"
@@ -196,7 +196,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
             className="px-4 py-2 bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold uppercase tracking-[0.16em] flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Add Garment</span>
+            <span>+ Add product</span>
           </button>
         </div>
       </div>
@@ -223,8 +223,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[#56554F] uppercase tracking-wider text-[10px]">
-                <th className="py-3 px-4">Garment</th>
+              <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[#56554F] uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-4">Product</th>
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Price</th>
@@ -250,7 +250,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                         />
                         <div>
                           <p className="font-serif text-sm text-[#171714] font-medium">{p.name}</p>
-                          <p className="text-[11px] text-[#56554F]">
+                          <p className="text-xs text-[#56554F]">
                             {p.variants?.length || 0} variant combinations
                           </p>
                         </div>
@@ -258,7 +258,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                     </td>
 
                     {/* Category */}
-                    <td className="py-3 px-4 uppercase tracking-wider text-[11px] text-[#56554F]">
+                    <td className="py-3 px-4 uppercase tracking-wider text-xs text-[#56554F]">
                       {p.category}
                     </td>
 
@@ -268,7 +268,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                         <select
                           value={pendingChanges?.status || p.status}
                           onChange={(e) => handleQuickChange(p.id, 'status', e.target.value)}
-                          className="bg-white border border-[#D8D4CC] px-2 py-1 text-[11px] uppercase tracking-wider font-semibold"
+                          className="bg-white border border-[#D8D4CC] px-2 py-1 text-xs uppercase tracking-wider font-semibold"
                         >
                           <option value="live">Live</option>
                           <option value="draft">Draft</option>
@@ -276,7 +276,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                         </select>
                       ) : (
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold border ${
+                          className={`inline-block px-2 py-0.5 text-[11px] uppercase tracking-wider font-semibold border ${
                             p.status === 'live'
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                               : p.status === 'draft'
@@ -293,15 +293,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                     <td className="py-3 px-4">
                       {quickEditMode ? (
                         <div className="flex items-center space-x-1">
-                          <span className="text-xs text-[#56554F]">₦</span>
+                          <span className="text-xs text-[#56554F]">$</span>
                           <input
                             type="number"
-                            defaultValue={Math.round(p.priceInKobo / 100)}
+                            defaultValue={p.priceInKobo / 100}
+                            step="0.01"
                             onChange={(e) =>
                               handleQuickChange(
                                 p.id,
                                 'priceInKobo',
-                                parseInt(e.target.value, 10) * 100
+                                Math.round(parseFloat(e.target.value) * 100)
                               )
                             }
                             className="w-24 px-2 py-1 bg-white border border-[#D8D4CC] text-xs font-semibold focus:outline-none focus:border-[#171714]"
@@ -309,7 +310,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                         </div>
                       ) : isPriceEditing ? (
                         <div className="flex items-center space-x-1">
-                          <span className="text-xs text-[#56554F]">₦</span>
+                          <span className="text-xs text-[#56554F]">$</span>
                           <input
                             type="number"
                             autoFocus
@@ -331,7 +332,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                           className="group text-xs font-semibold text-[#171714] hover:text-[#681F2C] flex items-center space-x-1 text-left"
                           title="Click to edit price directly"
                         >
-                          <span>{formatKobo(p.priceInKobo)}</span>
+                          <span>{formatMoney(p.priceInKobo)}</span>
                           <Edit2 className="w-3 h-3 text-[#8A8780] opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       )}
@@ -377,7 +378,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                           <button
                             onClick={() => handleArchive(p.id)}
                             className="p-1.5 text-[#56554F] hover:text-[#681F2C] hover:bg-red-50 transition-colors"
-                            title="Archive Garment"
+                            title="Remove from website"
                           >
                             <Archive className="w-3.5 h-3.5" />
                           </button>
@@ -396,7 +397,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
       {quickEditMode && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#171714] text-[#FAF9F6] px-5 py-3.5 border border-[#3A3935] shadow-2xl flex items-center space-x-4 animate-in slide-in-from-bottom-3 duration-200">
           <div className="text-xs">
-            <span className="font-semibold text-white">{changesCount}</span> garment{changesCount === 1 ? '' : 's'} modified
+            <span className="font-semibold text-white">{changesCount}</span> product{changesCount === 1 ? '' : 's'} changed
           </div>
           <button
             onClick={handleSaveQuickEdit}

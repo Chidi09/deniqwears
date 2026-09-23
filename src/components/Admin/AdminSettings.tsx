@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StoreSettings, DeliveryZone } from '../../types';
 import { api } from '../../services/api';
-import { formatKobo } from '../../lib/money';
+import { formatMoney } from '../../lib/money';
 import { getErrorMessage } from '../../lib/errors';
 import { Save, Check, Plus, Trash2, Truck, CreditCard } from 'lucide-react';
 
@@ -39,7 +39,10 @@ export const AdminSettings: React.FC = () => {
     setSavedSuccess(false);
 
     try {
-      await api.updateAdminSettings(settings);
+      // Promotions have their own tab and save button; leave them untouched here.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { promotions, ...rest } = settings;
+      await api.updateAdminSettings(rest);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
@@ -58,19 +61,19 @@ export const AdminSettings: React.FC = () => {
       {savedSuccess && (
         <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-medium flex items-center space-x-2">
           <Check className="w-4 h-4" />
-          <span>Atelier settings updated successfully</span>
+          <span>Settings saved</span>
         </div>
       )}
 
       {/* General Store Info */}
       <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-6 space-y-4">
         <h3 className="font-serif text-xl text-[#171714] border-b border-[#D8D4CC] pb-3">
-          Concierge Contact & Branding
+          Store details
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="space-y-1">
-            <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+            <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
               Store Name
             </label>
             <input
@@ -82,7 +85,7 @@ export const AdminSettings: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+            <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
               Client Support Email
             </label>
             <input
@@ -94,8 +97,8 @@ export const AdminSettings: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
-              Concierge WhatsApp
+            <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
+              WhatsApp number
             </label>
             <input
               type="text"
@@ -112,21 +115,22 @@ export const AdminSettings: React.FC = () => {
         <div className="flex justify-between items-baseline border-b border-[#D8D4CC] pb-3">
           <div>
             <h3 className="font-serif text-xl text-[#171714]">Courier Delivery Zones</h3>
-            <p className="text-[11px] text-[#56554F]">
+            <p className="text-xs text-[#56554F]">
               Server fees automatically applied during checkout calculation
             </p>
           </div>
           <div className="text-right">
-            <label className="text-[11px] uppercase tracking-wider text-[#56554F] font-semibold block">
-              Free Delivery Bag Threshold (₦)
+            <label className="text-xs uppercase tracking-wider text-[#56554F] font-semibold block">
+              Free shipping on orders over ($)
             </label>
             <input
               type="number"
-              value={Math.round(settings.freeDeliveryThresholdInKobo / 100)}
+              value={settings.freeDeliveryThresholdInKobo / 100}
+              step="0.01"
               onChange={(e) =>
                 setSettings({
                   ...settings,
-                  freeDeliveryThresholdInKobo: (parseInt(e.target.value, 10) || 0) * 100,
+                  freeDeliveryThresholdInKobo: Math.round((parseFloat(e.target.value) || 0) * 100),
                 })
               }
               className="w-36 bg-[#F4F1EB] border border-[#D8D4CC] px-2.5 py-1 text-xs font-semibold text-right"
@@ -152,12 +156,12 @@ export const AdminSettings: React.FC = () => {
                   value={zone.description}
                   onChange={(e) => handleUpdateZone(zone.id, 'description', e.target.value)}
                   placeholder="Zone description"
-                  className="w-full bg-white border border-[#D8D4CC] px-2.5 py-1 text-[11px] text-[#56554F] mt-1"
+                  className="w-full bg-white border border-[#D8D4CC] px-2.5 py-1 text-xs text-[#56554F] mt-1"
                 />
               </div>
 
               <div className="sm:col-span-4">
-                <label className="text-[10px] uppercase text-[#56554F] block">Estimate</label>
+                <label className="text-[11px] uppercase text-[#56554F] block">Estimate</label>
                 <input
                   type="text"
                   value={zone.estimatedDelivery}
@@ -167,15 +171,16 @@ export const AdminSettings: React.FC = () => {
               </div>
 
               <div className="sm:col-span-3">
-                <label className="text-[10px] uppercase text-[#56554F] block">Fee (₦)</label>
+                <label className="text-[11px] uppercase text-[#56554F] block">Fee ($)</label>
                 <input
                   type="number"
-                  value={Math.round(zone.feeInKobo / 100)}
+                  value={zone.feeInKobo / 100}
+                  step="0.01"
                   onChange={(e) =>
                     handleUpdateZone(
                       zone.id,
                       'feeInKobo',
-                      (parseInt(e.target.value, 10) || 0) * 100
+                      Math.round((parseFloat(e.target.value) || 0) * 100)
                     )
                   }
                   className="w-full bg-white border border-[#D8D4CC] px-2.5 py-1.5 font-semibold text-xs"
@@ -186,7 +191,7 @@ export const AdminSettings: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleUpdateZone(zone.id, 'active', !zone.active)}
-                  className={`px-2 py-1 text-[10px] uppercase tracking-wider font-semibold border ${
+                  className={`px-2 py-1 text-[11px] uppercase tracking-wider font-semibold border ${
                     zone.active
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                       : 'bg-neutral-100 text-neutral-500 border-neutral-300'
@@ -200,76 +205,38 @@ export const AdminSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Payment Provider Integrations */}
+      {/* Payments */}
       <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-6 space-y-4">
-        <h3 className="font-serif text-xl text-[#171714] border-b border-[#D8D4CC] pb-3">
-          Payment Provider Activations
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <label className="flex items-center space-x-3 p-3.5 border border-[#D8D4CC] bg-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={settings.paymentProviders.paystack}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  paymentProviders: {
-                    ...settings.paymentProviders,
-                    paystack: e.target.checked,
-                  },
-                })
-              }
-              className="accent-[#681F2C]"
-            />
-            <div>
-              <p className="font-semibold text-[#171714]">Paystack</p>
-              <p className="text-[11px] text-[#56554F]">Cards, Bank Transfer & USSD</p>
-            </div>
-          </label>
-
-          <label className="flex items-center space-x-3 p-3.5 border border-[#D8D4CC] bg-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={settings.paymentProviders.flutterwave}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  paymentProviders: {
-                    ...settings.paymentProviders,
-                    flutterwave: e.target.checked,
-                  },
-                })
-              }
-              className="accent-[#681F2C]"
-            />
-            <div>
-              <p className="font-semibold text-[#171714]">Flutterwave</p>
-              <p className="text-[11px] text-[#56554F]">Global Cards & Mobile Money</p>
-            </div>
-          </label>
-
-          <label className="flex items-center space-x-3 p-3.5 border border-[#D8D4CC] bg-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={settings.paymentProviders.showroomCollection}
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  paymentProviders: {
-                    ...settings.paymentProviders,
-                    showroomCollection: e.target.checked,
-                  },
-                })
-              }
-              className="accent-[#681F2C]"
-            />
-            <div>
-              <p className="font-semibold text-[#171714]">Showroom POS</p>
-              <p className="text-[11px] text-[#56554F]">Victoria Island Atelier POS</p>
-            </div>
-          </label>
+        <div className="border-b border-[#D8D4CC] pb-3">
+          <h3 className="font-serif text-xl text-[#171714]">Payments</h3>
+          <p className="text-xs text-[#56554F]">
+            Customers pay on Stripe&rsquo;s secure page. Which cards and wallets appear (Apple Pay, Google Pay,
+            Klarna…) is chosen in your Stripe dashboard.
+          </p>
         </div>
+
+        <label className="flex items-center space-x-3 p-3.5 border border-[#D8D4CC] bg-white cursor-pointer text-xs">
+          <input
+            type="checkbox"
+            checked={settings.paymentProviders.stripe}
+            onChange={(e) =>
+              setSettings({
+                ...settings,
+                paymentProviders: { ...settings.paymentProviders, stripe: e.target.checked },
+              })
+            }
+            className="accent-[#681F2C]"
+          />
+          <CreditCard className="w-4 h-4 text-[#56554F]" />
+          <div>
+            <p className="font-semibold text-[#171714]">Card & wallet payments (Stripe)</p>
+            <p className="text-xs text-[#56554F]">
+              {settings.paymentProviders.stripe
+                ? 'On — customers can check out.'
+                : 'Off — customers cannot pay online. Turn this on to take orders.'}
+            </p>
+          </div>
+        </label>
       </div>
 
       {/* Save Button */}

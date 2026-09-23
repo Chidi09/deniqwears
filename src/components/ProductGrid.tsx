@@ -6,6 +6,8 @@ interface ProductGridProps {
   products: Product[];
   title?: string;
   subtitle?: string;
+  eyebrow?: string;
+  onViewAll?: () => void;
   onSelectProduct: (slug: string) => void;
   onQuickAdd: (product: Product) => void;
 }
@@ -14,23 +16,27 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   title = "Current Collection",
   subtitle = "Defined silhouettes designed for lasting rotation",
+  eyebrow = 'The collection',
+  onViewAll,
   onSelectProduct,
   onQuickAdd,
 }) => {
   return (
     <section id="product-grid-section" className="max-w-[1344px] mx-auto px-5 md:px-12 pb-24 md:pb-32">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 pb-4 border-b border-[#D8D4CC]">
+      <div className="flex items-end justify-between gap-4 mb-8 md:mb-10">
         <div>
-          <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
-            Inventory 01
-          </span>
-          <h3 className="font-serif text-3xl md:text-4xl text-[#171714] mt-1">
-            {title}
-          </h3>
+          <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">{eyebrow}</span>
+          <h2 className="font-serif text-4xl md:text-5xl text-[#171714] mt-1">{title}</h2>
+          {subtitle && <p className="text-sm text-[#56554F] mt-2">{subtitle}</p>}
         </div>
-        <p className="text-xs tracking-wider uppercase text-[#56554F] mt-2 sm:mt-0">
-          {products.length} Selected Pieces
-        </p>
+        {onViewAll && (
+          <button
+            onClick={onViewAll}
+            className="editorial-link shrink-0 text-xs uppercase tracking-[0.18em] font-semibold text-[#171714] hover:text-[#681F2C]"
+          >
+            View all
+          </button>
+        )}
       </div>
 
       {/* 4 columns desktop / 2 columns mobile */}

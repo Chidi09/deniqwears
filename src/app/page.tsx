@@ -2,15 +2,17 @@
 
 import React from 'react';
 import { useStore } from '../context/StoreContext';
+import { useStoreSettingsQuery } from '../hooks/queries';
+import { DEFAULT_PROMOTIONS } from '../lib/promotions';
 import { EditorialHero } from '../components/EditorialHero';
-import { CollectionIntro } from '../components/CollectionIntro';
-import { AsymmetricShowcase } from '../components/AsymmetricShowcase';
-import { ProductGrid } from '../components/ProductGrid';
-import { EditorialBreak } from '../components/EditorialBreak';
+import { TrustStrip } from '../components/TrustStrip';
 import { CategoryShowcase } from '../components/CategoryShowcase';
+import { ProductGrid } from '../components/ProductGrid';
+import { PromoBanner } from '../components/PromoBanner';
+import { AsymmetricShowcase } from '../components/AsymmetricShowcase';
+import { EditorialBreak } from '../components/EditorialBreak';
 import { HorizontalSelection } from '../components/HorizontalSelection';
 import { LookbookSection } from '../components/LookbookSection';
-import { BrandStatement } from '../components/BrandStatement';
 import { CommunitySection } from '../components/CommunitySection';
 import { NewsletterSection } from '../components/NewsletterSection';
 
@@ -22,60 +24,59 @@ export default function HomePage() {
     handleCategoryNavigate,
     setQuickAddProduct,
     setSelectedLook,
+    setSizeGuideOpen,
   } = useStore();
+  const { data: settings } = useStoreSettingsQuery();
+  const promotions = settings?.promotions ?? DEFAULT_PROMOTIONS;
 
+  // Show new arrivals first; fall back to the catalog if none are flagged yet.
+  const newArrivals = productsList.filter((p) => p.isNewArrival);
+  const featured = (newArrivals.length > 0 ? newArrivals : productsList).slice(0, 8);
+
+  // Ordered so a shopper can act within the first scroll: see the brand,
+  // get reassured, pick a category or a new piece — the editorial storytelling
+  // follows for those who keep browsing.
   return (
     <>
-      {/* 1. Editorial Hero */}
-      <EditorialHero
-        onNavigate={handleNavigate}
-        onExploreProduct={handleSelectProduct}
+      <EditorialHero onNavigate={handleNavigate} onExploreProduct={handleSelectProduct} />
+
+      <TrustStrip
+        returnPeriodDays={settings?.returnPeriodDays ?? 5}
+        onOpenSizeGuide={() => setSizeGuideOpen(true)}
       />
 
-      {/* 2. Collection Introduction */}
-      <CollectionIntro onNavigate={handleNavigate} />
+      <CategoryShowcase onNavigateCategory={handleCategoryNavigate} />
 
-      {/* 3. Asymmetric Product Showcase */}
+      <ProductGrid
+        products={featured}
+        eyebrow="Just arrived"
+        title="New In"
+        subtitle="Every design available in sizes 10 to 20"
+        onViewAll={() => handleNavigate({ type: 'shop', newOnly: true })}
+        onSelectProduct={handleSelectProduct}
+        onQuickAdd={(p) => setQuickAddProduct(p)}
+      />
+
+      <PromoBanner banner={promotions.banner} onNavigate={handleNavigate} />
+
       <AsymmetricShowcase
         products={productsList}
         onSelectProduct={handleSelectProduct}
         onQuickAdd={(p) => setQuickAddProduct(p)}
       />
 
-      {/* 4. Normal Product Grid (4 col desktop / 2 col mobile) */}
-      <ProductGrid
-        products={productsList.slice(0, 8)}
-        title="Current Collection"
-        subtitle="Defined silhouettes designed for lasting rotation"
-        onSelectProduct={handleSelectProduct}
-        onQuickAdd={(p) => setQuickAddProduct(p)}
-      />
-
-      {/* 5. Editorial Break ("She doesn't dress for the room. She changes it.") */}
       <EditorialBreak />
 
-      {/* 6. Shop by Category */}
-      <CategoryShowcase onNavigateCategory={handleCategoryNavigate} />
-
-      {/* 7. Signature Horizontal Collection (The Deniq Selection) */}
       <HorizontalSelection
         products={productsList}
         onSelectProduct={handleSelectProduct}
         onQuickAdd={(p) => setQuickAddProduct(p)}
       />
 
-      {/* 8. WORN DENIQ (Lookbook Masonry Grid) */}
-      <LookbookSection
-        onOpenLookModal={(look) => setSelectedLook(look)}
-      />
+      <LookbookSection onOpenLookModal={(look) => setSelectedLook(look)} />
 
-      {/* 9. Brand Statement (Minimalist Lagos Manifesto) */}
-      <BrandStatement />
-
-      {/* 10. Community Archive (Seen in Deniq) */}
       <CommunitySection />
 
-      {/* 11. Private Access Newsletter */}
       <NewsletterSection />
     </>
   );

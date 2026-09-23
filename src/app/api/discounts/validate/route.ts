@@ -3,6 +3,7 @@ import { db } from '@/server/db';
 import { DiscountValidateSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
 import { calculateDiscountInKobo } from '@/server/pricing';
+import { formatMoney } from '@/src/lib/money';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (discount.minSpendInKobo && subtotalInKobo < discount.minSpendInKobo) {
       return NextResponse.json(
         {
-          error: `Promotion requires a minimum bag value of ₦${(discount.minSpendInKobo / 100).toLocaleString()}`,
+          error: `Promotion requires a minimum bag value of ${formatMoney(discount.minSpendInKobo)}`,
         },
         { status: 400 }
       );

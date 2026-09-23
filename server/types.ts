@@ -140,11 +140,13 @@ export interface DeliveryZone {
   active: boolean;
 }
 
+import type { StorePromotions } from '../src/lib/promotions';
+
 export interface StoreSettings {
   storeName: string;
   supportEmail: string;
   supportWhatsApp: string;
-  currency: 'NGN';
+  currency: 'USD';
   freeDeliveryThresholdInKobo: number;
   returnPeriodDays: number;
   deliveryZones: DeliveryZone[];
@@ -154,6 +156,7 @@ export interface StoreSettings {
     stripe: boolean;
     showroomCollection: boolean;
   };
+  promotions: StorePromotions;
 }
 
 export interface DiscountCode {

@@ -6,7 +6,7 @@ import {
   detailColumns,
   escapeHtml,
   formatDate,
-  formatNaira,
+  formatAmount,
   lineItems,
   metaStrip,
   notice,
@@ -33,7 +33,7 @@ function toLineItems(order: Order): EmailLineItem[] {
   return order.items.map((item) => ({
     name: item.name,
     meta: `${item.color} · Size ${item.size} · Qty ${item.quantity}`,
-    amount: formatNaira(item.totalPriceInKobo),
+    amount: formatAmount(item.totalPriceInKobo),
     image: item.image,
   }));
 }
@@ -47,16 +47,16 @@ function orderMeta(order: Order): string {
 
 function orderTotals(order: Order, totalLabel: string): string {
   return summary([
-    { label: 'Subtotal', value: formatNaira(order.subtotalInKobo) },
+    { label: 'Subtotal', value: formatAmount(order.subtotalInKobo) },
     {
       label: 'Delivery',
-      value: order.deliveryFeeInKobo === 0 ? 'Complimentary' : formatNaira(order.deliveryFeeInKobo),
+      value: order.deliveryFeeInKobo === 0 ? 'Complimentary' : formatAmount(order.deliveryFeeInKobo),
       accent: order.deliveryFeeInKobo === 0,
     },
     ...(order.discountInKobo > 0
-      ? [{ label: 'Discount', value: `&minus;${formatNaira(order.discountInKobo)}`, accent: true }]
+      ? [{ label: 'Discount', value: `&minus;${formatAmount(order.discountInKobo)}`, accent: true }]
       : []),
-    { label: totalLabel, value: formatNaira(order.totalInKobo), emphasis: true },
+    { label: totalLabel, value: formatAmount(order.totalInKobo), emphasis: true },
   ]);
 }
 
@@ -89,7 +89,7 @@ export function orderConfirmationEmail(order: Order, store?: StoreContact): Buil
     subject: `Payment confirmed — Order ${order.orderNumber}`,
     html: renderEmailLayout({
       store,
-      preheader: `Order ${order.orderNumber} confirmed · ${formatNaira(order.totalInKobo)}`,
+      preheader: `Order ${order.orderNumber} confirmed · ${formatAmount(order.totalInKobo)}`,
       eyebrow: 'Payment Confirmed',
       headline: `Thank you, ${escapeHtml(order.customer.firstName)}.`,
       intro:
@@ -144,7 +144,7 @@ export function orderDispatchedEmail(order: Order, store?: StoreContact): BuiltE
         'Your order has been packed and handed to our courier. Keep your phone close — the driver will call ahead before arriving.',
       blocks: [
         notice(
-          `Dispatched ${order.dispatchedAt ? formatDate(order.dispatchedAt) : formatDate(new Date().toISOString())} from the Victoria Island atelier.`
+          `Dispatched ${order.dispatchedAt ? formatDate(order.dispatchedAt) : formatDate(new Date().toISOString())} from our studio.`
         ),
         orderMeta(order),
         lineItems(toLineItems(order)),
@@ -172,18 +172,18 @@ export function refundIssuedEmail(
     subject: `Refund issued — Order ${order.orderNumber}`,
     html: renderEmailLayout({
       store,
-      preheader: `${formatNaira(refundedInKobo)} refunded for order ${order.orderNumber}`,
+      preheader: `${formatAmount(refundedInKobo)} refunded for order ${order.orderNumber}`,
       eyebrow: isFull ? 'Refund Issued' : 'Partial Refund Issued',
       headline: 'Your refund is on its way.',
       intro: `We have issued a ${isFull ? 'full' : 'partial'} refund for order ${escapeHtml(order.orderNumber)}. Funds typically settle back to your account within 5–10 business days, depending on your bank.`,
       blocks: [
         summary([
-          { label: 'Order Total', value: formatNaira(order.totalInKobo) },
+          { label: 'Order Total', value: formatAmount(order.totalInKobo) },
           ...(cumulativeRefunded > refundedInKobo
-            ? [{ label: 'Previously Refunded', value: formatNaira(cumulativeRefunded - refundedInKobo) }]
+            ? [{ label: 'Previously Refunded', value: formatAmount(cumulativeRefunded - refundedInKobo) }]
             : []),
-          ...(isFull ? [] : [{ label: 'Remaining Balance', value: formatNaira(remainingInKobo) }]),
-          { label: 'Refunded Now', value: formatNaira(refundedInKobo), emphasis: true, accent: true },
+          ...(isFull ? [] : [{ label: 'Remaining Balance', value: formatAmount(remainingInKobo) }]),
+          { label: 'Refunded Now', value: formatAmount(refundedInKobo), emphasis: true, accent: true },
         ]),
         orderMeta(order),
         lineItems(toLineItems(order)),

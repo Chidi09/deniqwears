@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Your payment went through, but one of these pieces sold out while you were checking out. Our concierge will contact you right away to arrange a replacement or refund.',
+            'Your payment went through, but one of these pieces sold out while you were checking out. Our team will contact you right away to arrange a replacement or refund.',
         },
         { status: 409 }
       );
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     console.error('Payment verification failed:', err);
     return NextResponse.json(
-      { error: 'We could not verify this payment. Please contact the concierge with your order number.' },
+      { error: 'We could not verify this payment. Please contact us with your order number.' },
       { status: 400 }
     );
   }

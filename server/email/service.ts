@@ -24,7 +24,7 @@ function getClient(): Resend {
 }
 
 function getFromAddress(): string {
-  return process.env.EMAIL_FROM || 'Deniqwears Concierge <concierge@deniqwears.com>';
+  return process.env.EMAIL_FROM || 'Deniqwears <hello@deniqwears.com>';
 }
 
 /**

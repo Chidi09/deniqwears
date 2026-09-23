@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'About Deniqwears',
-  description: 'Learn about Deniqwears, a Lagos-based contemporary womenswear label shaped by considered design and personal expression.',
+  description: 'Learn about Deniqwears, a US-based womenswear label designing statement pieces in sizes 10 to 20.',
   alternates: { canonical: '/about' },
   openGraph: { url: '/about' },
 };

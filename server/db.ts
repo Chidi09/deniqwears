@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Prisma, ProductStatus as PrismaProductStatus } from '@prisma/client';
 import { prisma } from './prisma';
+import { parsePromotions } from '../src/lib/promotions';
 import {
   Product,
   ProductColor,
@@ -17,6 +18,7 @@ import {
   PaymentMethodTotal,
   TopProduct,
 } from './types';
+import { formatMoney } from '../src/lib/money';
 
 const SETTINGS_ID = 'singleton';
 
@@ -135,7 +137,7 @@ function mapSettings(
     storeName: s.storeName,
     supportEmail: s.supportEmail,
     supportWhatsApp: s.supportWhatsApp,
-    currency: 'NGN',
+    currency: 'USD',
     freeDeliveryThresholdInKobo: s.freeDeliveryThresholdInKobo,
     returnPeriodDays: s.returnPeriodDays,
     deliveryZones: deliveryZones.map((z) => ({
@@ -152,6 +154,7 @@ function mapSettings(
       stripe: s.stripeEnabled,
       showroomCollection: s.showroomCollectionEnabled,
     },
+    promotions: parsePromotions(s.promotions),
   };
 }
 
@@ -255,7 +258,7 @@ export const db = {
       action: 'Product created',
       entityType: 'product',
       entityId: created.id,
-      details: `Created new product "${created.name}" at ₦${(created.priceInKobo / 100).toLocaleString()}`,
+      details: `Created new product "${created.name}" at ${formatMoney(created.priceInKobo)}`,
     });
 
     return mapProduct(created);
@@ -361,7 +364,7 @@ export const db = {
         action: 'Price changed',
         entityType: 'product',
         entityId: id,
-        details: `Price changed for ${updated.name}: ₦${(existing.priceInKobo / 100).toLocaleString()} → ₦${(updates.priceInKobo / 100).toLocaleString()}`,
+        details: `Price changed for ${updated.name}: ${formatMoney(existing.priceInKobo)} → ${formatMoney(updates.priceInKobo)}`,
       });
     } else {
       await db.logActivity({
@@ -799,6 +802,7 @@ export const db = {
         ...(updates.paymentProviders?.showroomCollection !== undefined && {
           showroomCollectionEnabled: updates.paymentProviders.showroomCollection,
         }),
+        ...(updates.promotions !== undefined && { promotions: updates.promotions }),
       },
     });
 
@@ -823,7 +827,9 @@ export const db = {
       adminEmail,
       action: 'Settings updated',
       entityType: 'settings',
-      details: 'Store delivery, threshold, or payment configurations updated',
+      details: updates.promotions
+        ? 'Promotions (top bar messages or homepage banner) updated'
+        : 'Store delivery, threshold, or payment configurations updated',
     });
 
     // Admins need to see inactive zones too, otherwise a zone switched off can

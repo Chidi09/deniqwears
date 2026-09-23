@@ -35,14 +35,14 @@ export const NewsletterSection: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
         {/* Left Copy */}
         <div className="lg:col-span-6 space-y-4">
-          <span className="text-[11px] uppercase tracking-[0.3em] font-semibold text-[#681F2C]">
+          <span className="text-xs uppercase tracking-[0.3em] font-semibold text-[#681F2C]">
             Client Privilege
           </span>
           <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl text-[#171714] leading-[1.08]">
             Private access.
           </h3>
           <p className="text-[#56554F] text-base md:text-lg font-light leading-relaxed max-w-[440px]">
-            New drops, restocks, and private showroom invitations — before everyone else.
+            New designs, restocks and subscriber-only offers — before everyone else.
           </p>
         </div>
 
@@ -81,11 +81,11 @@ export const NewsletterSection: React.FC = () => {
                 </button>
               </div>
               {error && (
-                <p role="alert" className="text-[11px] text-[#681F2C] tracking-wide">
+                <p role="alert" className="text-xs text-[#681F2C] tracking-wide">
                   {error}
                 </p>
               )}
-              <div className="flex justify-between items-center text-[10px] text-[#56554F] tracking-wide uppercase">
+              <div className="flex justify-between items-center text-[11px] text-[#56554F] tracking-wide uppercase">
                 <span>Direct correspondence only · No spam</span>
                 <span>Unsubscribe anytime</span>
               </div>

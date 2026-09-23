@@ -42,7 +42,7 @@ export default function OpenGraphImage() {
             </div>
           </div>
           <div style={{ color: '#F4F1EB', display: 'flex', fontSize: 23, letterSpacing: 2 }}>
-            CONTEMPORARY WOMENSWEAR · LAGOS, NIGERIA
+            CONTEMPORARY WOMENSWEAR · SIZES 10 – 20
           </div>
         </div>
       </div>

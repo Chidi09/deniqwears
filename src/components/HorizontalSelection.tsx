@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Product } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HorizontalSelectionProps {
@@ -27,7 +27,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
     <section id="horizontal-selection" className="py-20 md:py-32 border-t border-[#D8D4CC] overflow-hidden">
       <div className="max-w-[1344px] mx-auto px-5 md:px-12 mb-8 flex items-end justify-between">
         <div>
-          <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+          <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
             Signature Collection
           </span>
           <h2 className="font-serif text-3xl md:text-5xl text-[#171714] mt-1">
@@ -78,7 +78,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
               />
 
               {product.badge && (
-                <span className="absolute top-3 left-3 bg-[#FAF9F6]/90 backdrop-blur-xs text-[10px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2 py-0.5 border border-[#D8D4CC]">
+                <span className="absolute top-3 left-3 bg-[#FAF9F6]/90 backdrop-blur-xs text-[11px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2 py-0.5 border border-[#D8D4CC]">
                   {product.badge}
                 </span>
               )}
@@ -88,7 +88,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
                   e.stopPropagation();
                   onQuickAdd(product);
                 }}
-                className="absolute bottom-3 right-3 bg-[#171714] text-[#FAF9F6] hover:bg-[#681F2C] text-[10px] font-semibold tracking-[0.16em] uppercase px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute bottom-3 right-3 bg-[#171714] text-[#FAF9F6] hover:bg-[#681F2C] text-[11px] font-semibold tracking-[0.16em] uppercase px-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 Quick Add +
               </button>
@@ -105,7 +105,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
                 </p>
               </div>
               <span className="font-sans text-sm font-semibold text-[#171714]">
-                {formatKobo(product.priceInKobo)}
+                {formatMoney(product.priceInKobo)}
               </span>
             </div>
           </div>
@@ -113,7 +113,7 @@ export const HorizontalSelection: React.FC<HorizontalSelectionProps> = ({
 
         {/* 15% Peeking End Indicator Card */}
         <div className="flex-shrink-0 w-[160px] sm:w-[220px] flex flex-col justify-center items-center border border-dashed border-[#D8D4CC] p-6 text-center text-[#56554F] bg-[#FAF9F6]/50">
-          <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#681F2C] mb-1">
+          <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-[#681F2C] mb-1">
             Archive
           </span>
           <p className="font-serif text-lg text-[#171714]">

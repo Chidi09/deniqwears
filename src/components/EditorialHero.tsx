@@ -22,7 +22,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           <span>AUTUMN · RAIN ’26</span>
         </div>
         <div className="hidden sm:block text-right">
-          <span>EDITION 01 — LAGOS</span>
+          <span>EDITION 01</span>
         </div>
       </div>
 
@@ -41,26 +41,32 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           </div>
 
           <p className="text-[#56554F] text-base md:text-lg font-normal max-w-[440px] leading-relaxed">
-            Pieces created with architectural intention. Unhurried tailoring, heavy satin drapes, and an unapologetic Nigerian presence.
+            Statement pieces in linen, Ankara cotton and amwete — designed for women who love to be seen, in sizes 10 to 20.
           </p>
 
-          <div className="pt-4 flex flex-wrap items-center gap-6">
+          <div className="pt-4 flex flex-wrap items-center gap-3">
             <button
               id="hero-explore-button"
-              onClick={() => onNavigate({ type: 'shop', category: 'all' })}
-              className="group editorial-link inline-flex items-center space-x-3 text-sm md:text-base font-semibold tracking-[0.16em] uppercase text-[#171714] hover:text-[#681F2C] transition-colors py-2 cursor-pointer"
+              onClick={() => onNavigate({ type: 'shop', newOnly: true })}
+              className="group inline-flex items-center gap-3 px-8 py-4 bg-[#171714] text-[#FAF9F6] text-xs md:text-sm font-semibold tracking-[0.18em] uppercase hover:bg-[#681F2C] transition-colors cursor-pointer"
             >
-              <span>Explore Collection 01</span>
-              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 text-[#681F2C]" />
+              <span>Shop New In</span>
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </button>
-
             <button
-              onClick={() => onExploreProduct('the-amara-dress')}
-              className="text-xs tracking-[0.14em] uppercase text-[#56554F] hover:text-[#171714] border-b border-[#D8D4CC] pb-0.5"
+              onClick={() => onNavigate({ type: 'shop', category: 'all' })}
+              className="inline-flex items-center px-8 py-4 border border-[#171714] text-[#171714] text-xs md:text-sm font-semibold tracking-[0.18em] uppercase hover:bg-[#171714] hover:text-[#FAF9F6] transition-colors cursor-pointer"
             >
-              Featured: The Amara Dress (₦48,000)
+              Shop All
             </button>
           </div>
+
+          <button
+            onClick={() => onExploreProduct('the-amara-dress')}
+            className="w-fit text-xs tracking-[0.14em] uppercase text-[#56554F] hover:text-[#171714] border-b border-[#D8D4CC] pb-0.5"
+          >
+            Featured: The Amara Dress
+          </button>
         </div>
 
         {/* Right Asymmetric Editorial Photography */}
@@ -71,18 +77,17 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
           >
             <img
               src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1400&auto=format&fit=crop"
-              alt="The Deniq Edit — Editorial Campaign Model in Lagos"
+              alt="The Deniq Edit — campaign image"
               className="w-full h-full object-cover object-center image-subtle-zoom transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               loading="eager"
             />
             
             {/* Subtle photographic metadata badge */}
-            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end text-[11px] uppercase tracking-[0.16em] text-white mix-blend-difference bg-[#171714]/30 backdrop-blur-xs p-3 border border-white/20">
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end text-xs uppercase tracking-[0.16em] text-white mix-blend-difference bg-[#171714]/30 backdrop-blur-xs p-3 border border-white/20">
               <div>
                 <p className="font-semibold">Fig 01. The Amara Dress</p>
-                <p className="text-[10px] text-stone-200">Victoria Island, Lagos</p>
               </div>
-              <span className="font-serif italic text-sm">₦48,000</span>
+              <span className="font-serif italic text-sm">Shop now →</span>
             </div>
           </div>
         </div>
@@ -91,14 +96,14 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
       {/* Bottom Ticker Bar */}
       <div className="pt-6 border-t border-[#D8D4CC] flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs text-[#56554F] gap-2">
         <div className="flex items-center space-x-6">
-          <span className="text-[#171714] font-medium">SHOWROOM & ATELIER</span>
+          <span className="text-[#171714] font-medium">SHOP ONLINE</span>
           <span className="hidden sm:inline text-[#D8D4CC]">|</span>
-          <span>14 OKO AWO ST, VICTORIA ISLAND</span>
+          <span>SHIPPING ACROSS THE USA</span>
         </div>
         <div className="flex items-center space-x-6 tracking-wider">
-          <span>WORLDWIDE EXPRESS</span>
+          <span>SIZES 10 – 20</span>
           <span>·</span>
-          <span>CURATED DROPS</span>
+          <span>NEW DESIGNS MONTHLY</span>
         </div>
       </div>
     </section>

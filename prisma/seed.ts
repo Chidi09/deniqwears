@@ -7,7 +7,7 @@ const PRODUCTS = [
   {
     name: 'The Amara Dress',
     slug: 'the-amara-dress',
-    priceInKobo: 4_800_000,
+    priceInKobo: 12_800,
     status: 'live' as const,
     category: 'dresses',
     collection: 'COLLECTION 01',
@@ -47,7 +47,7 @@ const PRODUCTS = [
     description:
       'A floor-sweeping column dress cut from heavy double-faced satin. Designed with an asymmetric open back, clean neck binding, and subtle darting that contours with quiet authority.',
     fitAndSize: 'Tailored architectural fit through the bodice, relaxing into a gentle fluid flare at the ankle. True to size.',
-    delivery: 'Complimentary express dispatch across Lagos. Victoria Island atelier fittings available.',
+    delivery: 'Ships within 1–2 business days. Free standard US shipping on orders over $150.',
     care: 'Dry clean only. Store on wide padded hanger.',
     editorialSubtitle: 'Cut from fluid Japanese satin with clean asymmetric back contours.',
     isNewArrival: true,
@@ -58,7 +58,7 @@ const PRODUCTS = [
   {
     name: 'Sculpted Satin Corset',
     slug: 'sculpted-satin-corset',
-    priceInKobo: 3_450_000,
+    priceInKobo: 8_900,
     status: 'live' as const,
     category: 'tops',
     collection: 'COLLECTION 01',
@@ -101,7 +101,7 @@ const PRODUCTS = [
   {
     name: 'The Luna Two-Piece Set',
     slug: 'the-luna-two-piece-set',
-    priceInKobo: 5_500_000,
+    priceInKobo: 14_800,
     status: 'live' as const,
     category: 'sets',
     collection: 'COLLECTION 01',
@@ -131,7 +131,7 @@ const PRODUCTS = [
     description:
       'A cropped high-neck shell paired with sweeping wide-leg pleated trousers. Tailored in structured crêpe that moves with effortless poise.',
     fitAndSize: 'Trousers feature a deep rise and 34" inseam made for heels.',
-    delivery: 'Complimentary shipping across Nigeria.',
+    delivery: 'Free standard US shipping on orders over $150.',
     care: 'Dry clean only.',
     editorialSubtitle: 'Relaxed yet authoritative tailoring for evening salons.',
     isNewArrival: true,
@@ -141,10 +141,10 @@ const PRODUCTS = [
   {
     name: 'Sade Column Gown',
     slug: 'sade-column-gown',
-    priceInKobo: 6_200_000,
+    priceInKobo: 16_800,
     status: 'live' as const,
     category: 'occasion',
-    collection: 'ATELIER OCCASION',
+    collection: 'OCCASION',
     colors: [
       { name: 'Black', hex: '#171714' },
       { name: 'Oxblood', hex: '#681F2C' },
@@ -178,7 +178,7 @@ const PRODUCTS = [
   {
     name: 'Wide-Leg Pleated Trousers',
     slug: 'wide-leg-pleated-trousers',
-    priceInKobo: 3_800_000,
+    priceInKobo: 9_800,
     status: 'live' as const,
     category: 'bottoms',
     collection: 'COLLECTION 01',
@@ -215,7 +215,7 @@ const PRODUCTS = [
   {
     name: 'Silk Georgette Slip',
     slug: 'silk-georgette-slip',
-    priceInKobo: 4_200_000,
+    priceInKobo: 11_800,
     status: 'draft' as const,
     category: 'dresses',
     collection: 'STUDIO PREVIEW',
@@ -241,51 +241,26 @@ const PRODUCTS = [
   },
 ];
 
+// US shipping. Fees are in cents and are placeholders for the owner to
+// confirm in Admin → Settings.
 const DELIVERY_ZONES = [
   {
-    id: 'zone-lagos-island',
-    name: 'Lagos Island (Victoria Island, Ikoyi, Lekki 1)',
-    feeInKobo: 0,
-    estimatedDelivery: 'Same Day / Next Day (by 14:00)',
-    description: 'Private concierge express courier from our VI Flagship atelier',
+    id: 'zone-us-standard',
+    name: 'Standard Shipping',
+    feeInKobo: 795,
+    estimatedDelivery: '3 – 7 business days',
+    description: 'Tracked delivery anywhere in the United States',
     active: true,
     sortOrder: 0,
   },
   {
-    id: 'zone-lagos-mainland',
-    name: 'Lagos Mainland & Greater Lagos',
-    feeInKobo: 250_000,
-    estimatedDelivery: '24 – 36 Hours',
-    description: 'Fast tracked Lagos courier',
+    id: 'zone-us-express',
+    name: 'Express Shipping',
+    feeInKobo: 1_995,
+    estimatedDelivery: '1 – 3 business days',
+    description: 'Priority tracked delivery',
     active: true,
     sortOrder: 1,
-  },
-  {
-    id: 'zone-abuja',
-    name: 'Abuja FCT',
-    feeInKobo: 450_000,
-    estimatedDelivery: '2 Business Days',
-    description: 'Dedicated priority air dispatch',
-    active: true,
-    sortOrder: 2,
-  },
-  {
-    id: 'zone-rivers',
-    name: 'Rivers / Port Harcourt',
-    feeInKobo: 450_000,
-    estimatedDelivery: '2 Business Days',
-    description: 'Direct air courier dispatch',
-    active: true,
-    sortOrder: 3,
-  },
-  {
-    id: 'zone-nationwide',
-    name: 'Other Nationwide (Nigeria)',
-    feeInKobo: 450_000,
-    estimatedDelivery: '3 – 4 Business Days',
-    description: 'Insured nationwide express courier',
-    active: true,
-    sortOrder: 4,
   },
 ];
 
@@ -294,14 +269,14 @@ const DISCOUNTS = [
     code: 'WELCOME10',
     type: 'percentage' as const,
     value: 10,
-    minSpendInKobo: 3_000_000,
+    minSpendInKobo: 7_500,
     active: true,
   },
   {
     code: 'DENIQVIP',
     type: 'fixed' as const,
-    value: 500_000,
-    minSpendInKobo: 5_000_000,
+    value: 1_500,
+    minSpendInKobo: 15_000,
     active: true,
   },
 ];
@@ -319,15 +294,15 @@ async function main() {
     create: {
       id: 'singleton',
       storeName: 'Deniqwears',
-      supportEmail: 'concierge@deniqwears.com',
-      supportWhatsApp: '+234 818 000 3344',
-      currency: 'NGN',
-      freeDeliveryThresholdInKobo: 10_000_000,
-      returnPeriodDays: 7,
-      paystackEnabled: true,
-      flutterwaveEnabled: true,
-      stripeEnabled: false,
-      showroomCollectionEnabled: true,
+      supportEmail: 'hello@deniqwears.com',
+      supportWhatsApp: '+1 (555) 010-0000',
+      currency: 'USD',
+      freeDeliveryThresholdInKobo: 15_000,
+      returnPeriodDays: 5,
+      paystackEnabled: false,
+      flutterwaveEnabled: false,
+      stripeEnabled: true,
+      showroomCollectionEnabled: false,
     },
   });
 

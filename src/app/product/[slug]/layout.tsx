@@ -54,7 +54,7 @@ export default async function ProductLayout({ children, params }: Props) {
     offers: {
       '@type': 'Offer',
       url: `${getAppUrl()}/product/${product.slug}`,
-      priceCurrency: 'NGN',
+      priceCurrency: 'USD',
       price: (product.priceInKobo / 100).toFixed(2),
       availability: `https://schema.org/${inStock ? 'InStock' : 'OutOfStock'}`,
       itemCondition: 'https://schema.org/NewCondition',

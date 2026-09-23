@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse, after } from 'next/server';
+import { STORE_CURRENCY } from '@/src/lib/money';
 import { sendOrderConfirmationEmail } from '@/server/email/service';
 import { db } from '@/server/db';
 import { paymentService } from '@/server/payment/service';
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest) {
     const settings = storeSettings;
     if (settings.deliveryZones.length === 0) {
       return NextResponse.json(
-        { error: 'Delivery is temporarily unavailable. Please contact the concierge to complete your order.' },
+        { error: 'Delivery is temporarily unavailable. Please contact us to complete your order.' },
         { status: 503 }
       );
     }
@@ -185,14 +186,14 @@ export async function POST(req: NextRequest) {
       customer,
       shippingAddress: {
         ...shippingAddress,
-        country: shippingAddress.country || 'Nigeria',
+        country: shippingAddress.country || 'United States',
       },
       deliveryZoneId: selectedZone.id,
       deliveryFeeInKobo,
       subtotalInKobo: serverSubtotalInKobo,
       discountInKobo,
       totalInKobo: serverTotalInKobo,
-      currency: 'NGN',
+      currency: STORE_CURRENCY,
       paymentMethod,
       // Persist the relation the schema already models, so a redemption can be
       // traced back to the order that used it.
@@ -236,7 +237,7 @@ export async function POST(req: NextRequest) {
     // Never forward a raw Error.message to a public client: Prisma errors
     // carry model names, query text and connection details.
     return NextResponse.json(
-      { error: 'We could not complete your order. Please try again, or contact the concierge if it keeps happening.' },
+      { error: 'We could not complete your order. Please try again, or contact us if it keeps happening.' },
       { status: 500 }
     );
   }

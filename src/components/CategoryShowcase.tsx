@@ -1,161 +1,100 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
-import { Category, ActivePage } from '../types';
+import { ArrowUpRight } from 'lucide-react';
+import { Category } from '../types';
 
 interface CategoryShowcaseProps {
   onNavigateCategory: (category: Category) => void;
 }
 
 interface CategoryItem {
-  number: string;
-  id: Category;
+  id: Exclude<Category, 'all'>;
   label: string;
-  description: string;
+  caption: string;
   image: string;
-  alignment: 'left' | 'right';
 }
 
 const CATEGORIES: CategoryItem[] = [
   {
-    number: '01',
     id: 'dresses',
-    label: 'DRESSES',
-    description: 'Column silhouettes, bias fluid cuts, and sculpted floor-sweeping hems.',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop',
-    alignment: 'left',
+    label: 'Dresses',
+    caption: 'Everyday to evening',
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=900&auto=format&fit=crop',
   },
   {
-    number: '02',
     id: 'sets',
-    label: 'SETS',
-    description: 'Two-piece tailored ensembles engineered for ease and instant composure.',
-    image: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=1200&auto=format&fit=crop',
-    alignment: 'right',
+    label: 'Sets',
+    caption: 'Matching two-pieces',
+    image: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=900&auto=format&fit=crop',
   },
   {
-    number: '03',
     id: 'tops',
-    label: 'TOPS & CORSETS',
-    description: 'Structural boning, raw-hem trims, and architectural peak lapel jackets.',
-    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200&auto=format&fit=crop',
-    alignment: 'left',
+    label: 'Tops',
+    caption: 'Shirts & blouses',
+    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=900&auto=format&fit=crop',
   },
   {
-    number: '04',
     id: 'bottoms',
-    label: 'BOTTOMS',
-    description: 'Deep double-front pleats, high-rise silhouettes, and asymmetric draping.',
-    image: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?q=80&w=1200&auto=format&fit=crop',
-    alignment: 'right',
+    label: 'Bottoms',
+    caption: 'Trousers & skirts',
+    image: 'https://images.unsplash.com/photo-1506630448388-4e683c67ddb0?q=80&w=900&auto=format&fit=crop',
   },
   {
-    number: '05',
     id: 'occasion',
-    label: 'OCCASION',
-    description: 'Pieces for dinners, celebrations and moments where presence is essential.',
-    image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?q=80&w=1200&auto=format&fit=crop',
-    alignment: 'left',
-  }
+    label: 'Occasion',
+    caption: 'For the big days',
+    image: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?q=80&w=900&auto=format&fit=crop',
+  },
 ];
 
 export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onNavigateCategory }) => {
   return (
-    <section id="category-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 py-16 md:py-28">
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-16 pb-4 border-b border-[#D8D4CC]">
+    <section id="category-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 py-16 md:py-24">
+      <div className="flex items-end justify-between mb-8 md:mb-10">
         <div className="space-y-1">
-          <span className="text-xs uppercase tracking-[0.25em] font-semibold text-[#681F2C]">
-            Classification
-          </span>
-          <h2 className="font-serif text-3xl md:text-5xl text-[#171714]">
-            Shop by Category
-          </h2>
+          <span className="text-xs uppercase tracking-[0.25em] font-semibold text-[#681F2C]">Find your piece</span>
+          <h2 className="font-serif text-4xl md:text-5xl text-[#171714]">Shop by Category</h2>
         </div>
-        <p className="text-xs tracking-wider uppercase text-[#56554F] mt-2 sm:mt-0">
-          Curated Silhouettes
-        </p>
+        <button
+          onClick={() => onNavigateCategory('all')}
+          className="editorial-link hidden sm:inline-flex text-xs uppercase tracking-[0.18em] font-semibold text-[#171714] hover:text-[#681F2C]"
+        >
+          View all
+        </button>
       </div>
 
-      {/* Massive Editorial Layout Alternating Left / Right */}
-      <div className="space-y-24 md:space-y-36">
-        {CATEGORIES.map((cat) => (
-          <div
+      {/* 2 up on phones (Occasion spans the last row), 5 across on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-5">
+        {CATEGORIES.map((cat, i) => (
+          <button
             key={cat.id}
             onClick={() => onNavigateCategory(cat.id)}
-            className="group cursor-pointer grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
+            className={`group relative overflow-hidden bg-[#FAF9F6] text-left ${
+              i === CATEGORIES.length - 1 ? 'col-span-2 lg:col-span-1' : ''
+            }`}
           >
-            {/* If alignment is left: text left, image right */}
-            {cat.alignment === 'left' ? (
-              <>
-                <div className="lg:col-span-5 order-2 lg:order-1 space-y-4">
-                  <span className="text-sm font-sans font-semibold tracking-widest text-[#681F2C]">
-                    {cat.number}
-                  </span>
-                  
-                  <div className="flex items-center space-x-4 border-b border-[#171714] pb-2 group-hover:border-[#681F2C] transition-colors">
-                    <h3 className="font-serif text-4xl sm:text-5xl md:text-6xl text-[#171714] group-hover:text-[#681F2C] transition-colors">
-                      {cat.label}
-                    </h3>
-                    <ArrowRight className="w-6 h-6 text-[#171714] group-hover:text-[#681F2C] transition-transform duration-300 group-hover:translate-x-3" />
-                  </div>
-
-                  <p className="text-sm md:text-base text-[#56554F] max-w-[420px] font-light leading-relaxed">
-                    {cat.description}
-                  </p>
-
-                  <span className="inline-block text-xs uppercase tracking-[0.2em] font-medium text-[#171714] border-b border-transparent group-hover:border-[#681F2C] group-hover:text-[#681F2C] pt-2">
-                    View Silhouettes →
-                  </span>
-                </div>
-
-                <div className="lg:col-span-7 order-1 lg:order-2 overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC]">
-                  <div className="aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden">
-                    <img
-                      src={cat.image}
-                      alt={cat.label}
-                      className="w-full h-full object-cover object-[center_35%] transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* If alignment is right: image left, text right */
-              <>
-                <div className="lg:col-span-7 order-1 overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC]">
-                  <div className="aspect-[16/10] sm:aspect-[16/9] w-full overflow-hidden">
-                    <img
-                      src={cat.image}
-                      alt={cat.label}
-                      className="w-full h-full object-cover object-[center_35%] transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  </div>
-                </div>
-
-                <div className="lg:col-span-5 order-2 space-y-4 lg:pl-6">
-                  <span className="text-sm font-sans font-semibold tracking-widest text-[#681F2C]">
-                    {cat.number}
-                  </span>
-
-                  <div className="flex items-center space-x-4 border-b border-[#171714] pb-2 group-hover:border-[#681F2C] transition-colors">
-                    <h3 className="font-serif text-4xl sm:text-5xl md:text-6xl text-[#171714] group-hover:text-[#681F2C] transition-colors">
-                      {cat.label}
-                    </h3>
-                    <ArrowRight className="w-6 h-6 text-[#171714] group-hover:text-[#681F2C] transition-transform duration-300 group-hover:translate-x-3" />
-                  </div>
-
-                  <p className="text-sm md:text-base text-[#56554F] max-w-[420px] font-light leading-relaxed">
-                    {cat.description}
-                  </p>
-
-                  <span className="inline-block text-xs uppercase tracking-[0.2em] font-medium text-[#171714] border-b border-transparent group-hover:border-[#681F2C] group-hover:text-[#681F2C] pt-2">
-                    View Silhouettes →
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
+            <div
+              className={`w-full overflow-hidden ${
+                i === CATEGORIES.length - 1 ? 'aspect-[2/1] lg:aspect-[3/4]' : 'aspect-[3/4]'
+              }`}
+            >
+              <img
+                src={cat.image}
+                alt=""
+                className="w-full h-full object-cover object-[center_30%] transition-transform duration-700 ease-editorial group-hover:scale-[1.05]"
+                loading="lazy"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#171714]/75 via-[#171714]/10 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-4 md:p-5 flex items-end justify-between text-[#FAF9F6]">
+              <div>
+                <h3 className="font-serif text-2xl md:text-3xl leading-none">{cat.label}</h3>
+                <p className="text-xs tracking-wide text-[#FAF9F6]/80 mt-1.5">{cat.caption}</p>
+              </div>
+              <span className="w-9 h-9 rounded-full border border-[#FAF9F6]/60 flex items-center justify-center transition-colors group-hover:bg-[#FAF9F6] group-hover:text-[#171714]">
+                <ArrowUpRight className="w-4 h-4" />
+              </span>
+            </div>
+          </button>
         ))}
       </div>
     </section>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Lookbook',
-  description: 'Explore the Deniqwears lookbook: contemporary silhouettes, movement, and style from Lagos.',
+  description: 'Explore the Deniqwears lookbook: Deniqwears pieces styled and worn.',
   alternates: { canonical: '/lookbook' },
   openGraph: { url: '/lookbook' },
 };

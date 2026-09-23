@@ -1,3 +1,4 @@
+import { formatMoney } from '../../src/lib/money';
 /**
  * Reusable, email-client-safe building blocks. Every component returns a
  * self-contained table so blocks can be composed in any order without
@@ -33,13 +34,13 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/** Formats kobo as Naira, e.g. 4800000 -> ₦48,000 */
-export function formatNaira(kobo: number): string {
-  return `&#8358;${Math.round(kobo / 100).toLocaleString('en-NG')}`;
+/** Formats cents for email HTML, e.g. 12800 -> $128 (same rules as the site). */
+export function formatAmount(cents: number): string {
+  return escapeHtml(formatMoney(cents));
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-NG', {
+  return new Date(iso).toLocaleDateString('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { useRouter } from 'next/navigation';
 import { ActivePage, CartItem, Category, LookbookItem, Product } from '../types';
 import { useCartStore, useUIStore } from '../store/useStore';
-import { useProductsQuery } from '../hooks/queries';
+import { useProductsQuery, useStoreSettingsQuery } from '../hooks/queries';
 import { CartDrawer } from '../components/CartDrawer';
 import { SearchOverlay } from '../components/SearchOverlay';
 import { SizeGuideModal } from '../components/SizeGuideModal';
@@ -73,6 +73,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // papered over with demo fixtures.
   const { data: serverProducts, isLoading: productsLoading, isError: productsError } = useProductsQuery();
   const productsList = serverProducts ?? [];
+  const { data: storeSettings } = useStoreSettingsQuery();
 
   // Cart lines are persisted to localStorage and can sit there for days, so
   // their cached prices drift after an admin price change. Reconcile against
@@ -105,7 +106,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (page.type === 'home') {
       router.push('/');
     } else if (page.type === 'shop') {
-      if (page.category && page.category !== 'all') {
+      if (page.newOnly) {
+        router.push('/shop?new=1');
+      } else if (page.category && page.category !== 'all') {
         router.push(`/shop?category=${page.category}`);
       } else {
         router.push('/shop');
@@ -146,6 +149,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // After adding, slide the bag open so the next step (checkout) is obvious.
+  // The short delay lets the "Added ✓" confirmation register first; quick add
+  // waits for its modal to close so the two don't stack.
+  const addAndShowBag = (delayMs: number) => (product: Product, color: string, size: string) => {
+    addItem(product, color, size);
+    window.setTimeout(() => setCartOpen(true), delayMs);
+  };
+
   // Zero before hydration, matching the server-rendered markup. This used to
   // be 1, which briefly showed a phantom item in the bag on every page load.
   const totalCartCount = mounted ? totalCount() : 0;
@@ -174,7 +185,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         handleNavigate,
         handleSelectProduct,
         handleCategoryNavigate,
-        handleAddToCart: addItem,
+        handleAddToCart: addAndShowBag(700),
         handleUpdateCartQuantity: updateQuantity,
         handleRemoveCartItem: removeItem,
         handleClearCart: clearCart,
@@ -219,11 +230,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       <QuickAddModal
         product={quickAddProduct}
         onClose={() => setQuickAddProduct(null)}
-        onAddToCart={addItem}
+        onAddToCart={addAndShowBag(1250)}
         onViewProductDetails={handleSelectProduct}
       />
 
-      <AccountDrawer isOpen={accountOpen} onClose={() => setAccountOpen(false)} />
+      <AccountDrawer
+        isOpen={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        supportEmail={storeSettings?.supportEmail}
+        supportWhatsApp={storeSettings?.supportWhatsApp}
+      />
     </StoreContext.Provider>
   );
 }

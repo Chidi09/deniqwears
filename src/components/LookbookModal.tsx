@@ -1,6 +1,6 @@
 import React from 'react';
 import { LookbookItem, Product } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { X, ArrowRight } from 'lucide-react';
 
 interface LookbookModalProps {
@@ -44,16 +44,16 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
           <div className="absolute bottom-4 left-4 right-4 bg-[#171714]/60 backdrop-blur-xs text-[#FAF9F6] p-3 text-xs tracking-wider uppercase flex justify-between items-end">
             <div>
               <p className="font-semibold">{look.title}</p>
-              <p className="text-[10px] text-stone-300">{look.caption}</p>
+              <p className="text-[11px] text-stone-300">{look.caption}</p>
             </div>
-            <span className="text-[10px] text-[#B78D91]">WORN DENIQ</span>
+            <span className="text-[11px] text-[#B78D91]">WORN DENIQ</span>
           </div>
         </div>
 
         {/* Right: Shop The Look Breakdown */}
         <div className="md:col-span-5 p-6 md:p-8 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
-            <span className="text-[10px] uppercase tracking-[0.25em] font-semibold text-[#681F2C]">
+            <span className="text-[11px] uppercase tracking-[0.25em] font-semibold text-[#681F2C]">
               Look Chronicle
             </span>
             <h3 className="font-serif text-3xl text-[#171714]">
@@ -65,7 +65,7 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
 
             {/* Tagged Products list */}
             <div className="space-y-4 pt-4 border-t border-[#D8D4CC]">
-              <span className="text-[11px] uppercase tracking-wider font-semibold text-[#171714]">
+              <span className="text-xs uppercase tracking-wider font-semibold text-[#171714]">
                 Pieces in this look ({taggedProducts.length})
               </span>
 
@@ -90,12 +90,12 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
                       {prod.name}
                     </h5>
                     <p className="font-sans text-xs font-semibold text-[#171714]">
-                      {formatKobo(prod.priceInKobo)}
+                      {formatMoney(prod.priceInKobo)}
                     </p>
                     <div className="flex space-x-2 mt-2">
                       <button
                         onClick={() => onQuickAdd(prod)}
-                        className="text-[10px] uppercase tracking-wider font-semibold text-[#681F2C] hover:underline"
+                        className="text-[11px] uppercase tracking-wider font-semibold text-[#681F2C] hover:underline"
                       >
                         Quick Add +
                       </button>
@@ -105,7 +105,7 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
                           onSelectProduct(prod.slug);
                           onClose();
                         }}
-                        className="text-[10px] uppercase tracking-wider text-[#56554F] hover:text-[#171714]"
+                        className="text-[11px] uppercase tracking-wider text-[#56554F] hover:text-[#171714]"
                       >
                         View Details
                       </button>
@@ -116,8 +116,8 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[#D8D4CC] text-[11px] text-[#56554F]">
-            <span>Complimentary styling advice available via private concierge.</span>
+          <div className="pt-4 border-t border-[#D8D4CC] text-xs text-[#56554F]">
+            <span>Need styling or sizing advice? Message us on WhatsApp.</span>
           </div>
         </div>
       </div>

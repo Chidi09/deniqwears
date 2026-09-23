@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Plus } from 'lucide-react';
 import { Product } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 
 interface ProductCardProps {
   product: Product;
@@ -9,8 +10,6 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQuickAdd }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <a
       id={`product-card-${product.id}`}
@@ -22,41 +21,59 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
         onSelect(product.slug);
       }}
       className="group cursor-pointer flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-[#681F2C] focus-visible:ring-offset-2"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* 3:4 Aspect Ratio Image Area (No container, no shadow, no border-radius) */}
       <div className="relative aspect-[3/4] w-full bg-[#FAF9F6] border border-[#D8D4CC]/80 overflow-hidden">
         <img
-          src={isHovered && product.secondaryImage ? product.secondaryImage : product.primaryImage}
+          src={product.primaryImage}
           alt={product.name}
-          className="w-full h-full object-cover object-top transition-opacity duration-300 ease-in-out"
+          className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 ease-editorial group-hover:scale-[1.03]"
           loading="lazy"
         />
+        {/* Second photo cross-fades in on hover */}
+        {product.secondaryImage && (
+          <img
+            src={product.secondaryImage}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-top opacity-0 transition-opacity duration-500 ease-editorial group-hover:opacity-100"
+            loading="lazy"
+          />
+        )}
 
         {/* Subtle Badge (1 maximum) */}
         {product.badge && (
           <div className="absolute top-3 left-3">
-            <span className="text-[10px] tracking-[0.2em] uppercase font-semibold text-[#171714] bg-[#FAF9F6]/90 px-2 py-0.5 border border-[#D8D4CC]">
+            <span className="text-[11px] tracking-[0.2em] uppercase font-semibold text-[#171714] bg-[#FAF9F6]/90 px-2 py-0.5 border border-[#D8D4CC]">
               {product.badge}
             </span>
           </div>
         )}
 
-        {/* Subtle Quick Add Overlay Button */}
-        <div className="absolute inset-x-0 bottom-0 p-3 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-          <button
-            id={`quick-add-${product.id}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onQuickAdd(product);
-            }}
-            className="pointer-events-auto bg-[#171714] text-[#FAF9F6] hover:bg-[#681F2C] text-[11px] font-semibold tracking-[0.16em] uppercase px-3.5 py-2 transition-colors border border-[#171714]"
-            aria-label={`Quick add ${product.name}`}
-          >
-            Quick Add +
-          </button>
-        </div>
+        {/* Quick add: a round + on touch screens, a labelled bar on hover for desktop */}
+        <button
+          id={`quick-add-${product.id}`}
+          onClick={(e) => {
+            // The card is a link; stop the click from also opening the product page.
+            e.preventDefault();
+            e.stopPropagation();
+            onQuickAdd(product);
+          }}
+          className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-[#FAF9F6]/95 text-[#171714] shadow-sm flex items-center justify-center md:hidden"
+          aria-label={`Quick add ${product.name}`}
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onQuickAdd(product);
+          }}
+          aria-label={`Quick add ${product.name}`}
+          className="hidden md:block absolute inset-x-3 bottom-3 py-3 bg-[#FAF9F6]/95 backdrop-blur-sm text-[#171714] hover:bg-[#171714] hover:text-[#FAF9F6] text-xs font-semibold tracking-[0.18em] uppercase translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 transition-all duration-300 ease-editorial"
+        >
+          Quick add
+        </button>
       </div>
 
       {/* Product Information */}
@@ -66,7 +83,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
             {product.name}
           </h4>
           <span className="font-sans text-sm font-semibold text-[#171714] whitespace-nowrap">
-            {formatKobo(product.priceInKobo)}
+            {formatMoney(product.priceInKobo)}
           </span>
         </div>
 
@@ -81,7 +98,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, onQ
             {product.colors.map((c, i) => (
               <span
                 key={i}
-                className="w-2 h-2 rounded-full border border-[#D8D4CC]"
+                className="w-3 h-3 rounded-full border border-[#D8D4CC]"
                 style={{ backgroundColor: c.hex }}
                 title={c.name}
               />

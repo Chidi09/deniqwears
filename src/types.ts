@@ -1,3 +1,5 @@
+import type { StorePromotions } from './lib/promotions';
+
 export type Category = 'all' | 'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion';
 
 export type ProductStatus = 'live' | 'draft' | 'archived';
@@ -165,7 +167,7 @@ export interface StoreSettings {
   storeName: string;
   supportEmail: string;
   supportWhatsApp: string;
-  currency: 'NGN';
+  currency: 'USD';
   freeDeliveryThresholdInKobo: number;
   returnPeriodDays: number;
   deliveryZones: DeliveryZone[];
@@ -175,6 +177,7 @@ export interface StoreSettings {
     stripe: boolean;
     showroomCollection: boolean;
   };
+  promotions: StorePromotions;
 }
 
 export interface AdminActivityLog {
@@ -235,11 +238,11 @@ export interface FilterState {
 
 export type ActivePage =
   | { type: 'home' }
-  | { type: 'shop'; category?: Category }
+  | { type: 'shop'; category?: Category; newOnly?: boolean }
   | { type: 'product'; slug: string }
   | { type: 'lookbook' }
   | { type: 'about' }
   | { type: 'checkout' }
   | { type: 'order-confirmed'; orderNumber: string }
-  | { type: 'admin'; section?: 'overview' | 'products' | 'orders' | 'settings' | 'logs' }
+  | { type: 'admin'; section?: 'overview' | 'products' | 'orders' | 'promotions' | 'settings' | 'logs' }
   | { type: 'account'; tab?: 'orders' | 'addresses' | 'wishlist' };

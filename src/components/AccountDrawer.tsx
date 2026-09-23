@@ -23,8 +23,8 @@ interface AccountDrawerProps {
 export const AccountDrawer: React.FC<AccountDrawerProps> = ({
   isOpen,
   onClose,
-  supportEmail = 'concierge@deniqwears.com',
-  supportWhatsApp = '+234 818 000 3344',
+  supportEmail = '',
+  supportWhatsApp = '',
 }) => {
   const dialogRef = useDialog<HTMLDivElement>(isOpen, onClose);
 
@@ -48,7 +48,7 @@ export const AccountDrawer: React.FC<AccountDrawerProps> = ({
         >
           <div className="p-6 border-b border-[#D8D4CC] flex items-center justify-between">
             <div>
-              <span className="text-[10px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+              <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
                 Client Care
               </span>
               <h3 className="font-serif text-2xl text-[#171714] mt-0.5">Your Orders</h3>
@@ -75,7 +75,7 @@ export const AccountDrawer: React.FC<AccountDrawerProps> = ({
             </div>
 
             <div className="space-y-3">
-              <span className="text-[10px] uppercase tracking-[0.22em] font-semibold text-[#8A8780]">
+              <span className="text-[11px] uppercase tracking-[0.22em] font-semibold text-[#8A8780]">
                 Track, change or return an order
               </span>
 
@@ -85,7 +85,7 @@ export const AccountDrawer: React.FC<AccountDrawerProps> = ({
               >
                 <Mail className="w-4 h-4 text-[#681F2C]" />
                 <div className="text-xs">
-                  <p className="font-semibold text-[#171714]">Email the concierge</p>
+                  <p className="font-semibold text-[#171714]">Email us</p>
                   <p className="text-[#56554F]">{supportEmail}</p>
                 </div>
               </a>
@@ -98,7 +98,7 @@ export const AccountDrawer: React.FC<AccountDrawerProps> = ({
               >
                 <MessageCircle className="w-4 h-4 text-[#681F2C]" />
                 <div className="text-xs">
-                  <p className="font-semibold text-[#171714]">WhatsApp the atelier</p>
+                  <p className="font-semibold text-[#171714]">WhatsApp us</p>
                   <p className="text-[#56554F]">{supportWhatsApp}</p>
                 </div>
               </a>

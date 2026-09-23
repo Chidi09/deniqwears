@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Order, OrderStatus } from '../../types';
-import { formatKobo } from '../../lib/money';
+import { formatMoney } from '../../lib/money';
 import { api } from '../../services/api';
 import { getErrorMessage } from '../../lib/errors';
 import { Search, PackageCheck, CheckCircle2, Truck, X, Undo2 } from 'lucide-react';
@@ -72,7 +72,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
   };
 
   const handleRecordShowroomPayment = async (order: Order) => {
-    if (!window.confirm(`Confirm you have collected ${formatKobo(order.totalInKobo)} for order #${order.orderNumber}?`)) {
+    if (!window.confirm(`Confirm you have collected ${formatMoney(order.totalInKobo)} for order #${order.orderNumber}?`)) {
       return;
     }
     setIsUpdating(true);
@@ -92,13 +92,13 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
     const amountInKobo = trimmed ? Math.round(parseFloat(trimmed) * 100) : undefined;
 
     if (trimmed && (!Number.isFinite(amountInKobo) || (amountInKobo as number) <= 0)) {
-      alert('Enter a valid refund amount in Naira, or leave blank to refund the remaining balance.');
+      alert('Enter a valid refund amount in dollars, or leave blank to refund the remaining balance.');
       return;
     }
 
     const confirmMsg = amountInKobo
-      ? `Refund ${formatKobo(amountInKobo)} for order #${order.orderNumber}?`
-      : `Refund the remaining ${formatKobo(remainingRefundable(order))} for order #${order.orderNumber}?`;
+      ? `Refund ${formatMoney(amountInKobo)} for order #${order.orderNumber}?`
+      : `Refund the remaining ${formatMoney(remainingRefundable(order))} for order #${order.orderNumber}?`;
     if (!window.confirm(confirmMsg)) return;
 
     setIsRefunding(true);
@@ -157,13 +157,13 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[10px] uppercase tracking-wider text-[#56554F]">
+              <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[11px] uppercase tracking-wider text-[#56554F]">
                 <th className="py-3 px-4">Order #</th>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4">Customer</th>
                 <th className="py-3 px-4">Delivery Zone</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Garments</th>
+                <th className="py-3 px-4">Items</th>
                 <th className="py-3 px-4 text-right">Total</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
@@ -190,14 +190,14 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                     <p className="font-semibold text-[#171714]">
                       {order.customer.firstName} {order.customer.lastName}
                     </p>
-                    <p className="text-[11px] text-[#56554F]">{order.customer.email}</p>
+                    <p className="text-xs text-[#56554F]">{order.customer.email}</p>
                   </td>
-                  <td className="py-3 px-4 text-[#56554F] text-[11px]">
+                  <td className="py-3 px-4 text-[#56554F] text-xs">
                     {order.shippingAddress.city}, {order.shippingAddress.state}
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold border ${
+                      className={`inline-block px-2 py-0.5 text-[11px] uppercase tracking-wider font-semibold border ${
                         order.status === 'PAID'
                           ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                           : order.status === 'FULFILLED'
@@ -214,7 +214,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                     {order.items.reduce((s, i) => s + i.quantity, 0)} units
                   </td>
                   <td className="py-3 px-4 text-right font-medium text-[#171714]">
-                    {formatKobo(order.totalInKobo)}
+                    {formatMoney(order.totalInKobo)}
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button
@@ -222,7 +222,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                         e.stopPropagation();
                         onSelectOrder(order);
                       }}
-                      className="px-2.5 py-1 bg-white border border-[#D8D4CC] hover:border-[#171714] text-[11px] uppercase tracking-wider font-semibold"
+                      className="px-2.5 py-1 bg-white border border-[#D8D4CC] hover:border-[#171714] text-xs uppercase tracking-wider font-semibold"
                     >
                       View
                     </button>
@@ -241,13 +241,13 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
             {/* Drawer Header */}
             <div className="flex justify-between items-start border-b border-[#D8D4CC] pb-4">
               <div>
-                <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#681F2C]">
+                <span className="text-[11px] uppercase tracking-[0.2em] font-semibold text-[#681F2C]">
                   Order Details
                 </span>
                 <h2 className="font-serif text-2xl text-[#171714]">
                   #{selectedOrder.orderNumber}
                 </h2>
-                <p className="text-[11px] text-[#56554F] mt-0.5">
+                <p className="text-xs text-[#56554F] mt-0.5">
                   Placed on {new Date(selectedOrder.createdAt).toLocaleString()}
                 </p>
               </div>
@@ -291,7 +291,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <span>Ready for Courier Dispatch</span>
                 </div>
                 <p className="text-xs text-emerald-950 leading-snug">
-                  Payment is verified. Click below once packed in archival tissue and handed to the concierge driver.
+                  Payment received. Click below once the order is packed and handed to the courier.
                 </p>
                 <button
                   onClick={() =>
@@ -319,16 +319,17 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <Undo2 className="w-4 h-4" />
                   <span>Issue a Refund</span>
                 </div>
-                <p className="text-[11px] text-[#56554F] leading-snug">
+                <p className="text-xs text-[#56554F] leading-snug">
                   Refunds go through {selectedOrder.paymentMethod} directly. Leave the amount blank to
-                  refund the remaining {formatKobo(remainingRefundable(selectedOrder))}, or enter a partial amount in Naira.
+                  refund the remaining {formatMoney(remainingRefundable(selectedOrder))}, or enter a partial amount in dollars.
                 </p>
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-[#56554F]">₦</span>
+                  <span className="text-xs text-[#56554F]">$</span>
                   <input
                     type="number"
                     min="0"
-                    placeholder={`${Math.round(remainingRefundable(selectedOrder) / 100)} (remaining)`}
+                    step="0.01"
+                    placeholder={`${remainingRefundable(selectedOrder) / 100} (remaining)`}
                     value={refundAmount}
                     onChange={(e) => setRefundAmount(e.target.value)}
                     className="flex-1 bg-white border border-[#D8D4CC] px-2.5 py-1.5 text-xs focus:outline-none focus:border-[#171714]"
@@ -336,7 +337,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <button
                     onClick={() => handleRefund(selectedOrder)}
                     disabled={isRefunding}
-                    className="px-3.5 py-1.5 bg-[#171714] hover:bg-[#681F2C] text-white text-[11px] uppercase tracking-wider font-semibold border border-[#171714] transition-colors cursor-pointer"
+                    className="px-3.5 py-1.5 bg-[#171714] hover:bg-[#681F2C] text-white text-xs uppercase tracking-wider font-semibold border border-[#171714] transition-colors cursor-pointer"
                   >
                     {isRefunding ? 'Refunding...' : 'Refund'}
                   </button>
@@ -356,7 +357,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
             {/* Customer & Delivery Address */}
             <div className="grid grid-cols-2 gap-4 border border-[#D8D4CC] p-4 bg-white text-xs">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-[#56554F] font-semibold mb-1">
+                <p className="text-[11px] uppercase tracking-wider text-[#56554F] font-semibold mb-1">
                   Customer
                 </p>
                 <p className="font-semibold text-[#171714]">
@@ -367,7 +368,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
               </div>
 
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-[#56554F] font-semibold mb-1">
+                <p className="text-[11px] uppercase tracking-wider text-[#56554F] font-semibold mb-1">
                   Courier Destination
                 </p>
                 <p className="text-[#171714] font-medium">
@@ -399,13 +400,13 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                         <p className="text-[#56554F]">
                           {item.color} · Size {item.size} · Qty: {item.quantity}
                         </p>
-                        <p className="text-[11px] text-[#8A8780]">
-                          Unit: {formatKobo(item.unitPriceInKobo)}
+                        <p className="text-xs text-[#8A8780]">
+                          Unit: {formatMoney(item.unitPriceInKobo)}
                         </p>
                       </div>
                     </div>
                     <span className="font-semibold text-[#171714]">
-                      {formatKobo(item.totalPriceInKobo)}
+                      {formatMoney(item.totalPriceInKobo)}
                     </span>
                   </div>
                 ))}
@@ -416,27 +417,27 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
             <div className="p-4 bg-[#F4F1EB] border border-[#D8D4CC] space-y-2 text-xs uppercase tracking-wider">
               <div className="flex justify-between text-[#56554F]">
                 <span>Subtotal</span>
-                <span>{formatKobo(selectedOrder.subtotalInKobo)}</span>
+                <span>{formatMoney(selectedOrder.subtotalInKobo)}</span>
               </div>
               <div className="flex justify-between text-[#56554F]">
                 <span>Courier Fee</span>
                 <span>
                   {selectedOrder.deliveryFeeInKobo === 0
                     ? 'Complimentary'
-                    : formatKobo(selectedOrder.deliveryFeeInKobo)}
+                    : formatMoney(selectedOrder.deliveryFeeInKobo)}
                 </span>
               </div>
               {selectedOrder.discountInKobo > 0 && (
                 <div className="flex justify-between text-[#681F2C]">
                   <span>Discount</span>
-                  <span>-{formatKobo(selectedOrder.discountInKobo)}</span>
+                  <span>-{formatMoney(selectedOrder.discountInKobo)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-[#171714] text-sm pt-2 border-t border-[#D8D4CC]">
                 <span>Total Settled</span>
-                <span>{formatKobo(selectedOrder.totalInKobo)}</span>
+                <span>{formatMoney(selectedOrder.totalInKobo)}</span>
               </div>
-              <div className="pt-2 text-[10px] text-[#56554F] normal-case">
+              <div className="pt-2 text-[11px] text-[#56554F] normal-case">
                 Payment Method: <strong className="uppercase">{selectedOrder.paymentMethod}</strong>
                 {selectedOrder.paymentReference && ` · Ref: ${selectedOrder.paymentReference}`}
               </div>
@@ -452,8 +453,8 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                   <div key={event.id} className="relative">
                     <div className="absolute -left-[23px] top-1 w-2.5 h-2.5 rounded-full bg-[#171714]" />
                     <p className="font-semibold text-[#171714]">{event.title}</p>
-                    <p className="text-[#56554F] text-[11px]">{event.description}</p>
-                    <p className="text-[10px] text-[#8A8780] mt-0.5">
+                    <p className="text-[#56554F] text-xs">{event.description}</p>
+                    <p className="text-[11px] text-[#8A8780] mt-0.5">
                       {new Date(event.timestamp).toLocaleString()}
                     </p>
                   </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useDialog } from '../hooks/useDialog';
 import { Product } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { Search, X, ArrowRight } from 'lucide-react';
 
 interface SearchOverlayProps {
@@ -66,7 +66,7 @@ const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
       <div className="max-w-[1000px] mx-auto px-6 py-8 md:py-12">
         {/* Top bar with close button */}
         <div className="flex justify-between items-center mb-12">
-          <span className="text-[11px] tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+          <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
             Editorial Search
           </span>
           <button
@@ -146,7 +146,7 @@ const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
                     </div>
                     <div className="text-xs">
                       <p className="font-serif text-sm text-[#171714] group-hover:text-[#681F2C]">{p.name}</p>
-                      <p className="text-[#56554F]">{formatKobo(p.priceInKobo)}</p>
+                      <p className="text-[#56554F]">{formatMoney(p.priceInKobo)}</p>
                     </div>
                   </div>
                 ))}
@@ -184,14 +184,14 @@ const SearchOverlayContent: React.FC<SearchOverlayContentProps> = ({
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] uppercase tracking-wider text-[#681F2C] font-semibold">
+                      <span className="text-[11px] uppercase tracking-wider text-[#681F2C] font-semibold">
                         {product.category}
                       </span>
                       <h4 className="font-serif text-lg text-[#171714] group-hover:text-[#681F2C] truncate">
                         {product.name}
                       </h4>
                       <p className="font-sans text-sm font-medium text-[#171714]">
-                        {formatKobo(product.priceInKobo)}
+                        {formatMoney(product.priceInKobo)}
                       </p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-[#56554F] group-hover:text-[#681F2C] group-hover:translate-x-1 transition-transform" />

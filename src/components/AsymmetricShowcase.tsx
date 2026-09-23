@@ -1,6 +1,6 @@
 import React from 'react';
 import { Product } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { ArrowUpRight } from 'lucide-react';
 
 interface AsymmetricShowcaseProps {
@@ -42,7 +42,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               loading="lazy"
             />
             {biasDress.badge && (
-              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[10px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2.5 py-1 border border-[#D8D4CC]">
+              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[11px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2.5 py-1 border border-[#D8D4CC]">
                 {biasDress.badge}
               </span>
             )}
@@ -51,7 +51,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
                 e.stopPropagation();
                 onQuickAdd(biasDress);
               }}
-              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-[11px] font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
+              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-xs font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
             >
               Quick Add +
             </button>
@@ -66,7 +66,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatKobo(biasDress.priceInKobo)}
+              {formatMoney(biasDress.priceInKobo)}
             </span>
           </div>
         </div>
@@ -82,7 +82,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               loading="lazy"
             />
             {sculptedCorset.badge && (
-              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[10px] tracking-[0.2em] uppercase font-semibold text-[#681F2C] px-2.5 py-1 border border-[#D8D4CC]">
+              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[11px] tracking-[0.2em] uppercase font-semibold text-[#681F2C] px-2.5 py-1 border border-[#D8D4CC]">
                 {sculptedCorset.badge}
               </span>
             )}
@@ -91,7 +91,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
                 e.stopPropagation();
                 onQuickAdd(sculptedCorset);
               }}
-              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-[11px] font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
+              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-xs font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
             >
               Quick Add +
             </button>
@@ -106,7 +106,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatKobo(sculptedCorset.priceInKobo)}
+              {formatMoney(sculptedCorset.priceInKobo)}
             </span>
           </div>
         </div>
@@ -126,7 +126,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               loading="lazy"
             />
             {lunaSet.badge && (
-              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[10px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2.5 py-1 border border-[#D8D4CC]">
+              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[11px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2.5 py-1 border border-[#D8D4CC]">
                 {lunaSet.badge}
               </span>
             )}
@@ -135,7 +135,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
                 e.stopPropagation();
                 onQuickAdd(lunaSet);
               }}
-              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-[11px] font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
+              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-xs font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
             >
               Quick Add +
             </button>
@@ -150,7 +150,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatKobo(lunaSet.priceInKobo)}
+              {formatMoney(lunaSet.priceInKobo)}
             </span>
           </div>
         </div>
@@ -165,7 +165,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               loading="lazy"
             />
             {pleatedMidi.badge && (
-              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[10px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2.5 py-1 border border-[#D8D4CC]">
+              <span className="absolute top-4 left-4 bg-[#FAF9F6]/90 backdrop-blur-xs text-[11px] tracking-[0.2em] uppercase font-semibold text-[#171714] px-2.5 py-1 border border-[#D8D4CC]">
                 {pleatedMidi.badge}
               </span>
             )}
@@ -174,7 +174,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
                 e.stopPropagation();
                 onQuickAdd(pleatedMidi);
               }}
-              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-[11px] font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
+              className="absolute bottom-4 right-4 bg-[#FAF9F6]/95 hover:bg-[#171714] hover:text-[#FAF9F6] text-[#171714] text-xs font-semibold tracking-[0.16em] uppercase px-4 py-2.5 border border-[#D8D4CC] transition-all opacity-0 group-hover:opacity-100"
             >
               Quick Add +
             </button>
@@ -189,7 +189,7 @@ export const AsymmetricShowcase: React.FC<AsymmetricShowcaseProps> = ({
               </p>
             </div>
             <span className="font-sans text-base md:text-lg font-medium text-[#171714]">
-              {formatKobo(pleatedMidi.priceInKobo)}
+              {formatMoney(pleatedMidi.priceInKobo)}
             </span>
           </div>
         </div>

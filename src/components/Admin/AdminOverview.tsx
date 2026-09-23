@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { formatKobo } from '../../lib/money';
+import { formatMoney } from '../../lib/money';
 import { Order, AdminActivityLog } from '../../types';
 import { RevenueTrendChart, RevenuePoint } from './RevenueTrendChart';
 import {
@@ -10,10 +10,16 @@ import {
   Clock,
   ArrowUpRight,
   Undo2,
+  Plus,
+  PackageCheck,
+  Megaphone,
+  ExternalLink,
 } from 'lucide-react';
 
 interface AdminOverviewProps {
-  onNavigateTab: (tab: 'products' | 'orders' | 'settings' | 'logs') => void;
+  onNavigateTab: (tab: 'products' | 'orders' | 'promotions' | 'settings' | 'logs') => void;
+  onAddProduct: () => void;
+  onViewWebsite: () => void;
   onSelectOrder: (order: Order) => void;
 }
 
@@ -72,7 +78,12 @@ const PAYMENT_LABELS: Record<string, string> = {
   showroom: 'Showroom (cash/POS)',
 };
 
-export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onSelectOrder }) => {
+export const AdminOverview: React.FC<AdminOverviewProps> = ({
+  onNavigateTab,
+  onSelectOrder,
+  onAddProduct,
+  onViewWebsite,
+}) => {
   const [data, setData] = useState<AdminOverviewData | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [period, setPeriod] = useState('30d');
@@ -102,7 +113,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
   if (loading || !data) {
     return (
       <div className="py-20 text-center text-xs text-[#8A8780]">
-        Loading atelier metrics...
+        Loading your dashboard…
       </div>
     );
   }
@@ -110,13 +121,62 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
   const summary = analytics?.summary;
   const maxMethodValue = Math.max(1, ...(analytics?.paymentMethods.map((m) => m.netInKobo) ?? [1]));
 
+  const quickActions = [
+    { label: 'Add a product', hint: 'Photos, price and sizes', icon: Plus, onClick: onAddProduct, primary: true },
+    {
+      label: 'Orders to send',
+      hint:
+        data.pendingFulfillmentCount > 0
+          ? `${data.pendingFulfillmentCount} paid ${data.pendingFulfillmentCount === 1 ? 'order is' : 'orders are'} waiting`
+          : 'All caught up',
+      icon: PackageCheck,
+      onClick: () => onNavigateTab('orders'),
+      alert: data.pendingFulfillmentCount > 0,
+    },
+    { label: 'Change promotions', hint: 'Top bar & homepage banner', icon: Megaphone, onClick: () => onNavigateTab('promotions') },
+    { label: 'View my website', hint: 'See what customers see', icon: ExternalLink, onClick: onViewWebsite },
+  ];
+
   return (
     <div className="space-y-8">
+      {/* Quick actions — the everyday jobs, one tap away */}
+      <div>
+        <h2 className="font-serif text-3xl text-[#171714]">Welcome back</h2>
+        <p className="text-sm text-[#56554F] mt-1">What would you like to do today?</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+          {quickActions.map(({ label, hint, icon: Icon, onClick, primary, alert }) => (
+            <button
+              key={label}
+              onClick={onClick}
+              className={`group text-left p-4 sm:p-5 border transition-colors flex flex-col gap-3 ${
+                primary
+                  ? 'bg-[#171714] border-[#171714] text-[#FAF9F6] hover:bg-[#681F2C] hover:border-[#681F2C]'
+                  : 'bg-[#FAF9F6] border-[#D8D4CC] text-[#171714] hover:border-[#171714]'
+              }`}
+            >
+              <span
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  primary ? 'bg-[#FAF9F6]/10' : alert ? 'bg-[#681F2C] text-white' : 'bg-[#F4F1EB] text-[#681F2C]'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold">{label}</span>
+                <span className={`block text-xs mt-0.5 ${primary ? 'text-[#FAF9F6]/70' : alert ? 'text-[#681F2C] font-medium' : 'text-[#56554F]'}`}>
+                  {hint}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Period filter — one row above the figures it controls */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-serif text-2xl text-[#171714]">Money & Flow</h2>
-          <p className="text-[11px] text-[#56554F]">
+          <h2 className="font-serif text-2xl text-[#171714]">Sales</h2>
+          <p className="text-xs text-[#56554F]">
             Revenue is counted when payment lands, and always shown net of refunds.
           </p>
         </div>
@@ -142,52 +202,52 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#171714] text-[#FAF9F6] p-4 sm:p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#C4828E]">
+            <span className="text-xs uppercase tracking-wider font-semibold text-[#C4828E]">
               Net Revenue
             </span>
             <TrendingUp className="w-4 h-4 text-[#C4828E]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl">
-            {summary ? formatKobo(summary.netRevenueInKobo) : '—'}
+            {summary ? formatMoney(summary.netRevenueInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#8A8780] mt-1">
-            {summary ? `${summary.paidOrdersCount} paid orders · avg ${formatKobo(summary.averageOrderValueInKobo)}` : ' '}
+          <p className="text-xs text-[#8A8780] mt-1">
+            {summary ? `${summary.paidOrdersCount} paid orders · avg ${formatMoney(summary.averageOrderValueInKobo)}` : ' '}
           </p>
         </div>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
           <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Gross Sales</span>
+            <span className="text-xs uppercase tracking-wider font-semibold">Gross Sales</span>
             <Package className="w-4 h-4 text-[#171714]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {summary ? formatKobo(summary.grossSalesInKobo) : '—'}
+            {summary ? formatMoney(summary.grossSalesInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F] mt-1">
-            {summary ? `${formatKobo(summary.deliveryFeesInKobo)} of it delivery fees` : ' '}
+          <p className="text-xs text-[#56554F] mt-1">
+            {summary ? `${formatMoney(summary.deliveryFeesInKobo)} of it delivery fees` : ' '}
           </p>
         </div>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
           <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Refunded</span>
+            <span className="text-xs uppercase tracking-wider font-semibold">Refunded</span>
             <Undo2 className="w-4 h-4 text-[#681F2C]" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#681F2C]">
-            {summary ? formatKobo(summary.refundedInKobo) : '—'}
+            {summary ? formatMoney(summary.refundedInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F] mt-1">Already deducted from net</p>
+          <p className="text-xs text-[#56554F] mt-1">Already deducted from net</p>
         </div>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 sm:p-5">
           <div className="flex items-center justify-between text-[#56554F] mb-2">
-            <span className="text-[11px] uppercase tracking-wider font-semibold">Awaiting Payment</span>
+            <span className="text-xs uppercase tracking-wider font-semibold">Awaiting Payment</span>
             <Clock className="w-4 h-4 text-amber-700" />
           </div>
           <p className="font-serif text-2xl sm:text-3xl text-[#171714]">
-            {summary ? formatKobo(summary.pendingCollectionInKobo) : '—'}
+            {summary ? formatMoney(summary.pendingCollectionInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F] mt-1">
+          <p className="text-xs text-[#56554F] mt-1">
             {summary ? `${summary.pendingCollectionCount} orders not yet collected` : ' '}
           </p>
         </div>
@@ -198,7 +258,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
         <div className="flex justify-between items-baseline border-b border-[#D8D4CC] pb-3 mb-4">
           <div>
             <h3 className="font-serif text-xl text-[#171714]">Daily Net Revenue</h3>
-            <p className="text-[11px] text-[#56554F]">Hover any day for its exact figure</p>
+            <p className="text-xs text-[#56554F]">Hover any day for its exact figure</p>
           </div>
         </div>
         {analytics ? (
@@ -223,7 +283,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                       {PAYMENT_LABELS[method.method] ?? method.method}
                     </span>
                     <span className="text-[#171714] font-semibold">
-                      {formatKobo(method.netInKobo)}
+                      {formatMoney(method.netInKobo)}
                       <span className="text-[#8A8780] font-normal ml-1.5">· {method.ordersCount}</span>
                     </span>
                   </div>
@@ -235,7 +295,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                   </div>
                 </div>
               ))}
-              <p className="text-[11px] text-[#8A8780] pt-2">
+              <p className="text-xs text-[#8A8780] pt-2">
                 Showroom totals are cash or POS taken in person — reconcile these against the till.
               </p>
             </div>
@@ -258,7 +318,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                       {product.unitsSold} {product.unitsSold === 1 ? 'unit' : 'units'}
                     </td>
                     <td className="py-2.5 text-right text-[#171714] font-semibold whitespace-nowrap pl-3">
-                      {formatKobo(product.revenueInKobo)}
+                      {formatMoney(product.revenueInKobo)}
                     </td>
                   </tr>
                 ))}
@@ -276,40 +336,40 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
           onClick={() => onNavigateTab('orders')}
           className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 text-left hover:border-[#171714] transition-colors"
         >
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+          <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
             Awaiting Dispatch
           </span>
           <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.awaitingDispatchCount ?? '—'}</p>
-          <p className="text-[11px] text-[#56554F]">Paid, needs packing</p>
+          <p className="text-xs text-[#56554F]">Paid, needs packing</p>
         </button>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4">
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+          <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
             Discounts Given
           </span>
           <p className="font-serif text-2xl text-[#171714] mt-1">
-            {summary ? formatKobo(summary.discountsGivenInKobo) : '—'}
+            {summary ? formatMoney(summary.discountsGivenInKobo) : '—'}
           </p>
-          <p className="text-[11px] text-[#56554F]">Promo codes redeemed</p>
+          <p className="text-xs text-[#56554F]">Promo codes redeemed</p>
         </div>
 
         <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-4">
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+          <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
             Failed / Cancelled
           </span>
           <p className="font-serif text-2xl text-[#171714] mt-1">{summary?.failedOrCancelledCount ?? '—'}</p>
-          <p className="text-[11px] text-[#56554F]">Checkouts that fell through</p>
+          <p className="text-xs text-[#56554F]">Checkouts that fell through</p>
         </div>
 
         <button
           onClick={() => onNavigateTab('products')}
           className="bg-[#FAF9F6] border border-[#D8D4CC] p-4 text-left hover:border-[#171714] transition-colors"
         >
-          <span className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+          <span className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
             Low Stock Alerts
           </span>
           <p className="font-serif text-2xl text-[#681F2C] mt-1">{data.lowStockCount}</p>
-          <p className="text-[11px] text-[#56554F]">Variants with ≤ 2 units</p>
+          <p className="text-xs text-[#56554F]">Variants with ≤ 2 units</p>
         </button>
       </div>
 
@@ -329,7 +389,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                 className="inline-flex items-center px-2.5 py-1 bg-white border border-amber-300 text-xs text-amber-950"
               >
                 <span className="font-medium mr-1.5">{alert.product}</span>
-                <span className="text-amber-800 text-[11px]">
+                <span className="text-amber-800 text-xs">
                   ({alert.color} · {alert.size}): <strong>{alert.stock} left</strong>
                 </span>
               </span>
@@ -344,8 +404,8 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
         <div className="lg:col-span-8 bg-[#FAF9F6] border border-[#D8D4CC] p-5 sm:p-6 space-y-4">
           <div className="flex justify-between items-center border-b border-[#D8D4CC] pb-3">
             <div>
-              <h3 className="font-serif text-xl text-[#171714]">Recent Atelier Orders</h3>
-              <p className="text-[11px] text-[#56554F]">Real-time client checkout queue</p>
+              <h3 className="font-serif text-xl text-[#171714]">Recent orders</h3>
+              <p className="text-xs text-[#56554F]">Real-time client checkout queue</p>
             </div>
             <button
               onClick={() => onNavigateTab('orders')}
@@ -359,7 +419,7 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#D8D4CC] text-[#56554F] uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-[#D8D4CC] text-[#56554F] uppercase tracking-wider text-[11px]">
                   <th className="py-2.5 px-3">Order #</th>
                   <th className="py-2.5 px-3">Client</th>
                   <th className="py-2.5 px-3">Status</th>
@@ -378,11 +438,11 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                       <p className="font-medium text-[#171714]">
                         {order.customer.firstName} {order.customer.lastName}
                       </p>
-                      <p className="text-[10px] text-[#56554F]">{order.shippingAddress.city}</p>
+                      <p className="text-[11px] text-[#56554F]">{order.shippingAddress.city}</p>
                     </td>
                     <td className="py-3 px-3">
                       <span
-                        className={`inline-block px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold border ${
+                        className={`inline-block px-2 py-0.5 text-[11px] uppercase tracking-wider font-semibold border ${
                           order.status === 'PAID'
                             ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                             : order.status === 'FULFILLED'
@@ -396,15 +456,15 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
                       </span>
                     </td>
                     <td className="py-3 px-3 text-[#56554F]">
-                      {order.items.reduce((s, i) => s + i.quantity, 0)} garments
+                      {order.items.reduce((s, i) => s + i.quantity, 0)} items
                     </td>
                     <td className="py-3 px-3 text-right font-medium text-[#171714]">
-                      {formatKobo(order.totalInKobo)}
+                      {formatMoney(order.totalInKobo)}
                     </td>
                     <td className="py-3 px-3 text-right">
                       <button
                         onClick={() => onSelectOrder(order)}
-                        className="text-[11px] font-semibold uppercase tracking-wider text-[#681F2C] hover:underline"
+                        className="text-xs font-semibold uppercase tracking-wider text-[#681F2C] hover:underline"
                       >
                         Details
                       </button>
@@ -420,8 +480,8 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
         <div className="lg:col-span-4 bg-[#FAF9F6] border border-[#D8D4CC] p-5 sm:p-6 space-y-4">
           <div className="flex justify-between items-center border-b border-[#D8D4CC] pb-3">
             <div>
-              <h3 className="font-serif text-xl text-[#171714]">Audit Feed</h3>
-              <p className="text-[11px] text-[#56554F]">Recorded administrative actions</p>
+              <h3 className="font-serif text-xl text-[#171714]">Recent activity</h3>
+              <p className="text-xs text-[#56554F]">Recorded administrative actions</p>
             </div>
             <button
               onClick={() => onNavigateTab('logs')}
@@ -434,14 +494,14 @@ export const AdminOverview: React.FC<AdminOverviewProps> = ({ onNavigateTab, onS
           <div className="space-y-3">
             {data.recentActivity?.map((log: AdminActivityLog) => (
               <div key={log.id} className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-xs space-y-1">
-                <div className="flex justify-between items-center text-[10px] text-[#56554F]">
+                <div className="flex justify-between items-center text-[11px] text-[#56554F]">
                   <span className="uppercase tracking-wider font-semibold text-[#171714]">
                     {log.action}
                   </span>
                   <span>{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
-                <p className="text-[#171714] text-[11px] leading-snug">{log.details}</p>
-                <p className="text-[10px] text-[#56554F] pt-0.5">By {log.adminEmail}</p>
+                <p className="text-[#171714] text-xs leading-snug">{log.details}</p>
+                <p className="text-[11px] text-[#56554F] pt-0.5">By {log.adminEmail}</p>
               </div>
             ))}
           </div>

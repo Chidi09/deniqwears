@@ -8,6 +8,7 @@ import { AdminProducts } from './AdminProducts';
 import { AdminOrders } from './AdminOrders';
 import { AdminSettings } from './AdminSettings';
 import { AdminAuditLogs } from './AdminAuditLogs';
+import { AdminPromotions } from './AdminPromotions';
 import { AdminProductModal } from './AdminProductModal';
 import { AdminLogin } from './AdminLogin';
 import {
@@ -16,13 +17,14 @@ import {
   ShoppingBag,
   Settings,
   ShieldAlert,
+  Megaphone,
   LogOut,
   ExternalLink,
   Menu,
   X,
 } from 'lucide-react';
 
-type AdminTab = 'overview' | 'products' | 'orders' | 'settings' | 'logs';
+type AdminTab = 'overview' | 'products' | 'orders' | 'promotions' | 'settings' | 'logs';
 
 interface AdminLayoutProps {
   onExitToStore: () => void;
@@ -136,8 +138,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
           <div className="flex items-baseline space-x-2">
             <span className="font-serif text-lg tracking-wide text-[#FAF9F6]">DENIQWEARS</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#C4828E]">
-              Atelier Back-Office
+            <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[#C4828E]">
+              Store Admin
             </span>
           </div>
         </div>
@@ -147,7 +149,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             onClick={onExitToStore}
             className="inline-flex items-center space-x-1.5 text-xs text-[#8A8780] hover:text-[#FAF9F6] transition-colors"
           >
-            <span>Storefront</span>
+            <span>View website</span>
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
 
@@ -164,19 +166,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Navigation Sub-Bar */}
       <nav className="bg-[#FAF9F6] border-b border-[#D8D4CC] px-4 sm:px-8 overflow-x-auto">
-        <div className="flex space-x-8 text-xs uppercase tracking-wider font-semibold">
+        <div className="flex space-x-6 sm:space-x-8 text-sm font-semibold">
           {(
             [
-              { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-              { id: 'products', label: `Garments (${products.length})`, icon: Shirt },
+              { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+              { id: 'products', label: `Products (${products.length})`, icon: Shirt },
               {
                 id: 'orders',
                 label: `Orders (${orders.length})`,
                 badge: pendingOrdersCount > 0 ? pendingOrdersCount : undefined,
                 icon: ShoppingBag,
               },
+              { id: 'promotions', label: 'Promotions', icon: Megaphone },
               { id: 'settings', label: 'Settings', icon: Settings },
-              { id: 'logs', label: 'Audit Feed', icon: ShieldAlert },
+              { id: 'logs', label: 'Activity', icon: ShieldAlert },
             ] as Array<{ id: AdminTab; label: string; badge?: number; icon: typeof LayoutDashboard }>
           ).map((tab) => {
             const Icon = tab.icon;
@@ -193,7 +196,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
                 {tab.badge && (
-                  <span className="px-1.5 py-0.2 bg-[#681F2C] text-white text-[10px] rounded-full">
+                  <span
+                    className="px-1.5 min-w-[20px] h-5 bg-[#681F2C] text-white text-xs rounded-full flex items-center justify-center"
+                    title={`${tab.badge} paid ${tab.badge === 1 ? 'order' : 'orders'} waiting to be sent`}
+                  >
                     {tab.badge}
                   </span>
                 )}
@@ -207,17 +213,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       <main className="flex-1 max-w-[1344px] w-full mx-auto px-4 sm:px-8 py-8">
         {loading && (
           <div className="py-20 text-center text-xs text-[#8A8780]">
-            Synchronizing atelier records...
+            Loading your store…
           </div>
         )}
 
         {!loading && loadError && (
           <div className="py-16 text-center space-y-4">
             <p className="text-sm text-[#681F2C] font-semibold">
-              Could not load the back-office records.
+              Could not load your store data.
             </p>
             <p className="text-xs text-[#56554F]">
-              This is a connection or server problem — the records themselves are fine.
+              This is usually a connection problem — your products and orders are safe. Please try again.
             </p>
             <button
               onClick={loadData}
@@ -231,6 +237,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         {!loading && !loadError && activeTab === 'overview' && (
           <AdminOverview
             onNavigateTab={(t) => setActiveTab(t)}
+            onAddProduct={() => {
+              setEditingProduct(null);
+              setIsProductModalOpen(true);
+            }}
+            onViewWebsite={onExitToStore}
             onSelectOrder={(ord) => {
               setSelectedOrder(ord);
               setActiveTab('orders');
@@ -261,6 +272,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             onSelectOrder={(ord) => setSelectedOrder(ord)}
           />
         )}
+
+        {!loading && !loadError && activeTab === 'promotions' && <AdminPromotions onSaved={loadData} />}
 
         {!loading && !loadError && activeTab === 'settings' && <AdminSettings />}
 

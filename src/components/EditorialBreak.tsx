@@ -26,11 +26,9 @@ export const EditorialBreak: React.FC = () => {
           <span className="italic">She changes it.”</span>
         </blockquote>
 
-        <div className="mt-8 flex items-center space-x-3 text-[11px] uppercase tracking-[0.3em] text-[#FAF9F6]/90 font-medium">
+        <div className="mt-8 flex items-center space-x-3 text-xs uppercase tracking-[0.3em] text-[#FAF9F6]/90 font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-[#681F2C]" />
           <span>DENIQ NOTES — ISSUE 01</span>
-          <span className="text-white/40">/</span>
-          <span>LAGOS</span>
         </div>
       </div>
     </section>

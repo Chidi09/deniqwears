@@ -317,7 +317,7 @@ export class StripeProvider implements PaymentProvider {
         provider: this.id,
         transactionId: String(session.payment_intent ?? session.id),
         amountInKobo: session.amount_total ?? 0,
-        currency: (session.currency ?? 'ngn').toUpperCase(),
+        currency: (session.currency ?? 'usd').toUpperCase(),
         status: paid ? 'success' : 'pending',
         paidAt: paid ? new Date().toISOString() : undefined,
       };
@@ -385,7 +385,7 @@ export class ShowroomCollectionProvider implements PaymentProvider {
       provider: this.id,
       transactionId: '',
       amountInKobo: 0,
-      currency: 'NGN',
+      currency: 'USD',
       status: 'pending',
       gatewayResponse: 'Awaiting in-person collection at the showroom; an admin must confirm payment manually.',
     };

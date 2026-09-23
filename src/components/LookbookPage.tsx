@@ -21,14 +21,14 @@ export const LookbookPage: React.FC<LookbookPageProps> = ({ onNavigate, onOpenLo
         </button>
 
         <div className="py-12 border-b border-[#D8D4CC] mb-12">
-          <span className="text-[11px] uppercase tracking-[0.3em] font-semibold text-[#681F2C]">
+          <span className="text-xs uppercase tracking-[0.3em] font-semibold text-[#681F2C]">
             Visual Chronicle
           </span>
           <h1 className="font-serif text-4xl sm:text-6xl text-[#171714] mt-2">
             WORN DENIQ — ISSUE 01
           </h1>
           <p className="text-[#56554F] text-base md:text-lg font-light max-w-[580px] mt-4 leading-relaxed">
-            Documented on the streets and rooftop salons of Victoria Island and Ikoyi. Click any frame to inspect the garments and shop the look.
+            Deniqwears, styled and worn. Tap any photo to see the pieces and shop the look.
           </p>
         </div>
 

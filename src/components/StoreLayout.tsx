@@ -5,7 +5,10 @@ import { usePathname } from 'next/navigation';
 import { useStore } from '../context/StoreContext';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { FloatingContact } from './FloatingContact';
 import { ActivePage } from '../types';
+import { useStoreSettingsQuery } from '../hooks/queries';
+import { DEFAULT_PROMOTIONS } from '../lib/promotions';
 
 export function StoreLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -18,6 +21,8 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
     handleNavigate,
     handleCategoryNavigate,
   } = useStore();
+  const { data: settings } = useStoreSettingsQuery();
+  const announcements = (settings?.promotions ?? DEFAULT_PROMOTIONS).announcements;
 
   const isAdmin = pathname?.startsWith('/admin');
   const isCheckout = pathname?.startsWith('/checkout');
@@ -44,15 +49,22 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
         activePage={activePage}
         onNavigate={handleNavigate}
         cartCount={totalCartCount}
+        announcements={announcements}
         onOpenCart={() => setCartOpen(true)}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenAccount={() => setAccountOpen(true)}
+        onOpenSizeGuide={() => setSizeGuideOpen(true)}
       />
       <main className="flex-grow">{children}</main>
       <Footer
         onNavigate={handleNavigate}
         onNavigateCategory={handleCategoryNavigate}
         onOpenSizeGuide={() => setSizeGuideOpen(true)}
+      />
+      <FloatingContact
+        whatsApp={settings?.supportWhatsApp}
+        email={settings?.supportEmail}
+        raised={activePage.type === 'product'}
       />
     </div>
   );

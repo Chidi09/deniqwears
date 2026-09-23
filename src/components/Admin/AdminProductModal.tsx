@@ -31,9 +31,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   // Form State
   const [name, setName] = useState(product?.name || '');
   const [slug, setSlug] = useState(product?.slug || '');
-  const [priceInNaira, setPriceInNaira] = useState(
-    product ? Math.round(product.priceInKobo / 100) : 48000
-  );
+  const [priceInDollars, setPriceInDollars] = useState(product ? product.priceInKobo / 100 : 0);
   const [status, setStatus] = useState<'live' | 'draft' | 'archived'>(product?.status || 'live');
   const [category, setCategory] = useState<'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion'>(
     product?.category || 'dresses'
@@ -44,7 +42,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     product?.fitAndSize || 'Architectural fit through the bodice. Model is 5\'10" wearing size S.'
   );
   const [delivery, setDelivery] = useState(
-    product?.delivery || 'Complimentary express dispatch across Lagos.'
+    product?.delivery || 'Ships within 1–2 business days.'
   );
   const [care, setCare] = useState(product?.care || 'Dry clean only. Store on wide padded hanger.');
 
@@ -105,7 +103,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
 
   const handleDeleteImage = (idx: number) => {
     if (images.length <= 1) {
-      alert('At least one garment photograph is required');
+      alert('Please add at least one product photo');
       return;
     }
     const updated = images.filter((_, i) => i !== idx);
@@ -154,7 +152,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   // Save product
   const handleSave = async (targetStatus?: 'live' | 'draft') => {
     if (!name.trim()) {
-      setError('Garment name is required');
+      setError('Please give the product a name');
       return;
     }
 
@@ -199,7 +197,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     const payload = {
       name,
       slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
-      priceInKobo: priceInNaira * 100, // Smallest unit kobo
+      priceInKobo: Math.round(priceInDollars * 100), // stored in cents
       status: targetStatus || status,
       category,
       collection,
@@ -226,7 +224,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       onSaved();
       onClose();
     } catch (err) {
-      setError(getErrorMessage(err, 'Unable to save garment'));
+      setError(getErrorMessage(err, 'Could not save the product. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -234,7 +232,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
 
   const handleArchive = async () => {
     if (!product) return;
-    if (!window.confirm('Archive this garment? It will preserve client order history.')) return;
+    if (!window.confirm('Remove this product from the website? Past orders will be kept.')) return;
     try {
       await api.archiveAdminProduct(product.id);
       onSaved();
@@ -250,8 +248,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
         {/* Modal Header */}
         <div className="flex justify-between items-center p-6 border-b border-[#D8D4CC] sticky top-0 bg-[#FAF9F6] z-10">
           <div>
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-[#681F2C]">
-              {isEditing ? 'Garment Editor' : 'New Garment'}
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-[#681F2C]">
+              {isEditing ? 'Edit product' : 'Add a new product'}
             </span>
             <h2 className="font-serif text-2xl text-[#171714]">
               {isEditing ? product.name : 'Catalogue Item Entry'}
@@ -277,8 +275,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
           {/* 1. Core Garment Info */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="md:col-span-2 space-y-1">
-              <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
-                Garment Name
+              <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
+                Product name
               </label>
               <input
                 type="text"
@@ -291,20 +289,23 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
-                Price (₦ Naira)
+              <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
+                Price ($ USD)
               </label>
               <input
                 type="number"
                 required
-                value={priceInNaira}
-                onChange={(e) => setPriceInNaira(parseInt(e.target.value, 10) || 0)}
+                value={priceInDollars || ''}
+                step="0.01"
+                min="0"
+                placeholder="e.g. 128"
+                onChange={(e) => setPriceInDollars(parseFloat(e.target.value) || 0)}
                 className="w-full bg-[#F4F1EB] border border-[#D8D4CC] px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#171714]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+              <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                 Category
               </label>
               <select
@@ -321,7 +322,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+              <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                 Collection Name
               </label>
               <input
@@ -334,7 +335,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+              <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                 Status
               </label>
               <select
@@ -352,8 +353,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
           {/* 2. Photography & Media Manager (Drag, reorder, cover selection) */}
           <div className="space-y-3 border-t border-[#D8D4CC] pt-6">
             <div className="flex justify-between items-baseline">
-              <h3 className="font-serif text-lg text-[#171714]">Garment Photography</h3>
-              <span className="text-[11px] text-[#56554F]">
+              <h3 className="font-serif text-lg text-[#171714]">Product photos</h3>
+              <span className="text-xs text-[#56554F]">
                 First image is Primary Cover on lookbook & cards
               </span>
             </div>
@@ -367,19 +368,19 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                     primaryImageIdx === idx ? 'border-[#681F2C] ring-2 ring-[#681F2C]/20' : 'border-[#D8D4CC]'
                   }`}
                 >
-                  <img src={img} alt="garment preview" className="w-full h-36 object-cover" />
+                  <img src={img} alt="Product photo preview" className="w-full h-36 object-cover" />
 
                   {/* Badges & Actions */}
                   <div className="absolute top-2 left-2">
                     {primaryImageIdx === idx ? (
-                      <span className="bg-[#681F2C] text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-semibold">
+                      <span className="bg-[#681F2C] text-white text-[10px] uppercase tracking-wider px-1.5 py-0.5 font-semibold">
                         Cover
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleSetPrimaryImage(idx)}
-                        className="bg-black/70 hover:bg-[#681F2C] text-white text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-medium transition-colors cursor-pointer"
+                        className="bg-black/70 hover:bg-[#681F2C] text-white text-[10px] uppercase tracking-wider px-1.5 py-0.5 font-medium transition-colors cursor-pointer"
                       >
                         Set Cover
                       </button>
@@ -445,7 +446,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="font-serif text-lg text-[#171714]">Variant Inventory Matrix</h3>
-                <p className="text-[11px] text-[#56554F]">
+                <p className="text-xs text-[#56554F]">
                   Server source of truth: stock numbers decrement immediately on verified client payment.
                 </p>
               </div>
@@ -461,7 +462,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             <div className="border border-[#D8D4CC] overflow-x-auto bg-white">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[10px] uppercase tracking-wider text-[#56554F]">
+                  <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[11px] uppercase tracking-wider text-[#56554F]">
                     <th className="py-2.5 px-3">Color</th>
                     <th className="py-2.5 px-3">Size</th>
                     <th className="py-2.5 px-3">Stock Units</th>
@@ -518,7 +519,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleToggleVariantActive(v.id)}
-                          className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold border ${
+                          className={`px-2 py-0.5 text-[11px] uppercase tracking-wider font-semibold border ${
                             v.active
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                               : 'bg-neutral-100 text-neutral-600 border-neutral-300'
@@ -548,21 +549,21 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             <h3 className="font-serif text-lg text-[#171714]">Editorial Specifications</h3>
 
             <div className="space-y-1">
-              <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+              <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                 Description
               </label>
               <textarea
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Editorial column copy describing silhouette and movement..."
+                placeholder="Describe the piece: the fabric, the fit and when to wear it."
                 className="w-full bg-[#F4F1EB] border border-[#D8D4CC] p-3 text-xs focus:outline-none focus:border-[#171714]"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                   Fit & Sizing Guide
                 </label>
                 <textarea
@@ -573,8 +574,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
-                  Delivery & Atelier Fitting
+                <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
+                  Delivery information
                 </label>
                 <textarea
                   rows={2}
@@ -584,7 +585,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wider font-semibold text-[#56554F]">
+                <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
                   Care Instructions
                 </label>
                 <textarea
@@ -608,7 +609,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 className="text-xs uppercase tracking-wider text-red-700 hover:text-red-900 font-semibold flex items-center space-x-1"
               >
                 <Archive className="w-3.5 h-3.5" />
-                <span>Archive Garment</span>
+                <span>Remove from website</span>
               </button>
             )}
           </div>
@@ -635,7 +636,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               disabled={saving}
               className="px-6 py-2.5 bg-[#171714] hover:bg-[#681F2C] text-white text-xs uppercase tracking-[0.16em] font-semibold transition-colors cursor-pointer"
             >
-              {saving ? 'Publishing...' : 'Publish Garment'}
+              {saving ? 'Saving…' : 'Save product'}
             </button>
           </div>
         </div>

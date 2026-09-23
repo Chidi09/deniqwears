@@ -127,13 +127,14 @@ model StoreSettings {
   storeName                   String
   supportEmail                String
   supportWhatsApp             String
-  currency                    String   @default("NGN")
+  currency                    String   @default("USD")
   freeDeliveryThresholdInKobo Int
   returnPeriodDays            Int
   paystackEnabled             Boolean  @default(true)
   flutterwaveEnabled          Boolean  @default(true)
   stripeEnabled               Boolean  @default(false)
   showroomCollectionEnabled   Boolean  @default(true)
+  promotions                  Json? // StorePromotions, see src/lib/promotions.ts
   updatedAt                   DateTime @updatedAt
 }
 
@@ -169,7 +170,7 @@ model Order {
   /// Cumulative amount refunded against this order. Kept as a column (not
   /// derived from timeline text) so revenue can be reported net of refunds.
   refundedInKobo   Int           @default(0)
-  currency         String        @default("NGN")
+  currency         String        @default("USD")
   paymentMethod    PaymentMethod
   paymentReference String?
   paymentId        String?

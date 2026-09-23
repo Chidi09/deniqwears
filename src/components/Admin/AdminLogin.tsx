@@ -43,13 +43,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
         <div className="space-y-2 mb-8">
           <div className="flex items-center space-x-2 text-[#C4828E]">
             <Lock className="w-4 h-4" />
-            <span className="text-[11px] uppercase tracking-[0.2em] font-semibold">
+            <span className="text-xs uppercase tracking-[0.2em] font-semibold">
               Restricted Back-Office
             </span>
           </div>
-          <h1 className="font-serif text-2xl text-[#FAF9F6]">Deniq Atelier Admin</h1>
+          <h1 className="font-serif text-2xl text-[#FAF9F6]">Deniqwears Store Admin</h1>
           <p className="text-xs text-[#8A8780]">
-            Authenticate with your showroom management credentials to access live inventory, orders, and pricing controls.
+            Sign in to manage your products, orders and promotions.
           </p>
         </div>
 
@@ -62,7 +62,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] uppercase tracking-wider text-[#8A8780] mb-1 font-semibold">
+            <label className="block text-xs uppercase tracking-wider text-[#8A8780] mb-1 font-semibold">
               Admin Email
             </label>
             <input
@@ -75,7 +75,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess, onExit }) => 
           </div>
 
           <div>
-            <label className="block text-[11px] uppercase tracking-wider text-[#8A8780] mb-1 font-semibold">
+            <label className="block text-xs uppercase tracking-wider text-[#8A8780] mb-1 font-semibold">
               Passcode
             </label>
             <input

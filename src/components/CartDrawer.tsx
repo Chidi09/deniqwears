@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDialog } from '../hooks/useDialog';
 import { CartItem } from '../types';
-import { formatKobo } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { X, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 
 interface CartDrawerProps {
@@ -99,7 +99,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         </h4>
                         <button
                           onClick={() => onRemoveItem(item.id)}
-                          className="text-[10px] uppercase text-[#56554F] hover:text-[#681F2C] tracking-wider"
+                          className="text-[11px] uppercase text-[#56554F] hover:text-[#681F2C] tracking-wider"
                         >
                           Remove
                         </button>
@@ -110,7 +110,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       </p>
 
                       <p className="font-sans text-sm font-semibold text-[#171714] mt-1">
-                        {formatKobo(item.priceInKobo)}
+                        {formatMoney(item.priceInKobo)}
                       </p>
                     </div>
 
@@ -150,13 +150,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   <span>DELIVERY</span>
                   <span className="text-[#171714] font-medium">Calculated at checkout</span>
                 </div>
-                <div className="flex justify-between text-[#56554F]">
-                  <span>LAGOS ISLAND</span>
-                  <span className="text-[#681F2C] font-semibold">Complimentary</span>
-                </div>
                 <div className="flex justify-between text-sm font-semibold text-[#171714] pt-2 border-t border-[#D8D4CC]">
                   <span>SUBTOTAL</span>
-                  <span className="text-base">{formatKobo(subtotal)}</span>
+                  <span className="text-base">{formatMoney(subtotal)}</span>
                 </div>
               </div>
 
@@ -172,7 +168,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div className="text-center">
                 <button
                   onClick={onClose}
-                  className="editorial-link text-[11px] uppercase tracking-widest text-[#56554F] hover:text-[#171714]"
+                  className="editorial-link text-xs uppercase tracking-widest text-[#56554F] hover:text-[#171714]"
                 >
                   Continue shopping
                 </button>

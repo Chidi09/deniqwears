@@ -14,6 +14,7 @@ import {
   StripeProvider,
   ShowroomCollectionProvider,
 } from './providers';
+import { formatMoney } from '../../src/lib/money';
 
 // The exact shape of an inbound webhook body varies by gateway; this covers
 // only the handful of fields handleWebhook actually reads across all of them.
@@ -43,7 +44,7 @@ export class PaymentService {
   getProvider(providerId: string): PaymentProvider {
     const provider = this.providers.get(providerId);
     if (!provider) {
-      return this.providers.get('paystack')!;
+      return this.providers.get('stripe')!;
     }
     return provider;
   }
@@ -233,7 +234,7 @@ export class PaymentService {
     if (refundAmount <= 0 || refundAmount > remaining) {
       throw new Error(
         alreadyRefunded > 0
-          ? `Refund amount must be greater than zero and no more than the ₦${(remaining / 100).toLocaleString()} still refundable on this order`
+          ? `Refund amount must be greater than zero and no more than the ${formatMoney(remaining)} still refundable on this order`
           : 'Refund amount must be greater than zero and no more than the order total'
       );
     }
@@ -249,7 +250,7 @@ export class PaymentService {
       await db.updateOrderStatus(
         order.id,
         order.status,
-        `Refund of ₦${(refundAmount / 100).toLocaleString()} submitted to ${provider.name} and is ${refund.status} (Refund ID: ${refund.refundId}). Not yet recorded as refunded.`,
+        `Refund of ${formatMoney(refundAmount)} submitted to ${provider.name} and is ${refund.status} (Refund ID: ${refund.refundId}). Not yet recorded as refunded.`,
         adminEmail
       );
       throw new RefundNotSettledError(refund.status, refund.refundId);
@@ -269,7 +270,7 @@ export class PaymentService {
     const updatedOrder = (await db.updateOrderStatus(
       order.id,
       isFullRefund ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
-      `Refunded ₦${(refundAmount / 100).toLocaleString()} via ${provider.name} (Refund ID: ${refund.refundId})`,
+      `Refunded ${formatMoney(refundAmount)} via ${provider.name} (Refund ID: ${refund.refundId})`,
       adminEmail
     ))!;
 

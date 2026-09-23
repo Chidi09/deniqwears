@@ -26,16 +26,16 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-10 pb-16 border-b border-[#D8D4CC] text-[13px] tracking-[0.1em]">
           {/* Column 1: SHOP */}
           <div className="space-y-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
               Shop
             </h4>
             <ul className="space-y-2.5 text-[#56554F]">
               <li>
                 <button
-                  onClick={() => onNavigate({ type: 'shop', category: 'all' })}
+                  onClick={() => onNavigate({ type: 'shop', newOnly: true })}
                   className="hover:text-[#171714] transition-colors text-left"
                 >
-                  New Arrivals
+                  New In
                 </button>
               </li>
               <li>
@@ -83,7 +83,7 @@ export const Footer: React.FC<FooterProps> = ({
 
           {/* Column 2: HELP */}
           <div className="space-y-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
               Help & Client Care
             </h4>
             <ul className="space-y-2.5 text-[#56554F]">
@@ -108,7 +108,7 @@ export const Footer: React.FC<FooterProps> = ({
                   onClick={onOpenSizeGuide}
                   className="hover:text-[#171714] transition-colors text-left"
                 >
-                  Size Guide & Conversions
+                  Size Chart
                 </button>
               </li>
               <li>
@@ -116,15 +116,7 @@ export const Footer: React.FC<FooterProps> = ({
                   onClick={() => onNavigate({ type: 'about' })}
                   className="hover:text-[#171714] transition-colors text-left"
                 >
-                  Private Showroom Bookings
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => onNavigate({ type: 'about' })}
-                  className="hover:text-[#171714] transition-colors text-left"
-                >
-                  Contact Concierge
+                  Contact Us
                 </button>
               </li>
             </ul>
@@ -132,10 +124,20 @@ export const Footer: React.FC<FooterProps> = ({
 
           {/* Column 3: SOCIAL */}
           <div className="space-y-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
               Social & Editorial
             </h4>
             <ul className="space-y-2.5 text-[#56554F]">
+              <li>
+                <a
+                  href="https://tiktok.com/@deniqwears"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-[#171714] transition-colors"
+                >
+                  TikTok (@deniqwears)
+                </a>
+              </li>
               <li>
                 <a
                   href="https://instagram.com/deniqwears"
@@ -144,26 +146,6 @@ export const Footer: React.FC<FooterProps> = ({
                   className="hover:text-[#171714] transition-colors"
                 >
                   Instagram (@deniqwears)
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://tiktok.com/@deniqwears"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-[#171714] transition-colors"
-                >
-                  TikTok
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://pinterest.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-[#171714] transition-colors"
-                >
-                  Pinterest Lookbook
                 </a>
               </li>
               <li>
@@ -177,24 +159,15 @@ export const Footer: React.FC<FooterProps> = ({
             </ul>
           </div>
 
-          {/* Column 4: ATELIER */}
+          {/* Column 4: HELP */}
           <div className="space-y-4">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
-              Atelier & Flagship
+            <h4 className="text-xs font-semibold uppercase tracking-[0.25em] text-[#681F2C]">
+              Deniqwears
             </h4>
             <div className="text-xs text-[#56554F] leading-relaxed space-y-2">
-              <p className="text-[#171714] font-medium">Victoria Island, Lagos</p>
-              <p>Plot 14 Oko Awo Street, Victoria Island, Lagos, Nigeria.</p>
-              <p className="text-[#681F2C] font-semibold pt-1">Mon – Sat: 10:00 – 19:00</p>
-              <p className="text-[11px]">Private fitting sessions by appointment.</p>
-              <div className="pt-2">
-                <button
-                  onClick={() => onNavigate({ type: 'admin' })}
-                  className="editorial-link text-[11px] uppercase tracking-wider text-[#8A8780] hover:text-[#171714] font-medium"
-                >
-                  Atelier Back-Office →
-                </button>
-              </div>
+              <p className="text-[#171714] font-medium">Based in the USA</p>
+              <p>Shipping across the United States.</p>
+              <p>Sizes 10 – 20 in every design.</p>
             </div>
           </div>
         </div>
@@ -202,7 +175,7 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Bottom Bar: Copyright & Location */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-[#56554F] tracking-[0.14em] uppercase gap-3">
           <span>© 2026 DENIQWEARS. ALL RIGHTS RESERVED.</span>
-          <div className="flex items-center space-x-4 text-[11px]">
+          <div className="flex items-center space-x-4 text-xs">
             <span>TERMS</span>
             <span>·</span>
             <span>PRIVACY</span>
@@ -211,10 +184,10 @@ export const Footer: React.FC<FooterProps> = ({
               onClick={() => onNavigate({ type: 'admin' })}
               className="hover:text-[#171714] transition-colors"
             >
-              STAFF
+              STAFF LOGIN
             </button>
             <span>·</span>
-            <span className="text-[#171714] font-semibold">LAGOS, NG</span>
+            <span className="text-[#171714] font-semibold">USA</span>
           </div>
         </div>
       </div>
