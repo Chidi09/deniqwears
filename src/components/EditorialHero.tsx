@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ActivePage } from '../types';
+import { AdireBand, AdireMark, AdirePattern } from './Adire';
 
 /** The one piece pictured in the hero; the homepage leaves it out of New In. */
 export const HERO_PRODUCT_SLUG = 'iris-gown';
@@ -19,7 +20,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
       {/* Top subtle metadata */}
       <div className="flex justify-between items-start text-xs tracking-[0.2em] uppercase font-medium text-[#56554F]">
         <div className="flex items-center space-x-3">
-          <span className="w-2 h-2 rounded-full bg-[#681F2C]"></span>
+          <AdireMark className="text-[#1E2656]" />
           <span className="text-[#171714]">THE DENIQ EDIT</span>
           <span className="text-[#D8D4CC]">/</span>
           <span>AUTUMN · RAIN ’26</span>
@@ -78,10 +79,13 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ onNavigate, onExpl
             onClick={() => onExploreProduct(HERO_PRODUCT_SLUG)}
             className="relative w-full max-w-[580px] aspect-[3/4] overflow-hidden bg-[#FAF9F6] border border-[#D8D4CC] cursor-pointer group"
           >
+            {/* Faint adire rings behind the piece, like the cloth it's photographed on */}
+            <AdirePattern motif="rings" size={56} className="absolute inset-0 text-[#1E2656] opacity-[0.06]" />
+            <AdireBand height={22} className="absolute top-0 inset-x-0 text-[#1E2656] opacity-70 border-b border-[#1E2656]/20 bg-[#F4F1EB]" />
             <img
               src="/products/iris-gown.webp"
               alt="The Deniq Edit — campaign image"
-              className="w-full h-full object-contain p-6 pb-20 transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              className="relative w-full h-full object-contain p-6 pt-10 pb-20 transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               loading="eager"
             />
             

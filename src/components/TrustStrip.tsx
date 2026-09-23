@@ -25,7 +25,7 @@ export const TrustStrip: React.FC<TrustStripProps> = ({ returnPeriodDays, onOpen
       <ul className="max-w-[1344px] mx-auto px-5 md:px-12 grid grid-cols-2 lg:grid-cols-4 divide-[#D8D4CC] lg:divide-x">
         {items.map(({ icon: Icon, title, text, action }) => (
           <li key={title} className="flex items-start gap-3 py-5 lg:px-6 first:lg:pl-0">
-            <span className="shrink-0 w-10 h-10 rounded-full bg-[#F4F1EB] text-[#681F2C] flex items-center justify-center">
+            <span className="shrink-0 w-10 h-10 rounded-full bg-[#1E2656] text-[#FAF9F6] flex items-center justify-center">
               <Icon className="w-[18px] h-[18px] stroke-[1.6]" />
             </span>
             <div className="min-w-0">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowRight, Check, Copy } from 'lucide-react';
 import { ActivePage } from '../types';
 import { PromoBanner as PromoBannerData, PromoLinkTarget } from '../lib/promotions';
+import { AdirePattern } from './Adire';
 
 interface PromoBannerProps {
   banner: PromoBannerData;
@@ -39,20 +40,23 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onNavigate, pr
       aria-label="Current promotion"
     >
       <div
-        className={`relative overflow-hidden bg-[#171714] text-[#FAF9F6] min-h-[320px] ${
+        className={`relative overflow-hidden bg-[#1E2656] text-[#FAF9F6] min-h-[320px] ${
           hasImage ? 'grid md:grid-cols-2' : 'flex'
         }`}
       >
-        {/* Oxblood glow gives the text-only version depth without a photo */}
-        {!hasImage && (
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(ellipse_at_85%_50%,rgba(104,31,44,0.7),transparent_60%)]"
-          />
-        )}
+        {/* Indigo adire cloth: the lattice motif, fading out behind the words */}
+        <AdirePattern motif="lattice" size={48} className="absolute inset-0 text-[#FAF9F6] opacity-[0.09]" />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[linear-gradient(90deg,#1E2656_0%,rgba(30,38,86,0.85)_45%,rgba(30,38,86,0.2)_100%)]"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[radial-gradient(ellipse_at_90%_50%,rgba(104,31,44,0.45),transparent_55%)]"
+        />
 
         {hasImage && (
-          <div className="relative order-1 md:order-2 min-h-[300px] bg-gradient-to-br from-[#2A2420] to-[#171714]">
+          <div className="relative order-1 md:order-2 min-h-[300px] bg-transparent">
             <img
               src={banner.image}
               alt=""
@@ -68,12 +72,6 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onNavigate, pr
             hasImage ? '' : 'max-w-[760px]'
           }`}
         >
-          <span
-            aria-hidden
-            className="absolute -left-6 -top-10 font-serif italic text-[180px] leading-none text-[#FAF9F6]/[0.04] select-none pointer-events-none"
-          >
-            D
-          </span>
           {banner.eyebrow && (
             <span className="inline-flex w-fit items-center gap-2 text-xs uppercase tracking-[0.26em] font-semibold text-[#E4B5BC]">
               <span className="w-6 h-px bg-[#E4B5BC]" />

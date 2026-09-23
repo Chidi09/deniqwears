@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product } from '../types';
 import { ProductCard } from './ProductCard';
+import { AdireMark } from './Adire';
 
 interface ProductGridProps {
   products: Product[];
@@ -25,7 +26,10 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     <section id="product-grid-section" className="max-w-[1344px] mx-auto px-5 md:px-12 pb-24 md:pb-32">
       <div className="flex items-end justify-between gap-4 mb-8 md:mb-10">
         <div>
-          <span className="text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">{eyebrow}</span>
+          <span className="inline-flex items-center gap-2 text-xs tracking-[0.25em] uppercase font-semibold text-[#681F2C]">
+            <AdireMark className="text-[#1E2656]" />
+            {eyebrow}
+          </span>
           <h2 className="font-serif text-4xl md:text-5xl text-[#171714] mt-1">{title}</h2>
           {subtitle && <p className="text-sm text-[#56554F] mt-2">{subtitle}</p>}
         </div>

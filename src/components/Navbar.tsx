@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ShoppingBag, User, Menu, X, ChevronRight, ChevronLeft, Ruler } from 'lucide-react';
 import { ActivePage, Category } from '../types';
+import { AdirePattern } from './Adire';
 
 interface NavbarProps {
   activePage: ActivePage;
@@ -57,15 +58,16 @@ const AnnouncementBar: React.FC<{ messages: string[] }> = ({ messages }) => {
   return (
     <div
       id="announcement-bar"
-      className="w-full bg-[#171714] text-[#FAF9F6] text-xs tracking-[0.16em] uppercase font-medium"
+      className="relative w-full bg-[#1E2656] text-[#FAF9F6] text-xs tracking-[0.16em] uppercase font-medium overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="max-w-[1344px] mx-auto px-4 h-9 flex items-center justify-between gap-3">
+      <AdirePattern motif="dots" size={24} className="absolute inset-0 text-[#FAF9F6] opacity-[0.07]" />
+      <div className="relative max-w-[1344px] mx-auto px-4 h-9 flex items-center justify-between gap-3">
         {count > 1 ? (
           <button
             onClick={() => setIndex((i) => (i - 1 + count) % count)}
-            className="p-1 text-[#8A8780] hover:text-[#FAF9F6] transition-colors"
+            className="p-1 text-[#FAF9F6]/60 hover:text-[#FAF9F6] transition-colors"
             aria-label="Previous message"
           >
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -79,7 +81,7 @@ const AnnouncementBar: React.FC<{ messages: string[] }> = ({ messages }) => {
         {count > 1 ? (
           <button
             onClick={() => setIndex((i) => (i + 1) % count)}
-            className="p-1 text-[#8A8780] hover:text-[#FAF9F6] transition-colors"
+            className="p-1 text-[#FAF9F6]/60 hover:text-[#FAF9F6] transition-colors"
             aria-label="Next message"
           >
             <ChevronRight className="w-3.5 h-3.5" />

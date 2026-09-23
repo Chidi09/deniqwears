@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivePage, Category } from '../types';
+import { AdireBand } from './Adire';
 
 interface FooterProps {
   onNavigate: (page: ActivePage) => void;
@@ -13,7 +14,8 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenSizeGuide,
 }) => {
   return (
-    <footer id="brand-footer" className="w-full bg-[#FAF9F6] border-t border-[#D8D4CC] pt-20 pb-12">
+    <footer id="brand-footer" className="w-full bg-[#FAF9F6] pb-12">
+      <AdireBand height={32} className="text-[#1E2656] bg-[#F4F1EB] border-y border-[#1E2656]/20 mb-20" />
       <div className="max-w-[1344px] mx-auto px-5 md:px-12">
         {/* Massive Lettering Almost Spanning Viewport */}
         <div className="overflow-hidden border-b border-[#D8D4CC] pb-10 mb-16 select-none">

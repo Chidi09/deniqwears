@@ -11,6 +11,7 @@ import { ProductGrid } from '../components/ProductGrid';
 import { PromoBanner } from '../components/PromoBanner';
 import { EditorialBreak } from '../components/EditorialBreak';
 import { NewsletterSection } from '../components/NewsletterSection';
+import { AdireBand } from '../components/Adire';
 
 export default function HomePage() {
   const {
@@ -41,6 +42,9 @@ export default function HomePage() {
         returnPeriodDays={settings?.returnPeriodDays ?? 5}
         onOpenSizeGuide={() => setSizeGuideOpen(true)}
       />
+
+      {/* Adire selvedge: a quiet textile trim between the promise and the shop */}
+      <AdireBand height={26} className="text-[#1E2656] bg-[#F4F1EB] border-b border-[#1E2656]/15" />
 
       <CategoryShowcase products={productsList} onNavigateCategory={handleCategoryNavigate} />
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { AdireMark, AdirePattern } from './Adire';
 
 export const EditorialBreak: React.FC = () => {
   return (
@@ -6,12 +7,10 @@ export const EditorialBreak: React.FC = () => {
       id="editorial-break"
       className="relative w-full min-h-[440px] md:min-h-[520px] flex items-center justify-center overflow-hidden my-12 border-y border-[#D8D4CC]"
     >
-      {/* Typographic backdrop — no photography needed */}
-      <div className="absolute inset-0 bg-[#171714]" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(104,31,44,0.55),transparent_70%)]" />
-        <span className="absolute -right-10 -bottom-24 font-serif italic text-[420px] md:text-[620px] leading-none text-[#FAF9F6]/[0.04] select-none">
-          D
-        </span>
+      {/* Indigo adire cloth backdrop */}
+      <div className="absolute inset-0 bg-[#1E2656]" aria-hidden>
+        <AdirePattern motif="rings" size={64} className="absolute inset-0 text-[#FAF9F6] opacity-[0.07]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(30,38,86,0.9),transparent_75%)]" />
       </div>
 
       {/* Floating Content Box */}
@@ -24,7 +23,7 @@ export const EditorialBreak: React.FC = () => {
         </blockquote>
 
         <div className="mt-8 flex items-center space-x-3 text-xs uppercase tracking-[0.3em] text-[#FAF9F6]/90 font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#681F2C]" />
+          <AdireMark className="text-[#FAF9F6]/80" />
           <span>DENIQ NOTES — ISSUE 01</span>
         </div>
       </div>

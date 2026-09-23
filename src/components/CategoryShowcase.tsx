@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { Category, Product } from '../types';
+import { AdireMark, AdireMotif, AdirePattern } from './Adire';
 
 interface CategoryShowcaseProps {
   products: Product[];
@@ -9,14 +10,20 @@ interface CategoryShowcaseProps {
 
 type ShopCategory = Exclude<Category, 'all'>;
 
-// Typographic tiles in brand colours — the product photos already appear in
-// New In, so repeating them here only made the page feel cluttered.
-const CATEGORY_TILES: { id: ShopCategory; label: string; caption: string; tone: string }[] = [
-  { id: 'sets', label: 'Sets', caption: 'Matching two-pieces', tone: 'bg-[#171714] text-[#FAF9F6]' },
-  { id: 'dresses', label: 'Dresses', caption: 'Gowns & kaftans', tone: 'bg-[#681F2C] text-[#FAF9F6]' },
-  { id: 'occasion', label: 'Occasion', caption: 'For the big days', tone: 'bg-[#E7DFD2] text-[#171714]' },
-  { id: 'tops', label: 'Tops', caption: 'Shirts & blouses', tone: 'bg-[#FAF9F6] text-[#171714] border border-[#D8D4CC]' },
-  { id: 'bottoms', label: 'Bottoms', caption: 'Trousers & skirts', tone: 'bg-[#56554F] text-[#FAF9F6]' },
+// Each tile is a swatch of adire cloth in a brand colour — the product photos
+// already appear in New In, so repeating them here only cluttered the page.
+const CATEGORY_TILES: {
+  id: ShopCategory;
+  label: string;
+  caption: string;
+  tone: string;
+  motif: AdireMotif;
+}[] = [
+  { id: 'sets', label: 'Sets', caption: 'Matching two-pieces', tone: 'bg-[#1E2656] text-[#FAF9F6]', motif: 'lattice' },
+  { id: 'dresses', label: 'Dresses', caption: 'Gowns & kaftans', tone: 'bg-[#681F2C] text-[#FAF9F6]', motif: 'rings' },
+  { id: 'occasion', label: 'Occasion', caption: 'For the big days', tone: 'bg-[#E7DFD2] text-[#1E2656]', motif: 'dots' },
+  { id: 'tops', label: 'Tops', caption: 'Shirts & blouses', tone: 'bg-[#171714] text-[#FAF9F6]', motif: 'waves' },
+  { id: 'bottoms', label: 'Bottoms', caption: 'Trousers & skirts', tone: 'bg-[#FAF9F6] text-[#1E2656] border border-[#D8D4CC]', motif: 'lattice' },
 ];
 
 // Static class names so Tailwind can see them.
@@ -41,7 +48,10 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ products, on
     <section id="category-showcase" className="max-w-[1344px] mx-auto px-5 md:px-12 py-14 md:py-20">
       <div className="flex items-end justify-between mb-6 md:mb-8">
         <div className="space-y-1">
-          <span className="text-xs uppercase tracking-[0.25em] font-semibold text-[#681F2C]">Find your piece</span>
+          <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] font-semibold text-[#681F2C]">
+            <AdireMark className="text-[#1E2656]" />
+            Find your piece
+          </span>
           <h2 className="font-serif text-4xl md:text-5xl text-[#171714]">Shop by Category</h2>
         </div>
         <button
@@ -59,13 +69,12 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ products, on
             onClick={() => onNavigateCategory(tile.id)}
             className={`group relative overflow-hidden text-left p-6 md:p-8 min-h-[150px] md:min-h-[220px] flex flex-col justify-between transition-transform duration-300 hover:-translate-y-1 ${tile.tone}`}
           >
-            <span
-              aria-hidden
-              className="absolute -right-4 -bottom-10 font-serif italic text-[160px] leading-none opacity-[0.07] select-none"
-            >
-              {tile.label.charAt(0)}
-            </span>
-            <div className="flex items-start justify-between">
+            <AdirePattern
+              motif={tile.motif}
+              size={44}
+              className="absolute inset-0 opacity-[0.12] transition-opacity duration-500 group-hover:opacity-[0.2]"
+            />
+            <div className="relative flex items-start justify-between">
               <span className="text-xs uppercase tracking-[0.2em] opacity-70">
                 {tile.count} {tile.count === 1 ? 'piece' : 'pieces'}
               </span>
@@ -73,7 +82,7 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ products, on
                 <ArrowUpRight className="w-4 h-4" />
               </span>
             </div>
-            <div>
+            <div className="relative">
               <h3 className="font-serif text-4xl md:text-5xl leading-none">{tile.label}</h3>
               <p className="text-sm opacity-75 mt-2">{tile.caption}</p>
             </div>
