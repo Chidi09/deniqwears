@@ -13,6 +13,7 @@ export default function Checkout() {
     <CheckoutComponent
       items={cartItems}
       onBackToShopping={() => router.push('/shop')}
+      onBackToHome={() => router.push('/')}
       onClearCart={handleClearCart}
     />
   );

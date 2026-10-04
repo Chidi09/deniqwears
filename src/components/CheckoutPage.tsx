@@ -48,12 +48,14 @@ const PAYMENT_OPTIONS: { id: CheckoutPaymentMethod; title: string; detail: strin
 interface CheckoutPageProps {
   items: CartItem[];
   onBackToShopping: () => void;
+  onBackToHome: () => void;
   onClearCart: () => void;
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   items,
   onBackToShopping,
+  onBackToHome,
   onClearCart,
 }) => {
   const {
@@ -126,6 +128,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // Post-purchase "Save details" password
   const [saveAccountPassword, setSaveAccountPassword] = useState('');
   const [accountSaved, setAccountSaved] = useState(false);
+  const [cancelledNotice, setCancelledNotice] = useState(false);
 
   // Load store settings (delivery zones & fees)
   useEffect(() => {
@@ -148,6 +151,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     const params = new URLSearchParams(window.location.search);
     const reference = params.get('reference');
     const orderId = params.get('orderId');
+
+    // Backed out of the payment page: keep the bag, say so, and clean the URL.
+    if (params.get('cancelled') === 'true') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the URL once on mount
+      setCancelledNotice(true);
+      window.history.replaceState(null, '', '/checkout');
+      return;
+    }
     if (!reference || !orderId) return;
 
     verifyPaymentMutation.mutate(
@@ -157,6 +168,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           if (res.success && res.order) {
             setConfirmedOrder(res.order);
             onClearCart();
+            // Drop the payment reference from the address so a refresh or the
+            // back button can't re-run verification.
+            window.history.replaceState(null, '', '/checkout');
           } else {
             setErrorMsg(res.message || 'Payment could not be completed.');
           }
@@ -397,12 +411,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               )}
             </div>
 
-            <div className="pt-2 text-center">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={onBackToShopping}
-                className="bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold tracking-[0.2em] uppercase px-8 py-4 border border-[#171714] transition-colors"
+                className="w-full sm:w-auto bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold tracking-[0.2em] uppercase px-8 py-4 border border-[#171714] transition-colors"
               >
-                Return to The Deniq Edit
+                Continue shopping
+              </button>
+              <button
+                onClick={onBackToHome}
+                className="w-full sm:w-auto text-[#171714] hover:bg-[#171714] hover:text-[#FAF9F6] text-xs font-semibold tracking-[0.2em] uppercase px-8 py-4 border border-[#171714] transition-colors"
+              >
+                Back to home
               </button>
             </div>
           </div>
@@ -455,6 +475,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
           {/* LEFT: Guest Checkout Steps */}
           <div className="lg:col-span-7 space-y-10">
+            {cancelledNotice && !errorMsg && (
+              <div className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-[#171714] text-xs flex items-center space-x-2">
+                <span>Payment was cancelled. Nothing was charged and your bag is saved, so you can try again whenever you are ready.</span>
+              </div>
+            )}
             {errorMsg && (
               <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs flex items-center space-x-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
