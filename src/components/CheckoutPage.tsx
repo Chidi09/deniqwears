@@ -664,13 +664,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                           <p className="text-xs text-[#56554F]">{zone.description} · {zone.estimatedDelivery}</p>
                         </div>
                       </div>
-                      <span className="text-xs font-semibold text-[#171714]">
-                        {zone.feeInKobo === 0 ? (
-                          <span className="text-[#681F2C]">Complimentary</span>
-                        ) : (
-                          formatMoney(zone.feeInKobo)
-                        )}
-                      </span>
+                      <span className="text-xs font-semibold text-[#171714]">{formatMoney(zone.feeInKobo)}</span>
                     </label>
                   ))}
                 </div>
@@ -973,14 +967,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </div>
 
                 <div className="flex justify-between text-[#56554F]">
-                  <span>Courier Delivery</span>
-                  <span className="text-[#171714] font-medium">
-                    {deliveryFeeInKobo === 0 ? (
-                      <span className="text-[#681F2C]">Complimentary</span>
-                    ) : (
-                      formatMoney(deliveryFeeInKobo)
-                    )}
-                  </span>
+                  <span>Shipping</span>
+                  <span className="text-[#171714] font-medium">{formatMoney(deliveryFeeInKobo)}</span>
                 </div>
 
                 {effectiveDiscount > 0 && (
@@ -999,7 +987,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               {/* Free delivery threshold callout */}
               {settings?.freeDeliveryThresholdInKobo && subtotalInKobo < settings.freeDeliveryThresholdInKobo && (
                 <div className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-xs text-[#56554F]">
-                  Add {formatMoney(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more to unlock complimentary nationwide delivery.
+                  Add {formatMoney(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more for free shipping.
                 </div>
               )}
             </div>

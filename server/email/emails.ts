@@ -50,8 +50,8 @@ function orderTotals(order: Order, totalLabel: string): string {
   return summary([
     { label: 'Subtotal', value: formatAmount(order.subtotalInKobo) },
     {
-      label: 'Delivery',
-      value: order.deliveryFeeInKobo === 0 ? 'Complimentary' : formatAmount(order.deliveryFeeInKobo),
+      label: 'Shipping',
+      value: formatAmount(order.deliveryFeeInKobo),
       accent: order.deliveryFeeInKobo === 0,
     },
     ...(order.discountInKobo > 0
