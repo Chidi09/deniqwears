@@ -1,4 +1,5 @@
 import { Product, StoreSettings, Order, PaymentSession, ProductInput, QuickEditItem } from '../types';
+import type { VerifyAddressRequest, VerifyAddressResult } from '../lib/address';
 
 export const api = {
   // --- STOREFRONT ENDPOINTS ---
@@ -37,6 +38,21 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Invalid discount');
     return data;
+  },
+
+  /** Never throws: if the check can't run, the customer just continues. */
+  async verifyAddress(address: VerifyAddressRequest): Promise<VerifyAddressResult> {
+    try {
+      const res = await fetch('/api/address/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(address),
+      });
+      if (!res.ok) return { status: 'unverified' };
+      return (await res.json()) as VerifyAddressResult;
+    } catch {
+      return { status: 'unverified' };
+    }
   },
 
   async initiateCheckout(payload: {

@@ -15,25 +15,19 @@ import {
   CreditCard,
   Building,
   ChevronRight,
+  MapPin,
 } from 'lucide-react';
 import { AdirePattern } from './Adire';
-
-// All 50 states plus DC, by postal abbreviation (what couriers expect).
-const US_STATES: [string, string][] = [
-  ['AL', 'Alabama'], ['AK', 'Alaska'], ['AZ', 'Arizona'], ['AR', 'Arkansas'], ['CA', 'California'],
-  ['CO', 'Colorado'], ['CT', 'Connecticut'], ['DE', 'Delaware'], ['DC', 'District of Columbia'],
-  ['FL', 'Florida'], ['GA', 'Georgia'], ['HI', 'Hawaii'], ['ID', 'Idaho'], ['IL', 'Illinois'],
-  ['IN', 'Indiana'], ['IA', 'Iowa'], ['KS', 'Kansas'], ['KY', 'Kentucky'], ['LA', 'Louisiana'],
-  ['ME', 'Maine'], ['MD', 'Maryland'], ['MA', 'Massachusetts'], ['MI', 'Michigan'], ['MN', 'Minnesota'],
-  ['MS', 'Mississippi'], ['MO', 'Missouri'], ['MT', 'Montana'], ['NE', 'Nebraska'], ['NV', 'Nevada'],
-  ['NH', 'New Hampshire'], ['NJ', 'New Jersey'], ['NM', 'New Mexico'], ['NY', 'New York'],
-  ['NC', 'North Carolina'], ['ND', 'North Dakota'], ['OH', 'Ohio'], ['OK', 'Oklahoma'], ['OR', 'Oregon'],
-  ['PA', 'Pennsylvania'], ['RI', 'Rhode Island'], ['SC', 'South Carolina'], ['SD', 'South Dakota'],
-  ['TN', 'Tennessee'], ['TX', 'Texas'], ['UT', 'Utah'], ['VT', 'Vermont'], ['VA', 'Virginia'],
-  ['WA', 'Washington'], ['WV', 'West Virginia'], ['WI', 'Wisconsin'], ['WY', 'Wyoming'],
-];
-
-const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
+import { CheckoutField } from './CheckoutField';
+import {
+  US_STATES,
+  VerifiedAddress,
+  VerifyAddressResult,
+  formatPhone,
+  hasErrors,
+  validateAddress,
+  validateContact,
+} from '../lib/address';
 
 type CheckoutPaymentMethod = 'stripe' | 'paystack' | 'flutterwave' | 'showroom';
 
@@ -80,7 +74,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     address: guestShippingAddress?.address || '',
     apartment: guestShippingAddress?.apartment || '',
     city: guestShippingAddress?.city || '',
-    state: guestShippingAddress?.state || '',
+    state: US_STATES.some(([code]) => code === guestShippingAddress?.state) ? guestShippingAddress!.state : '',
     postalCode: guestShippingAddress?.postalCode || '',
     country: 'United States',
   });
@@ -121,6 +115,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   // recovers the original order instead of creating a second one. Cleared only
   // once an order is confirmed.
   const idempotencyKeyRef = useRef<string | null>(null);
+  const idempotencyFingerprintRef = useRef<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null);
@@ -129,6 +124,25 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [saveAccountPassword, setSaveAccountPassword] = useState('');
   const [accountSaved, setAccountSaved] = useState(false);
   const [cancelledNotice, setCancelledNotice] = useState(false);
+
+  // Inline validation: a field shows its error once it has been left, or once
+  // the customer has tried to pay. Errors are derived from the current values,
+  // so they clear the moment the problem is fixed.
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [attemptedPay, setAttemptedPay] = useState(false);
+  const contactErrors = validateContact(contact);
+  const addressErrors = validateAddress(address);
+  const touch = (field: string) => setTouched((prev) => (prev.has(field) ? prev : new Set(prev).add(field)));
+  const shown = <T extends object>(errors: T, field: keyof T & string): string | undefined =>
+    touched.has(field) || attemptedPay ? ((errors[field] as unknown) as string | undefined) : undefined;
+
+  // Address verification: what the check said, and which exact address (if any)
+  // the customer has chosen to keep or has already had confirmed.
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [addressCheck, setAddressCheck] = useState<VerifyAddressResult | null>(null);
+  const [acceptedAddressKey, setAcceptedAddressKey] = useState<string | null>(null);
+  const addressKey = (a: { address: string; apartment?: string; city: string; state: string; postalCode: string }) =>
+    [a.address, a.apartment ?? '', a.city, a.state, a.postalCode].map((v) => v.trim().toUpperCase()).join('|');
 
   // Load store settings (delivery zones & fees)
   useEffect(() => {
@@ -215,43 +229,24 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     }
   };
 
-  // Submit Checkout (Never trusts client prices!)
-  const handlePay = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg(null);
-
-    if (items.length === 0) {
-      setErrorMsg('Your bag is empty.');
-      return;
-    }
-
-    if (!contact.email || !contact.phone || !contact.firstName || !contact.lastName) {
-      setErrorMsg('Please provide your complete contact details.');
-      return;
-    }
-
-    if (!address.address || !address.city || !address.state) {
-      setErrorMsg('Please provide your complete delivery address, including your state.');
-      return;
-    }
-
-    if (!ZIP_PATTERN.test(address.postalCode.trim())) {
-      setErrorMsg('Please enter a valid 5-digit ZIP code.');
-      return;
-    }
-
+  // Place the order for a confirmed delivery address (never trusts client prices!)
+  const submitOrder = async (addr: typeof address) => {
     // Created on first submit (not during render, which must stay pure) and
-    // reused by retries so a failed attempt recovers its original order.
-    if (!idempotencyKeyRef.current) {
+    // reused by retries so a failed attempt recovers its original order. It is
+    // tied to the form contents, so changing the address or bag starts a new order
+    // instead of resurrecting the old one.
+    const fingerprint = JSON.stringify([contact, addr, selectedZoneId, paymentMethod, items.map((i) => [i.variantId, i.quantity])]);
+    if (!idempotencyKeyRef.current || idempotencyFingerprintRef.current !== fingerprint) {
+      // Runs only from click handlers, never during render.
+      // eslint-disable-next-line react-hooks/purity
       idempotencyKeyRef.current = `idemp_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      idempotencyFingerprintRef.current = fingerprint;
     }
 
     setIsSubmitting(true);
-    setGuestCustomer(contact);
-    setGuestShippingAddress({
-      ...contact,
-      ...address,
-    });
+    const normalisedContact = { ...contact, phone: formatPhone(contact.phone) };
+    setGuestCustomer(normalisedContact);
+    setGuestShippingAddress({ ...normalisedContact, ...addr });
 
     try {
       const payload = {
@@ -260,10 +255,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           variantId: i.variantId,
           quantity: i.quantity,
         })),
-        customer: contact,
+        customer: normalisedContact,
         shippingAddress: {
-          ...contact,
-          ...address,
+          ...normalisedContact,
+          ...addr,
         },
         deliveryZoneId: selectedZoneId,
         discountCode: promoStillValid ? appliedPromo!.code : undefined,
@@ -279,14 +274,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         // Send the customer to the gateway to actually authorize/pay. They
         // land back on this same page (via the reference/orderId query
         // params handled in the effect above), which is what triggers
-        // verification — never verify before the customer has paid.
+        // verification, never before the customer has paid.
+        // eslint-disable-next-line react-hooks/immutability -- navigating away, from a click handler
         window.location.href = redirectUrl;
         return;
       }
 
-      // No gateway redirect (e.g. showroom in-person collection): the order
-      // is placed but payment isn't captured online, so there's nothing to
-      // verify yet. An admin confirms payment manually once collected.
+      // No gateway redirect (e.g. in-person collection): the order is placed
+      // but payment isn't captured online, so there's nothing to verify yet.
       setConfirmedOrder(result.order);
       onClearCart();
     } catch (err) {
@@ -294,6 +289,67 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const focusFirstError = () => {
+    // Wait a tick so the errors have rendered, then jump to the first invalid field.
+    window.setTimeout(() => {
+      document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    }, 0);
+  };
+
+  const handlePay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+    setAddressCheck(null);
+
+    if (items.length === 0) {
+      setErrorMsg('Your bag is empty.');
+      return;
+    }
+
+    setAttemptedPay(true);
+    if (hasErrors(contactErrors) || hasErrors(addressErrors)) {
+      focusFirstError();
+      return;
+    }
+
+    // Check the address exists, unless the customer already confirmed or chose
+    // to keep this exact one. A failed check never blocks the sale.
+    if (acceptedAddressKey !== addressKey(address)) {
+      setIsVerifying(true);
+      const result = await api.verifyAddress({
+        address: address.address,
+        apartment: address.apartment,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+      });
+      setIsVerifying(false);
+
+      if (result.status === 'invalid' || result.status === 'corrected') {
+        setAddressCheck(result);
+        document.getElementById('address-check')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      setAcceptedAddressKey(addressKey(address));
+    }
+
+    await submitOrder(address);
+  };
+
+  const applySuggestedAddress = async (suggestion: VerifiedAddress) => {
+    const next = { ...address, ...suggestion };
+    setAddress(next);
+    setAcceptedAddressKey(addressKey(next));
+    setAddressCheck(null);
+    await submitOrder(next);
+  };
+
+  const keepEnteredAddress = async () => {
+    setAcceptedAddressKey(addressKey(address));
+    setAddressCheck(null);
+    await submitOrder(address);
   };
 
   const handleSaveAccount = (e: React.FormEvent) => {
@@ -497,58 +553,76 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    First Name
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Ada"
-                    value={contact.firstName}
-                    onChange={(e) => setContact({ ...contact, firstName: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    Last Name
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Okafor"
-                    value={contact.lastName}
-                    onChange={(e) => setContact({ ...contact, lastName: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    Email for Dispatch Notes
-                  </label>
-                  <input
-                    required
-                    type="email"
-                    placeholder="ada@domain.com"
-                    value={contact.email}
-                    onChange={(e) => setContact({ ...contact, email: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    Phone (for delivery updates)
-                  </label>
-                  <input
-                    required
-                    type="tel"
-                    placeholder="(555) 123-4567"
-                    value={contact.phone}
-                    onChange={(e) => setContact({ ...contact, phone: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
+                <CheckoutField id="checkout-first-name" label="First Name" error={shown(contactErrors, 'firstName')}>
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="text"
+                      autoComplete="given-name"
+                      placeholder="e.g. Ada"
+                      value={contact.firstName}
+                      onChange={(e) => setContact({ ...contact, firstName: e.target.value })}
+                      onBlur={() => touch('firstName')}
+                    />
+                  )}
+                </CheckoutField>
+                <CheckoutField id="checkout-last-name" label="Last Name" error={shown(contactErrors, 'lastName')}>
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="text"
+                      autoComplete="family-name"
+                      placeholder="e.g. Okafor"
+                      value={contact.lastName}
+                      onChange={(e) => setContact({ ...contact, lastName: e.target.value })}
+                      onBlur={() => touch('lastName')}
+                    />
+                  )}
+                </CheckoutField>
+                <CheckoutField
+                  id="checkout-email"
+                  label="Email"
+                  hint="Your receipt and tracking updates go here."
+                  error={shown(contactErrors, 'email')}
+                >
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="ada@gmail.com"
+                      value={contact.email}
+                      onChange={(e) => setContact({ ...contact, email: e.target.value })}
+                      onBlur={() => {
+                        setContact((prev) => ({ ...prev, email: prev.email.trim() }));
+                        touch('email');
+                      }}
+                    />
+                  )}
+                </CheckoutField>
+                <CheckoutField
+                  id="checkout-phone"
+                  label="Phone"
+                  hint="Only used for delivery updates."
+                  error={shown(contactErrors, 'phone')}
+                >
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      placeholder="(555) 123-4567"
+                      value={contact.phone}
+                      onChange={(e) => setContact({ ...contact, phone: e.target.value })}
+                      onBlur={() => {
+                        setContact((prev) => ({ ...prev, phone: formatPhone(prev.phone) }));
+                        touch('phone');
+                      }}
+                    />
+                  )}
+                </CheckoutField>
               </div>
             </div>
 
@@ -603,94 +677,146 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
               {/* Street Address */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    Street Address
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. 123 Main Street"
-                    value={address.address}
-                    onChange={(e) => setAddress({ ...address, address: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    Apartment / Suite (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Apt 4B"
-                    value={address.apartment}
-                    onChange={(e) => setAddress({ ...address, apartment: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                    City
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Houston"
-                    autoComplete="address-level2"
-                    value={address.city}
-                    onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
+                <CheckoutField
+                  id="checkout-address"
+                  label="Street Address"
+                  className="sm:col-span-2"
+                  error={shown(addressErrors, 'address')}
+                >
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="text"
+                      autoComplete="address-line1"
+                      placeholder="e.g. 123 Main Street"
+                      value={address.address}
+                      onChange={(e) => setAddress({ ...address, address: e.target.value })}
+                      onBlur={() => touch('address')}
+                    />
+                  )}
+                </CheckoutField>
+                <CheckoutField id="checkout-apartment" label="Apartment / Suite (Optional)">
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="text"
+                      autoComplete="address-line2"
+                      placeholder="e.g. Apt 4B"
+                      value={address.apartment}
+                      onChange={(e) => setAddress({ ...address, apartment: e.target.value })}
+                    />
+                  )}
+                </CheckoutField>
+                <CheckoutField id="checkout-city" label="City" error={shown(addressErrors, 'city')}>
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="text"
+                      autoComplete="address-level2"
+                      placeholder="e.g. Houston"
+                      value={address.city}
+                      onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                      onBlur={() => touch('city')}
+                    />
+                  )}
+                </CheckoutField>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label
-                    htmlFor="checkout-state"
-                    className="text-xs uppercase tracking-wider font-semibold text-[#56554F]"
-                  >
-                    State
-                  </label>
-                  <select
-                    id="checkout-state"
-                    required
-                    autoComplete="address-level1"
-                    value={address.state}
-                    onChange={(e) => setAddress({ ...address, state: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  >
-                    <option value="" disabled>
-                      Select your state
-                    </option>
-                    {US_STATES.map(([code, name]) => (
-                      <option key={code} value={code}>
-                        {name}
+                <CheckoutField id="checkout-state" label="State" error={shown(addressErrors, 'state')}>
+                  {(c) => (
+                    <select
+                      {...c}
+                      autoComplete="address-level1"
+                      value={address.state}
+                      onChange={(e) => setAddress({ ...address, state: e.target.value })}
+                      onBlur={() => touch('state')}
+                    >
+                      <option value="" disabled>
+                        Select your state
                       </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label
-                    htmlFor="checkout-zip"
-                    className="text-xs uppercase tracking-wider font-semibold text-[#56554F]"
-                  >
-                    ZIP Code
-                  </label>
-                  <input
-                    id="checkout-zip"
-                    required
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="postal-code"
-                    maxLength={10}
-                    placeholder="e.g. 77002"
-                    value={address.postalCode}
-                    onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
-                    className="w-full bg-[#FAF9F6] border border-[#D8D4CC] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#171714]"
-                  />
-                </div>
+                      {US_STATES.map(([code, name]) => (
+                        <option key={code} value={code}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </CheckoutField>
+                <CheckoutField id="checkout-zip" label="ZIP Code" error={shown(addressErrors, 'postalCode')}>
+                  {(c) => (
+                    <input
+                      {...c}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      maxLength={10}
+                      placeholder="e.g. 77002"
+                      value={address.postalCode}
+                      onChange={(e) => setAddress({ ...address, postalCode: e.target.value.replace(/[^\d-]/g, '') })}
+                      onBlur={() => touch('postalCode')}
+                    />
+                  )}
+                </CheckoutField>
               </div>
+
+              {/* Address check result: shown after pressing pay, if we found something to confirm */}
+              {addressCheck && (addressCheck.status === 'corrected' || addressCheck.status === 'invalid') && (
+                <div
+                  id="address-check"
+                  role="alert"
+                  className={`p-4 border space-y-3 ${
+                    addressCheck.status === 'invalid' ? 'border-[#B3261E]/40 bg-[#FDF3F2]' : 'border-[#B07A2E]/50 bg-[#FBF6EC]'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <MapPin className={`w-4 h-4 mt-0.5 shrink-0 ${addressCheck.status === 'invalid' ? 'text-[#B3261E]' : 'text-[#B07A2E]'}`} />
+                    <div className="text-sm text-[#171714] space-y-1">
+                      <p className="font-semibold">
+                        {addressCheck.status === 'invalid' ? 'We couldn\u2019t confirm this address' : 'Is this the right address?'}
+                      </p>
+                      {addressCheck.message && <p className="text-[#56554F]">{addressCheck.message}</p>}
+                      {addressCheck.suggestion && (
+                        <p className="text-[#171714]">
+                          <span className="text-[#56554F]">We suggest: </span>
+                          {addressCheck.suggestion.address}, {addressCheck.suggestion.city}, {addressCheck.suggestion.state}{' '}
+                          {addressCheck.suggestion.postalCode}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                    {addressCheck.suggestion && (
+                      <button
+                        type="button"
+                        onClick={() => applySuggestedAddress(addressCheck.suggestion as VerifiedAddress)}
+                        disabled={isSubmitting}
+                        className="px-5 py-3 bg-[#171714] text-[#FAF9F6] text-xs font-semibold uppercase tracking-wider hover:bg-[#681F2C] transition-colors"
+                      >
+                        Use suggested address
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddressCheck(null);
+                        document.getElementById('checkout-address')?.focus();
+                      }}
+                      className="px-5 py-3 border border-[#171714] text-xs font-semibold uppercase tracking-wider hover:bg-[#171714] hover:text-[#FAF9F6] transition-colors"
+                    >
+                      Edit my address
+                    </button>
+                    <button
+                      type="button"
+                      onClick={keepEnteredAddress}
+                      disabled={isSubmitting}
+                      className="text-xs text-[#56554F] underline underline-offset-2 hover:text-[#171714] sm:ml-auto"
+                    >
+                      Ship to what I typed
+                    </button>
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-[#8A8780]">We currently ship within the United States only.</p>
             </div>
 
@@ -746,13 +872,15 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <button
                 type="button"
                 onClick={handlePay}
-                disabled={isSubmitting || verifyPaymentMutation.isPending}
+                disabled={isSubmitting || isVerifying || verifyPaymentMutation.isPending}
                 className="w-full bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold tracking-[0.2em] uppercase py-4 border border-[#171714] transition-colors cursor-pointer flex items-center justify-center space-x-2"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>
-                  {isSubmitting || verifyPaymentMutation.isPending
-                    ? 'Securing Transaction...'
+                  {isVerifying
+                    ? 'Checking your address…'
+                    : isSubmitting || verifyPaymentMutation.isPending
+                    ? 'Securing your order…'
                     : `Pay ${formatMoney(totalInKobo)}`}
                 </span>
               </button>

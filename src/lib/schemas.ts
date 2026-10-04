@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { GARMENT_SIZES } from '../types';
 import { PromotionsSchema } from './promotions';
+import { US_STATE_CODES, ZIP_PATTERN, isValidEmail, isValidUsPhone, validateAddress, validateContact } from './address';
 
 // Bounded on purpose: unbounded arrays/strings let an anonymous caller drive
 // arbitrary database work and gateway calls from a single request.
@@ -17,24 +18,46 @@ export const OrderItemInputSchema = z.object({
     .max(MAX_QUANTITY_PER_LINE, `Maximum ${MAX_QUANTITY_PER_LINE} of a single size per order`),
 });
 
+// Same rules the checkout form shows inline (src/lib/address.ts), enforced here
+// so a request that skips the form can't place an order with a bad address.
+const nameField = (label: string, field: 'firstName' | 'lastName') =>
+  z
+    .string()
+    .trim()
+    .max(80)
+    .superRefine((value, ctx) => {
+      const message = validateContact({ firstName: 'x', lastName: 'x', email: 'a@b.co', phone: '2125550100', [field]: value })[field];
+      if (message) ctx.addIssue({ code: 'custom', message: `${label}: ${message}` });
+    });
+
 export const CustomerInputSchema = z.object({
-  firstName: z.string().trim().min(1, 'First name is required').max(80),
-  lastName: z.string().trim().min(1, 'Last name is required').max(80),
-  email: z.string().trim().email('Valid email address is required'),
-  phone: z.string().trim().min(5, 'Valid phone number is required').max(32),
+  firstName: nameField('First name', 'firstName'),
+  lastName: nameField('Last name', 'lastName'),
+  email: z.string().trim().refine(isValidEmail, 'Valid email address is required'),
+  phone: z.string().trim().refine(isValidUsPhone, 'Enter a valid 10-digit US phone number'),
 });
 
 export const ShippingAddressInputSchema = z.object({
-  firstName: z.string().trim().min(1, 'First name is required').max(80),
-  lastName: z.string().trim().min(1, 'Last name is required').max(80),
-  email: z.string().trim().email('Valid email address is required'),
-  phone: z.string().trim().min(5, 'Phone number is required').max(32),
-  address: z.string().trim().min(3, 'Street delivery address is required').max(200),
+  firstName: nameField('First name', 'firstName'),
+  lastName: nameField('Last name', 'lastName'),
+  email: z.string().trim().refine(isValidEmail, 'Valid email address is required'),
+  phone: z.string().trim().refine(isValidUsPhone, 'Enter a valid 10-digit US phone number'),
+  address: z.string().trim().max(200),
   apartment: z.string().trim().max(100).optional(),
-  city: z.string().trim().min(1, 'City is required').max(80),
-  state: z.string().trim().min(1, 'State is required').max(80),
-  country: z.string().trim().default('United States'),
-  postalCode: z.string().trim().optional(),
+  city: z.string().trim().max(80),
+  state: z.string().trim().refine((s) => US_STATE_CODES.has(s), 'Choose a valid US state'),
+  country: z.literal('United States').default('United States'),
+  postalCode: z.string().trim().regex(ZIP_PATTERN, 'Enter a valid 5-digit ZIP code'),
+}).superRefine((value, ctx) => {
+  const errors = validateAddress({
+    address: value.address,
+    city: value.city,
+    state: value.state,
+    postalCode: value.postalCode,
+  });
+  for (const [field, message] of Object.entries(errors)) {
+    ctx.addIssue({ code: 'custom', path: [field], message: message as string });
+  }
 });
 
 export const CheckoutPayloadSchema = z.object({
