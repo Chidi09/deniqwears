@@ -116,26 +116,8 @@ export const AdminSettings: React.FC = () => {
           <div>
             <h3 className="font-serif text-xl text-[#171714]">Courier Delivery Zones</h3>
             <p className="text-xs text-[#56554F]">
-              Server fees automatically applied during checkout calculation
+              The shipping fee customers are charged. It is always added to the order.
             </p>
-          </div>
-          <div className="text-right">
-            <label className="text-xs uppercase tracking-wider text-[#56554F] font-semibold block">
-              Free shipping on orders over ($)
-            </label>
-            <input
-              type="number"
-              value={settings.freeDeliveryThresholdInKobo / 100}
-              step="0.01"
-              onChange={(e) =>
-                setSettings({
-                  ...settings,
-                  freeDeliveryThresholdInKobo: Math.round((parseFloat(e.target.value) || 0) * 100),
-                })
-              }
-              className="w-36 bg-[#F4F1EB] border border-[#D8D4CC] px-2.5 py-1 text-xs font-semibold text-right"
-            />
-            <p className="text-[11px] text-[#8A8780] mt-1">Set to 0 for no free shipping. Shipping fees are then always charged.</p>
           </div>
         </div>
 

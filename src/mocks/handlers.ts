@@ -109,10 +109,7 @@ export const apiHandlers = [
       };
     });
 
-    const deliveryFeeInKobo =
-      MOCK_SETTINGS.freeDeliveryThresholdInKobo > 0 && subtotalInKobo >= MOCK_SETTINGS.freeDeliveryThresholdInKobo
-        ? 0
-        : MOCK_SETTINGS.deliveryZones.find((z) => z.id === body.deliveryZoneId)?.feeInKobo ?? 0;
+    const deliveryFeeInKobo = MOCK_SETTINGS.deliveryZones.find((z) => z.id === body.deliveryZoneId)?.feeInKobo ?? 0;
 
     const totalInKobo = subtotalInKobo + deliveryFeeInKobo;
     const id = `mock-ord-${Date.now()}`;

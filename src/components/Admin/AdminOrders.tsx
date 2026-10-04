@@ -420,7 +420,7 @@ export const AdminOrders: React.FC<AdminOrdersProps> = ({
                 <span>{formatMoney(selectedOrder.subtotalInKobo)}</span>
               </div>
               <div className="flex justify-between text-[#56554F]">
-                <span>Shipping</span>
+                <span>Courier Fee</span>
                 <span>{formatMoney(selectedOrder.deliveryFeeInKobo)}</span>
               </div>
               {selectedOrder.discountInKobo > 0 && (

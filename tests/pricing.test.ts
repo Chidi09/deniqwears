@@ -6,21 +6,9 @@ import {
 } from '../server/pricing';
 
 describe('calculateDeliveryFeeInKobo', () => {
-  it('charges the zone fee when below the free-delivery threshold', () => {
-    expect(calculateDeliveryFeeInKobo(5_000_000, 10_000_000, 450_000)).toBe(450_000);
-  });
-
-  it('is free once the subtotal meets the threshold', () => {
-    expect(calculateDeliveryFeeInKobo(10_000_000, 10_000_000, 450_000)).toBe(0);
-  });
-
-  it('is free once the subtotal exceeds the threshold', () => {
-    expect(calculateDeliveryFeeInKobo(20_000_000, 10_000_000, 450_000)).toBe(0);
-  });
-
-  it('always charges the zone fee when the threshold is 0 (free shipping off)', () => {
-    expect(calculateDeliveryFeeInKobo(0, 0, 1_000)).toBe(1_000);
-    expect(calculateDeliveryFeeInKobo(5_000_000, 0, 1_000)).toBe(1_000);
+  it('always charges the zone fee: shipping is compulsory', () => {
+    expect(calculateDeliveryFeeInKobo(1_000)).toBe(1_000);
+    expect(calculateDeliveryFeeInKobo(1_995)).toBe(1_995);
   });
 });
 

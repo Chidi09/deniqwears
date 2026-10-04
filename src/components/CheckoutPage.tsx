@@ -201,8 +201,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const subtotalInKobo = items.reduce((sum, item) => sum + item.priceInKobo * item.quantity, 0);
 
   const currentZone = settings?.deliveryZones.find((z) => z.id === selectedZoneId);
-  const isFreeDelivery = (settings?.freeDeliveryThresholdInKobo && subtotalInKobo >= settings.freeDeliveryThresholdInKobo) || currentZone?.feeInKobo === 0;
-  const deliveryFeeInKobo = isFreeDelivery ? 0 : (currentZone?.feeInKobo || 0);
+  // Shipping is compulsory: always the selected option's fee.
+  const deliveryFeeInKobo = currentZone?.feeInKobo ?? 0;
   // A discount only counts while the code in the box and the bag value still
   // match what the server quoted.
   const promoStillValid =
@@ -518,7 +518,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             className="inline-flex items-center space-x-2 text-xs uppercase tracking-[0.16em] text-[#56554F] hover:text-[#171714] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Return to Boutique</span>
+            <span>Back to shop</span>
           </button>
 
           <div className="flex items-center space-x-2 text-xs uppercase tracking-[0.2em] font-semibold text-[#171714]">
@@ -550,7 +550,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <h3 className="font-serif text-2xl text-[#171714]">
                   1. Contact Information
                 </h3>
-                <span className="text-xs uppercase tracking-wider text-[#56554F]">Guest Checkout</span>
+                <span className="text-xs uppercase tracking-wider text-[#56554F]">No account needed</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -638,7 +638,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               {/* Delivery Zone Selector */}
               <div className="space-y-2">
                 <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                  Select Region / Courier Route
+                  Shipping Method
                 </label>
                 <div className="space-y-2">
                   {settings?.deliveryZones.map((zone) => (
@@ -889,11 +889,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </button>
 
               <div className="flex items-center justify-center space-x-4 pt-3 text-xs text-[#56554F]">
-                <span>SSL Encrypted</span>
+                <span>Secure, encrypted checkout</span>
                 <span>·</span>
-                <span>PCI-DSS Compliant</span>
-                <span>·</span>
-                <span>Server-Verified Amounts</span>
+                <span>Payments by Stripe</span>
               </div>
             </div>
           </div>
@@ -903,9 +901,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <div className="bg-[#FAF9F6] border border-[#D8D4CC] p-6 space-y-6">
               <div className="flex justify-between items-baseline border-b border-[#D8D4CC] pb-3">
                 <span className="text-xs uppercase tracking-wider font-semibold text-[#171714]">
-                  Bag Summary ({items.reduce((sum, i) => sum + i.quantity, 0)} items)
+                  Your Bag ({items.reduce((sum, i) => sum + i.quantity, 0)} items)
                 </span>
-                <span className="text-xs text-[#56554F]">Live Server Verification</span>
               </div>
 
               {/* Items List */}
@@ -967,7 +964,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 </div>
 
                 <div className="flex justify-between text-[#56554F]">
-                  <span>Shipping</span>
+                  <span>Courier Delivery</span>
                   <span className="text-[#171714] font-medium">{formatMoney(deliveryFeeInKobo)}</span>
                 </div>
 
@@ -979,17 +976,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 )}
 
                 <div className="flex justify-between text-sm font-semibold text-[#171714] pt-3 border-t border-[#D8D4CC]">
-                  <span>Total (Server Verified)</span>
+                  <span>Total</span>
                   <span className="text-base font-bold">{formatMoney(totalInKobo)}</span>
                 </div>
               </div>
-
-              {/* Free delivery threshold callout */}
-              {settings?.freeDeliveryThresholdInKobo && subtotalInKobo < settings.freeDeliveryThresholdInKobo && (
-                <div className="p-3 bg-[#F4F1EB] border border-[#D8D4CC] text-xs text-[#56554F]">
-                  Add {formatMoney(settings.freeDeliveryThresholdInKobo - subtotalInKobo)} more for free shipping.
-                </div>
-              )}
             </div>
 
             {/* Reassurance Badges */}

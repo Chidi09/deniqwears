@@ -152,11 +152,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const deliveryFeeInKobo = calculateDeliveryFeeInKobo(
-      serverSubtotalInKobo,
-      settings.freeDeliveryThresholdInKobo,
-      selectedZone.feeInKobo
-    );
+    const deliveryFeeInKobo = calculateDeliveryFeeInKobo(selectedZone.feeInKobo);
 
     // Server calculates discount. Redemption is NOT counted here — the usage
     // count used to increment before the order existed, so an abandoned or
