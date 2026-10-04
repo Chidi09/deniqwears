@@ -18,7 +18,7 @@ export const MOCK_SETTINGS: StoreSettings = {
   supportEmail: 'hello@deniqwears.com',
   supportWhatsApp: '+1 (555) 010-0000',
   currency: 'USD',
-  freeDeliveryThresholdInKobo: 15_000,
+  freeDeliveryThresholdInKobo: 0,
   returnPeriodDays: 5,
   deliveryZones: [
     {

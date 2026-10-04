@@ -89,7 +89,7 @@ async function main() {
     }
     if (items.length === 0) continue;
 
-    const deliveryFeeInKobo = subtotalInKobo >= settings.freeDeliveryThresholdInKobo ? 0 : zone.feeInKobo;
+    const deliveryFeeInKobo = settings.freeDeliveryThresholdInKobo > 0 && subtotalInKobo >= settings.freeDeliveryThresholdInKobo ? 0 : zone.feeInKobo;
     const totalInKobo = subtotalInKobo + deliveryFeeInKobo;
 
     // Realistic funnel: most paid, some dispatched, a few unpaid/failed/refunded.

@@ -110,7 +110,7 @@ export const apiHandlers = [
     });
 
     const deliveryFeeInKobo =
-      subtotalInKobo >= MOCK_SETTINGS.freeDeliveryThresholdInKobo
+      MOCK_SETTINGS.freeDeliveryThresholdInKobo > 0 && subtotalInKobo >= MOCK_SETTINGS.freeDeliveryThresholdInKobo
         ? 0
         : MOCK_SETTINGS.deliveryZones.find((z) => z.id === body.deliveryZoneId)?.feeInKobo ?? 0;
 

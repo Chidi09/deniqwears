@@ -62,7 +62,7 @@ async function main() {
       supportEmail: 'hello@deniqwears.com',
       supportWhatsApp: '+1 (555) 010-0000',
       currency: 'USD',
-      freeDeliveryThresholdInKobo: 15_000,
+      freeDeliveryThresholdInKobo: 0,
       returnPeriodDays: 5,
       paystackEnabled: false,
       flutterwaveEnabled: false,

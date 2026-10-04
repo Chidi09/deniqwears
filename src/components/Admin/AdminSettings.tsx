@@ -135,6 +135,7 @@ export const AdminSettings: React.FC = () => {
               }
               className="w-36 bg-[#F4F1EB] border border-[#D8D4CC] px-2.5 py-1 text-xs font-semibold text-right"
             />
+            <p className="text-[11px] text-[#8A8780] mt-1">Set to 0 for no free shipping. Shipping fees are then always charged.</p>
           </div>
         </div>
 

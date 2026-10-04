@@ -1,15 +1,16 @@
 import { DiscountCode } from './types';
 
 /**
- * Delivery fee in kobo: free once the subtotal clears the store-wide
- * threshold, otherwise the selected zone's flat fee.
+ * Delivery fee in cents: free once the subtotal clears the store-wide
+ * threshold, otherwise the selected zone's flat fee. A threshold of 0 means the
+ * store offers no free shipping, so the zone fee is always charged.
  */
 export function calculateDeliveryFeeInKobo(
   subtotalInKobo: number,
   freeDeliveryThresholdInKobo: number,
   zoneFeeInKobo: number
 ): number {
-  if (subtotalInKobo >= freeDeliveryThresholdInKobo) return 0;
+  if (freeDeliveryThresholdInKobo > 0 && subtotalInKobo >= freeDeliveryThresholdInKobo) return 0;
   return zoneFeeInKobo;
 }
 

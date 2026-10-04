@@ -227,7 +227,8 @@ export const StoreSettingsUpdateSchema = z.object({
   supportEmail: z.string().email().optional(),
   supportWhatsApp: z.string().optional(),
   currency: z.literal('USD').optional(),
-  freeDeliveryThresholdInKobo: z.number().int().positive().optional(),
+  // 0 turns free shipping off.
+  freeDeliveryThresholdInKobo: z.number().int().min(0).optional(),
   returnPeriodDays: z.number().int().positive().optional(),
   deliveryZones: z
     .array(
