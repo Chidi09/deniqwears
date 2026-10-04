@@ -1,5 +1,6 @@
 import { Product, StoreSettings, Order, PaymentSession, ProductInput, QuickEditItem } from '../types';
-import type { VerifyAddressRequest, VerifyAddressResult } from '../lib/address';
+import type { VerifiedAddress, VerifyAddressRequest, VerifyAddressResult } from '../lib/address';
+import type { AddressSuggestion } from '../lib/address';
 
 export const api = {
   // --- STOREFRONT ENDPOINTS ---
@@ -38,6 +39,40 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Invalid discount');
     return data;
+  },
+
+  /** Autocomplete never throws: on any failure the form simply has no suggestions. */
+  async suggestAddresses(
+    input: string,
+    sessionToken: string,
+    signal?: AbortSignal
+  ): Promise<{ enabled: boolean; suggestions: AddressSuggestion[] }> {
+    try {
+      const res = await fetch('/api/address/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'suggest', input, sessionToken }),
+        signal,
+      });
+      if (!res.ok) return { enabled: true, suggestions: [] };
+      return await res.json();
+    } catch {
+      return { enabled: true, suggestions: [] };
+    }
+  },
+
+  async pickSuggestedAddress(placeId: string, sessionToken: string): Promise<VerifiedAddress | null> {
+    try {
+      const res = await fetch('/api/address/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'place', placeId, sessionToken }),
+      });
+      if (!res.ok) return null;
+      return (await res.json()).address ?? null;
+    } catch {
+      return null;
+    }
   },
 
   /** Never throws: if the check can't run, the customer just continues. */

@@ -131,3 +131,14 @@ describe('address verification (ZIP check, no street provider configured)', () =
     expect((await verifyAddress(goodAddress)).status).toBe('unverified');
   });
 });
+
+import { formatUnit } from '../server/address/autocomplete';
+
+describe('apartment formatting from Google', () => {
+  it('capitalises a labelled unit and prefixes a bare number', () => {
+    expect(formatUnit('apt 12')).toBe('Apt 12');
+    expect(formatUnit('Suite 400')).toBe('Suite 400');
+    expect(formatUnit('4B')).toBe('#4B');
+    expect(formatUnit(undefined)).toBe('');
+  });
+});

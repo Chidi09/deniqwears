@@ -124,3 +124,12 @@ export interface VerifyAddressResult {
   message?: string;
   suggestion?: VerifiedAddress;
 }
+
+/** One row in the street-address dropdown. */
+export interface AddressSuggestion {
+  placeId: string;
+  /** The whole line, for screen readers. */
+  text: string;
+  main: string;
+  secondary: string;
+}

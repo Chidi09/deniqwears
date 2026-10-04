@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { AdirePattern } from './Adire';
 import { CheckoutField } from './CheckoutField';
+import { AddressAutocomplete } from './AddressAutocomplete';
 import {
   US_STATES,
   VerifiedAddress,
@@ -684,14 +685,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                   error={shown(addressErrors, 'address')}
                 >
                   {(c) => (
-                    <input
-                      {...c}
-                      type="text"
-                      autoComplete="address-line1"
-                      placeholder="e.g. 123 Main Street"
+                    <AddressAutocomplete
+                      control={c}
                       value={address.address}
-                      onChange={(e) => setAddress({ ...address, address: e.target.value })}
+                      onChange={(value) => setAddress({ ...address, address: value })}
                       onBlur={() => touch('address')}
+                      onPick={(picked) =>
+                        setAddress({
+                          ...address,
+                          address: picked.address,
+                          // Keep an apartment the customer already typed; otherwise use Google's.
+                          apartment: address.apartment || picked.apartment,
+                          city: picked.city,
+                          state: picked.state,
+                          postalCode: picked.postalCode.slice(0, 5),
+                        })
+                      }
                     />
                   )}
                 </CheckoutField>
