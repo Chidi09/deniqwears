@@ -12,7 +12,7 @@ const DELIVERY_ZONES = [
   {
     id: 'zone-us-standard',
     name: 'Standard Shipping',
-    feeInKobo: 795,
+    feeInKobo: 1_000,
     estimatedDelivery: '3–7 business days',
     description: 'Tracked delivery anywhere in the United States',
     active: true,
