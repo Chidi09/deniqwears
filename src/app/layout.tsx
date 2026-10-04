@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Jost } from 'next/font/google';
 import './globals.css';
 import { QueryProvider } from '../providers/QueryProvider';
@@ -20,6 +20,10 @@ const siteUrl = process.env.APP_URL?.trim().replace(/\/+$/, '') || 'http://local
 const siteName = 'Deniqwears';
 const siteDescription =
   'Contemporary womenswear in sizes 10 to 20. Statement dresses, sets and occasion pieces in linen, Ankara cotton and amwete. Shipping across the USA.';
+
+export const viewport: Viewport = {
+  themeColor: '#1E2656',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -54,6 +58,16 @@ const organizationJsonLd = {
       name: siteName,
       url: siteUrl,
       description: siteDescription,
+      logo: `${siteUrl}/icons/icon-512.png`,
+    },
+    {
+      '@type': 'OnlineStore',
+      '@id': `${siteUrl}/#store`,
+      name: siteName,
+      url: siteUrl,
+      image: `${siteUrl}/opengraph-image`,
+      areaServed: 'US',
+      parentOrganization: { '@id': `${siteUrl}/#organization` },
     },
     {
       '@type': 'WebSite',
