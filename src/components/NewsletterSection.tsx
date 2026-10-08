@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
 
 export const NewsletterSection: React.FC = () => {
@@ -89,6 +90,10 @@ export const NewsletterSection: React.FC = () => {
                 <span>Direct correspondence only · No spam</span>
                 <span>Unsubscribe anytime</span>
               </div>
+              <p className="text-xs leading-relaxed text-[#56554F]">
+                By subscribing, you agree to receive Deniqwears news and offers. Read our{' '}
+                <Link href="/privacy-policy" className="underline underline-offset-4 hover:text-[#681F2C]">Privacy Policy</Link>.
+              </p>
             </form>
           )}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { CartItem, Order, StoreSettings } from '../types';
 import { api } from '../services/api';
 import { formatMoney } from '../lib/money';
@@ -872,6 +873,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
             {/* Submit Button */}
             <div className="pt-4">
+              <p className="mb-4 text-xs leading-relaxed text-[#56554F]">
+                By placing your order, you agree to our{' '}
+                <Link href="/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-[#681F2C]">Terms & Conditions (opens in a new tab)</Link>.
+                {' '}Read our{' '}
+                <Link href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-[#681F2C]">Privacy Policy (opens in a new tab)</Link> and{' '}
+                <Link href="/cookie-policy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-[#681F2C]">Cookie Policy (opens in a new tab)</Link>.
+              </p>
               <button
                 type="button"
                 onClick={handlePay}

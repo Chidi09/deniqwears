@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { ActivePage, Category } from '../types';
 import { AdireBand } from './Adire';
 
@@ -161,11 +162,13 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Bottom Bar: Copyright & Location */}
         <div className="pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-[#56554F] tracking-[0.14em] uppercase gap-3">
           <span>© 2026 DENIQWEARS. ALL RIGHTS RESERVED.</span>
-          <div className="flex items-center space-x-4 text-xs">
-            <span>TERMS</span>
-            <span>·</span>
-            <span>PRIVACY</span>
-            <span>·</span>
+          <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-3 text-xs">
+            <Link href="/terms-and-conditions" className="hover:text-[#171714] transition-colors">TERMS</Link>
+            <span aria-hidden="true">·</span>
+            <Link href="/privacy-policy" className="hover:text-[#171714] transition-colors">PRIVACY</Link>
+            <span aria-hidden="true">·</span>
+            <Link href="/cookie-policy" className="hover:text-[#171714] transition-colors">COOKIES</Link>
+            <span aria-hidden="true">·</span>
             <button
               onClick={() => onNavigate({ type: 'admin' })}
               className="hover:text-[#171714] transition-colors"
