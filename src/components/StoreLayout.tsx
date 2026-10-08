@@ -6,6 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { FloatingContact } from './FloatingContact';
+import { CookieNotice } from './CookieNotice';
 import { ActivePage } from '../types';
 import { useStoreSettingsQuery } from '../hooks/queries';
 import { DEFAULT_PROMOTIONS } from '../lib/promotions';
@@ -30,8 +31,12 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
   const isAdmin = pathname?.startsWith('/admin');
   const isCheckout = pathname?.startsWith('/checkout');
 
-  if (isAdmin || isCheckout) {
+  if (isAdmin) {
     return <>{children}</>;
+  }
+
+  if (isCheckout) {
+    return <>{children}<CookieNotice /></>;
   }
 
   // Derive activePage for Navbar highlight
@@ -68,6 +73,7 @@ export function StoreLayout({ children }: { children: React.ReactNode }) {
         email={settings?.supportEmail}
         raised={activePage.type === 'product'}
       />
+      <CookieNotice />
     </div>
   );
 }
