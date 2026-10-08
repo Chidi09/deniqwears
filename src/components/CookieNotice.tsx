@@ -39,7 +39,7 @@ export function CookieNotice() {
     >
       <h2 id="cookie-notice-title" className="font-serif text-2xl text-[#171714] mb-3">A little note on cookies.</h2>
       <p className="text-sm leading-relaxed text-[#56554F]">
-        We use browser storage to remember your bag and checkout details, and cookies for staff sign-in.
+        We use browser storage to remember your bag and checkout details.
         We don’t use advertising or analytics trackers.
       </p>
       <div className="flex items-center justify-between gap-5 mt-5">
