@@ -8,8 +8,10 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      // The back-office and API are not content; keep them out of the index.
-      disallow: ['/admin', '/api/', '/checkout'],
+      // The API and checkout are not content; keep them out of the index.
+      // The admin is kept out of search by its noindex tag and the entry gate;
+      // listing it here would only advertise where it is.
+      disallow: ['/api/', '/checkout'],
     },
     sitemap: `${base}/sitemap.xml`,
   };

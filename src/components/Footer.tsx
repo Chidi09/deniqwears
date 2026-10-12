@@ -169,13 +169,6 @@ export const Footer: React.FC<FooterProps> = ({
             <span aria-hidden="true">·</span>
             <Link href="/cookie-policy" className="hover:text-[#171714] transition-colors">COOKIES</Link>
             <span aria-hidden="true">·</span>
-            <button
-              onClick={() => onNavigate({ type: 'admin' })}
-              className="hover:text-[#171714] transition-colors"
-            >
-              STAFF LOGIN
-            </button>
-            <span>·</span>
             <span className="text-[#171714] font-semibold">USA</span>
           </div>
         </div>
