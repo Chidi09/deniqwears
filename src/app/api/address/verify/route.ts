@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyAddress } from '@/server/address/verify';
 import { getClientIp } from '@/server/request';
+import { parseBody } from '@/server/http';
 import { US_STATE_CODES, ZIP_PATTERN } from '@/src/lib/address';
+import { text } from '@/server/sanitize';
 
 const VerifyRequestSchema = z.object({
-  address: z.string().trim().min(3).max(200),
-  apartment: z.string().trim().max(100).optional(),
-  city: z.string().trim().min(1).max(80),
+  address: text(200, { min: 3, label: 'Street address' }),
+  apartment: text(40, { label: 'Apartment' }).optional(),
+  city: text(80, { min: 1, label: 'City' }),
   state: z.string().refine((s) => US_STATE_CODES.has(s), 'Choose a valid US state'),
   postalCode: z.string().trim().regex(ZIP_PATTERN, 'Enter a valid ZIP code'),
 });
@@ -36,17 +38,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'unverified' });
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
-  }
-
-  const parsed = VerifyRequestSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Invalid address' }, { status: 400 });
-  }
+  const parsed = await parseBody(req, VerifyRequestSchema, { maxBytes: 2_000 });
+  if ('response' in parsed) return parsed.response;
 
   const result = await verifyAddress(parsed.data);
   return NextResponse.json(result);

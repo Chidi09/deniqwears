@@ -26,7 +26,10 @@ export const ZIP_PATTERN = /^\d{5}(-\d{4})?$/;
 const NAME_PATTERN = /^[\p{L}][\p{L}\p{M}'’. -]*$/u;
 // Letters plus the punctuation real US place names use ("St. Louis", "Winston-Salem").
 const CITY_PATTERN = /^[\p{L}][\p{L}\p{M}'’. -]*$/u;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Letters, digits and the punctuation real mailboxes use (. _ % + ' -) before the @,
+// then dot-separated hostnames. Excludes < > " ( ) , ; : \\ [ ] and spaces, so markup
+// and header-injection tricks can't pass as an address.
+const EMAIL_PATTERN = /^[\p{L}\p{N}._%+'-]+@(?:[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?\.)+[\p{L}]{2,}$/u;
 
 /** Digits only, with a leading US country code removed: "+1 (713) 555-0142" becomes "7135550142". */
 export function phoneDigits(value: string): string {

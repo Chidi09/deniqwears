@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { paymentService } from '@/server/payment/service';
 import { PaymentVerificationError } from '@/server/payment/types';
 import { InsufficientStockError } from '@/server/db';
 import { requireAdminAuth } from '../../../auth-helper';
 import { getErrorMessage } from '@/src/lib/errors';
-
-const RecordPaymentSchema = z.object({
-  note: z.string().trim().max(300).optional(),
-});
+import { RecordPaymentSchema } from '@/src/lib/schemas';
+import { invalidId, isValidId, parseBody } from '@/server/http';
 
 /**
  * Records payment collected in person for a showroom order. Showroom orders
@@ -25,26 +22,16 @@ export async function POST(
 
   const { id } = await params;
 
-  let rawBody: unknown = {};
-  try {
-    rawBody = await req.json();
-  } catch {
-    rawBody = {};
-  }
+  if (!isValidId(id)) return invalidId();
 
-  const parseResult = RecordPaymentSchema.safeParse(rawBody);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: parseResult.error.issues[0]?.message || 'Invalid request' },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseBody(req, RecordPaymentSchema, { maxBytes: 2_000 });
+  if ('response' in parsed) return parsed.response;
 
   try {
     const { order } = await paymentService.recordManualPayment(
       id,
       auth.adminEmail!,
-      parseResult.data.note
+      parsed.data.note
     );
     return NextResponse.json({ order });
   } catch (err) {

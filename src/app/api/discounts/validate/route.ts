@@ -4,20 +4,14 @@ import { DiscountValidateSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
 import { calculateDiscountInKobo } from '@/server/pricing';
 import { formatMoney } from '@/src/lib/money';
+import { parseBody } from '@/server/http';
 
 export async function POST(req: NextRequest) {
   try {
-    const rawBody = await req.json();
-    const parseResult = DiscountValidateSchema.safeParse(rawBody);
+    const parsed = await parseBody(req, DiscountValidateSchema, { maxBytes: 2000 });
+    if ('response' in parsed) return parsed.response;
 
-    if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error.issues[0]?.message || 'Invalid discount request' },
-        { status: 400 }
-      );
-    }
-
-    const { code, subtotalInKobo } = parseResult.data;
+    const { code, subtotalInKobo } = parsed.data;
 
     const discount = await db.getDiscount(code);
     if (!discount) {

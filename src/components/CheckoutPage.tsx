@@ -943,7 +943,10 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     type="text"
                     placeholder="Promotional code (e.g. WELCOME10)"
                     value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
+                    maxLength={40}
+                    autoCapitalize="characters"
+                    spellCheck={false}
+                    onChange={(e) => setPromoCode(e.target.value.replace(/[^A-Za-z0-9_-]/g, ''))}
                     className="flex-1 px-3 py-2 text-xs border border-[#D8D4CC] bg-[#F4F1EB] focus:outline-none focus:border-[#171714] uppercase"
                   />
                   <button

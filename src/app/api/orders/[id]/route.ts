@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/db';
 import { requireAdminAuth } from '../../admin/auth-helper';
+import { invalidId, isValidId } from '@/server/http';
 
 /**
  * Admin-only. This previously required no authentication, and `getOrderById`
@@ -21,6 +22,7 @@ export async function GET(
   if (!auth.authorized) return auth.response!;
 
   const { id } = await params;
+  if (!isValidId(id)) return invalidId();
   const order = await db.getOrderById(id);
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });

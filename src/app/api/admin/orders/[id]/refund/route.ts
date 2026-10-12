@@ -5,6 +5,7 @@ import { PaymentGatewayError, RefundNotSettledError } from '@/server/payment/typ
 import { requireAdminAuth } from '../../../auth-helper';
 import { OrderRefundSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
+import { invalidId, isValidId, parseBody } from '@/server/http';
 
 export async function POST(
   req: NextRequest,
@@ -15,27 +16,12 @@ export async function POST(
 
   const { id } = await params;
 
-  // A malformed body must not become "refund everything". This previously
-  // caught the parse error and substituted `{}`, which the schema accepts as
-  // "no amount given" — i.e. a broken request selected the largest possible
-  // financial action.
-  let rawBody: unknown;
-  try {
-    rawBody = await req.json();
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid request body. Send {"amountInKobo": number} for a partial refund, or {} for the full remaining balance.' },
-      { status: 400 }
-    );
-  }
+  if (!isValidId(id)) return invalidId();
 
-  const parseResult = OrderRefundSchema.safeParse(rawBody);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: parseResult.error.issues[0]?.message || 'Invalid refund request' },
-      { status: 400 }
-    );
-  }
+  // A malformed or missing body must never become "refund everything": it is
+  // rejected here, and only an explicit {} means the full remaining balance.
+  const parsed = await parseBody(req, OrderRefundSchema, { maxBytes: 2_000 });
+  if ('response' in parsed) return parsed.response;
 
   try {
     // Use the amount the service actually refunded — with no amount supplied
@@ -43,7 +29,7 @@ export async function POST(
     // partial refund already exists.
     const { order, refundId, refundedInKobo } = await paymentService.refundOrder(
       id,
-      parseResult.data.amountInKobo,
+      parsed.data.amountInKobo,
       auth.adminEmail!
     );
 

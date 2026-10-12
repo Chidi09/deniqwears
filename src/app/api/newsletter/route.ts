@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { NewsletterSubscribeSchema } from '@/src/lib/schemas';
+import { parseBody } from '@/server/http';
 import { prisma } from '@/server/prisma';
-
-const SubscribeSchema = z.object({
-  email: z.string().trim().toLowerCase().email('Please enter a valid email address').max(200),
-});
 
 /**
  * Real subscription persistence. The form previously only flipped local state,
@@ -12,22 +9,9 @@ const SubscribeSchema = z.object({
  * them early access.
  */
 export async function POST(req: NextRequest) {
-  let rawBody: unknown;
-  try {
-    rawBody = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
-  }
-
-  const parseResult = SubscribeSchema.safeParse(rawBody);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: parseResult.error.issues[0]?.message || 'Please enter a valid email address' },
-      { status: 400 }
-    );
-  }
-
-  const { email } = parseResult.data;
+  const parsed = await parseBody(req, NewsletterSubscribeSchema, { maxBytes: 1_000 });
+  if ('response' in parsed) return parsed.response;
+  const { email } = parsed.data;
 
   try {
     // Re-subscribing is idempotent and clears any previous opt-out.

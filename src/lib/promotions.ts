@@ -28,12 +28,21 @@ export const PromoBannerSchema = z.object({
   ctaLabel: z.string().trim().min(1, 'The banner button needs a label').max(30),
   ctaTarget: z.enum(PROMO_LINK_TARGETS),
   // A full web address, or a photo hosted on the site itself (/products/…).
+  // Never javascript:, data: or a protocol-relative //host link.
   image: z
     .string()
     .trim()
     .max(1000)
-    .refine((v) => v === '' || v.startsWith('/') || /^https?:\/\//.test(v), 'Banner photo must be a web address (https://…)'),
-  discountCode: z.string().trim().toUpperCase().max(30),
+    .refine(
+      (v) => v === '' || /^https?:\/\/[^\s\\]+$/.test(v) || /^\/(?!\/)[^\s\\]*$/.test(v),
+      'Banner photo must be a web address (https://…)'
+    ),
+  discountCode: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .max(30)
+    .regex(/^[A-Z0-9_-]*$/, 'Discount code can only contain letters, numbers, - and _'),
 });
 
 export const PromotionsSchema = z.object({

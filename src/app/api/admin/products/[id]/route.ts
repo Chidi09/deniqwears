@@ -3,6 +3,7 @@ import { db } from '@/server/db';
 import { requireAdminAuth } from '../../auth-helper';
 import { ProductUpdateSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
+import { invalidId, isValidId, parseBody } from '@/server/http';
 
 export async function PUT(
   req: NextRequest,
@@ -13,21 +14,13 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const rawBody = await req.json();
-
-    // Validated like POST and quick-edit. This route used to forward raw JSON
-    // to the database, which accepted negative prices/stock and invalid sizes.
-    const parseResult = ProductUpdateSchema.safeParse(rawBody);
-    if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error.issues[0]?.message || 'Invalid garment data' },
-        { status: 400 }
-      );
-    }
+    if (!isValidId(id)) return invalidId();
+    const parsed = await parseBody(req, ProductUpdateSchema, { maxBytes: 300000 });
+    if ('response' in parsed) return parsed.response;
 
     const updated = await db.updateProduct(
       id,
-      parseResult.data as Parameters<typeof db.updateProduct>[1],
+      parsed.data as Parameters<typeof db.updateProduct>[1],
       auth.adminEmail!
     );
     if (!updated) {

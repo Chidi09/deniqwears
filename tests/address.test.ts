@@ -28,10 +28,15 @@ describe('contact validation', () => {
   });
 
   it('rejects malformed emails', () => {
-    for (const email of ['', 'ada', 'ada@', 'ada@gmail', 'ada @gmail.com', '@gmail.com']) {
+    for (const email of [
+      '', 'ada', 'ada@', 'ada@gmail', 'ada @gmail.com', '@gmail.com',
+      '<script>alert(1)</script>@x.co', 'a"b@x.co', 'a(b)@x.co', 'a,b@x.co', 'a@b.co\r\nBcc: v@x.co', 'a@-.co', "a@b.c",
+    ]) {
       expect(isValidEmail(email)).toBe(false);
     }
     expect(isValidEmail('ada.okafor+shop@mail.co.uk')).toBe(true);
+    expect(isValidEmail("o'neil@example.com")).toBe(true);
+    expect(isValidEmail('josé@exemple.fr')).toBe(true);
   });
 
   it('accepts common US phone formats and rejects the rest', () => {

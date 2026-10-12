@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check } from 'lucide-react';
+import { isValidEmail } from '../lib/address';
 
 export const NewsletterSection: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -11,7 +12,13 @@ export const NewsletterSection: React.FC = () => {
   // Success is only shown once the server has actually stored the address.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || submitting) return;
+    if (submitting) return;
+
+    const value = email.trim();
+    if (!isValidEmail(value)) {
+      setError('That email doesn\u2019t look right. Check for typos, for example name@gmail.com.');
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -19,7 +26,7 @@ export const NewsletterSection: React.FC = () => {
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: value }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Could not subscribe');
@@ -66,6 +73,8 @@ export const NewsletterSection: React.FC = () => {
                   id="newsletter-email-input"
                   type="email"
                   required
+                  maxLength={254}
+                  autoComplete="email"
                   placeholder="EMAIL ADDRESS"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

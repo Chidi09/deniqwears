@@ -3,24 +3,13 @@ import { paymentService } from '@/server/payment/service';
 import { PaymentVerificationError, PaymentGatewayError } from '@/server/payment/types';
 import { InsufficientStockError } from '@/server/db';
 import { PaymentVerifySchema } from '@/src/lib/schemas';
+import { parseBody } from '@/server/http';
 
 export async function POST(req: NextRequest) {
-  let rawBody: unknown;
-  try {
-    rawBody = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-  }
+  const parsed = await parseBody(req, PaymentVerifySchema, { maxBytes: 2000 });
+  if ('response' in parsed) return parsed.response;
 
-  const parseResult = PaymentVerifySchema.safeParse(rawBody);
-  if (!parseResult.success) {
-    return NextResponse.json(
-      { error: parseResult.error.issues[0]?.message || 'Reference and order ID are required' },
-      { status: 400 }
-    );
-  }
-
-  const { reference, orderId } = parseResult.data;
+  const { reference, orderId } = parsed.data;
 
   try {
     const result = await paymentService.verifyPayment(reference, orderId);

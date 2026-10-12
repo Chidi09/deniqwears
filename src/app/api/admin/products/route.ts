@@ -3,6 +3,7 @@ import { db } from '@/server/db';
 import { requireAdminAuth } from '../auth-helper';
 import { ProductCreateUpdateSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
+import { parseBody } from '@/server/http';
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdminAuth(req);
@@ -17,21 +18,14 @@ export async function POST(req: NextRequest) {
   if (!auth.authorized) return auth.response!;
 
   try {
-    const rawBody = await req.json();
-    const parseResult = ProductCreateUpdateSchema.safeParse(rawBody);
-
-    if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error.issues[0]?.message || 'Invalid garment data' },
-        { status: 400 }
-      );
-    }
+    const parsed = await parseBody(req, ProductCreateUpdateSchema, { maxBytes: 300000 });
+    if ('response' in parsed) return parsed.response;
 
     // Prisma requires secondaryImage; fall back to the primary rather than
     // letting a schema-valid payload fail at insert.
     const payload = {
-      ...parseResult.data,
-      secondaryImage: parseResult.data.secondaryImage || parseResult.data.primaryImage,
+      ...parsed.data,
+      secondaryImage: parsed.data.secondaryImage || parsed.data.primaryImage,
     };
 
     const newProduct = await db.createProduct(

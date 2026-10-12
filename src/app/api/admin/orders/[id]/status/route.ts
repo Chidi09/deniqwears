@@ -4,6 +4,7 @@ import { sendOrderDispatchedEmail } from '@/server/email/service';
 import { requireAdminAuth } from '../../../auth-helper';
 import { OrderStatusUpdateSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
+import { invalidId, isValidId, parseBody } from '@/server/http';
 import { assertAdminTransition, InvalidOrderTransitionError } from '@/server/order-state';
 
 export async function PUT(
@@ -15,17 +16,10 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const rawBody = await req.json();
-    const parseResult = OrderStatusUpdateSchema.safeParse(rawBody);
-
-    if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error.issues[0]?.message || 'Invalid order status payload' },
-        { status: 400 }
-      );
-    }
-
-    const { status, reason } = parseResult.data;
+    if (!isValidId(id)) return invalidId();
+    const parsed = await parseBody(req, OrderStatusUpdateSchema, { maxBytes: 2_000 });
+    if ('response' in parsed) return parsed.response;
+    const { status, reason } = parsed.data;
     const previous = await db.getOrderById(id);
     if (!previous) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });

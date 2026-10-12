@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/server/db';
 import { getClientIp } from '@/server/request';
 import { AdminLoginSchema } from '@/src/lib/schemas';
+import { parseBody } from '@/server/http';
 import { getErrorMessage } from '@/src/lib/errors';
 import {
   verifyPassword,
@@ -16,17 +17,9 @@ const RATE_LIMIT_WINDOW_MINUTES = 15;
 
 export async function POST(req: NextRequest) {
   try {
-    const rawBody = await req.json();
-    const parseResult = AdminLoginSchema.safeParse(rawBody);
-
-    if (!parseResult.success) {
-      return NextResponse.json(
-        { error: parseResult.error.issues[0]?.message || 'Invalid credentials format' },
-        { status: 400 }
-      );
-    }
-
-    const { email, password } = parseResult.data;
+    const parsed = await parseBody(req, AdminLoginSchema, { maxBytes: 4_000 });
+    if ('response' in parsed) return parsed.response;
+    const { email, password } = parsed.data;
     const ipAddress = getClientIp(req);
 
     const recentFailures = await db.countRecentFailedLoginAttempts(

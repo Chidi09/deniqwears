@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { autocompleteEnabled, placeToAddress, suggestAddresses } from '@/server/address/autocomplete';
 import { getClientIp } from '@/server/request';
+import { text } from '@/server/sanitize';
+import { parseBody } from '@/server/http';
 
 const SessionToken = z.string().uuid();
 
 const SuggestSchema = z.object({
   action: z.literal('suggest'),
-  input: z.string().trim().min(3).max(120),
+  input: text(120, { min: 3, label: 'Search' }),
   sessionToken: SessionToken,
 });
 const PlaceSchema = z.object({
@@ -43,25 +45,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ enabled: false, suggestions: [] });
   }
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
-  }
+  const parsed = await parseBody(req, z.union([SuggestSchema, PlaceSchema]), { maxBytes: 2_000 });
+  if ('response' in parsed) return parsed.response;
+  const body = parsed.data;
 
   try {
-    const suggest = SuggestSchema.safeParse(body);
-    if (suggest.success) {
-      const suggestions = await suggestAddresses(suggest.data.input, suggest.data.sessionToken);
+    if (body.action === 'suggest') {
+      const suggestions = await suggestAddresses(body.input, body.sessionToken);
       return NextResponse.json({ enabled: true, suggestions });
     }
 
-    const place = PlaceSchema.safeParse(body);
-    if (place.success) {
-      const address = await placeToAddress(place.data.placeId, place.data.sessionToken);
-      return NextResponse.json({ address });
-    }
+    const address = await placeToAddress(body.placeId, body.sessionToken);
+    return NextResponse.json({ address });
   } catch {
     return NextResponse.json({ enabled: true, suggestions: [], address: null });
   }

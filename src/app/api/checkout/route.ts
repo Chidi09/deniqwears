@@ -12,16 +12,12 @@ import {
 } from '@/server/pricing';
 import { CheckoutPayloadSchema } from '@/src/lib/schemas';
 import { getErrorMessage } from '@/src/lib/errors';
+import { parseBody } from '@/server/http';
 
 export async function POST(req: NextRequest) {
   try {
-    const rawBody = await req.json();
-    const parseResult = CheckoutPayloadSchema.safeParse(rawBody);
-
-    if (!parseResult.success) {
-      const firstError = parseResult.error.issues[0]?.message || 'Invalid checkout payload';
-      return NextResponse.json({ error: firstError }, { status: 400 });
-    }
+    const parsed = await parseBody(req, CheckoutPayloadSchema, { maxBytes: 50000 });
+    if ('response' in parsed) return parsed.response;
 
     const {
       items,
@@ -31,7 +27,7 @@ export async function POST(req: NextRequest) {
       discountCode,
       paymentMethod,
       idempotencyKey,
-    } = parseResult.data;
+    } = parsed.data;
 
     // Idempotency: an indexed direct lookup, not a full table scan.
     const finalIdempotencyKey =

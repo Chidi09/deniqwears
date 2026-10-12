@@ -21,6 +21,17 @@ interface AdminProductModalProps {
   onSaved: () => void;
 }
 
+/** "The Ember's Gown!" becomes "the-embers-gown": lowercase letters, numbers and single hyphens. */
+function toSlug(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
 export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   product,
   onClose,
@@ -193,7 +204,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
 
     const payload = {
       name,
-      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+      slug: toSlug(slug || name),
       priceInKobo: Math.round(priceInDollars * 100), // stored in cents
       status: targetStatus || status,
       category,
