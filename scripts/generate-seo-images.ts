@@ -3,6 +3,7 @@
  *   - public/og/<slug>.jpg   1200x630 share image per catalogue product
  *   - src/app/favicon.ico, icon.png, apple-icon.png and public/icons/*
  *   - src/lib/og-images.ts   which slugs have a share image
+ *   - src/app/opengraph-image.jpg   the home page share image
  *
  * Share images are JPEG on a solid background because social apps (WhatsApp,
  * iMessage, X, Facebook) don't reliably render the transparent WebP product
@@ -102,6 +103,53 @@ async function productShareImage(name: string, subtitle: string, imagePath: stri
     .toBuffer();
 }
 
+
+/** The home page share card: indigo adire panel, three real pieces on cream. */
+async function homeShareImage(): Promise<Buffer> {
+  const W = 1200;
+  const H = 630;
+  const panelW = 560;
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
+  <rect width="${W}" height="${H}" fill="${CREAM}"/>
+  <rect width="${panelW}" height="${H}" fill="${INDIGO}"/>
+  <clipPath id="p"><rect width="${panelW}" height="${H}"/></clipPath>
+  <g clip-path="url(#p)">${ringPattern(panelW, H)}</g>
+  <text x="64" y="104" font-family="${SANS}" font-size="24" letter-spacing="8" fill="#FAF9F6" fill-opacity="0.9">DENIQWEARS</text>
+  <rect x="64" y="128" width="64" height="2" fill="#B07A2E"/>
+  <text x="64" y="262" font-family="${SERIF}" font-size="68" fill="#FAF9F6">Statement</text>
+  <text x="64" y="340" font-family="${SERIF}" font-size="68" fill="#FAF9F6">pieces in sizes</text>
+  <text x="64" y="418" font-family="${SERIF}" font-style="italic" font-size="68" fill="#E9C9A0">10 to 20.</text>
+  <text x="64" y="480" font-family="${SANS}" font-size="25" fill="#FAF9F6" fill-opacity="0.78">Dresses, sets and occasion wear.</text>
+  <text x="64" y="${H - 52}" font-family="${SANS}" font-size="22" letter-spacing="2" fill="#FAF9F6" fill-opacity="0.7">SHIPPING ACROSS THE USA</text>
+  <text x="64" y="${H - 22}" font-family="${SANS}" font-size="20" letter-spacing="1" fill="#E9C9A0">deniqwears.com</text>
+</svg>`;
+
+  const piece = async (slug: string, height: number) => {
+    const input = await sharp(`public/products/${slug}.webp`).resize({ height }).toBuffer();
+    const meta = await sharp(input).metadata();
+    return { input, width: meta.width ?? 0, height };
+  };
+
+  const left = await piece('bloom-cape-set', 400);
+  const right = await piece('ember-circle-kaftan', 420);
+  const center = await piece('iris-gown', 540);
+
+  const areaX = panelW;
+  const areaW = W - panelW;
+  const centerLeft = areaX + Math.round((areaW - center.width) / 2);
+
+  return sharp(Buffer.from(svg))
+    .composite([
+      { input: left.input, left: areaX + 10, top: H - 40 - left.height },
+      { input: right.input, left: W - right.width - 10, top: H - 40 - right.height },
+      { input: center.input, left: centerLeft, top: Math.round((H - center.height) / 2) },
+    ])
+    .jpeg({ quality: 90, mozjpeg: true })
+    .toBuffer();
+}
+
 function iconSvg(size: number): string {
   const r = Math.round(size * 0.2);
   return `
@@ -147,6 +195,11 @@ async function main() {
     slugs.push(p.slug);
     console.log(`og/${p.slug}.jpg  ${(jpg.length / 1024).toFixed(0)} KB`);
   }
+
+  const home = await homeShareImage();
+  await writeFile('src/app/opengraph-image.jpg', home);
+  await writeFile('src/app/opengraph-image.alt.txt', 'Deniqwears: statement womenswear in sizes 10 to 20');
+  console.log(`opengraph-image.jpg  ${(home.length / 1024).toFixed(0)} KB`);
 
   await writeFile(
     'src/lib/og-images.ts',
