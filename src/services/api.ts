@@ -2,6 +2,26 @@ import { Product, StoreSettings, Order, PaymentSession, ProductInput, QuickEditI
 import type { VerifiedAddress, VerifyAddressRequest, VerifyAddressResult } from '../lib/address';
 import type { AddressSuggestion } from '../lib/address';
 
+// Phone photos are often 5-15 MB, over the host's 4.5 MB request limit. Shrink them in the
+// browser first; if the browser can't decode the file, send it as is and let the server judge.
+const MAX_PHOTO_EDGE = 1600;
+async function shrinkPhoto(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const scale = Math.min(1, MAX_PHOTO_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+    if (!blob || (blob.size >= file.size && file.size < 3_000_000)) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch {
+    return file;
+  }
+}
+
 export const api = {
   // --- STOREFRONT ENDPOINTS ---
   // These deliberately throw rather than returning [] / null on failure:
@@ -197,9 +217,11 @@ export const api = {
   /** Uploads one photo; returns the address the website serves it from. */
   async uploadAdminPhoto(file: File): Promise<string> {
     const body = new FormData();
-    body.append('file', file);
+    const small = await shrinkPhoto(file);
+    body.append('file', small, small.name);
     const res = await fetch('/api/admin/upload', { method: 'POST', body, credentials: 'same-origin' });
     if (res.status === 401) throw new Error('Admin session expired. Please sign in again.');
+    if (res.status === 413) throw new Error('That photo is too large. Please choose a smaller one.');
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Photo upload failed. Please try again.');
     return data.url;

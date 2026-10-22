@@ -470,7 +470,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 />
               </label>
               <p className="mt-2 text-xs text-[#56554F]">
-                JPG, PNG or WebP, up to 4 MB each. Photos are resized automatically.
+                JPG, PNG or WebP. Large phone photos are shrunk automatically.
               </p>
             </div>
           </div>
