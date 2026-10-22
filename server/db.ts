@@ -211,10 +211,16 @@ export const db = {
     data: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'variants'> & { variants?: Omit<ProductVariant, 'id'>[] },
     adminEmail: string
   ): Promise<Product> {
+    // Two products can share a name (e.g. a re-listed style); keep the web address unique.
+    const baseSlug = data.slug || slugify(data.name);
+    let slug = baseSlug;
+    for (let n = 2; await prisma.product.findUnique({ where: { slug }, select: { id: true } }); n++) {
+      slug = `${baseSlug}-${n}`;
+    }
     const created = await prisma.product.create({
       data: {
         name: data.name,
-        slug: data.slug || slugify(data.name),
+        slug,
         priceInKobo: data.priceInKobo,
         status: data.status,
         category: data.category,
