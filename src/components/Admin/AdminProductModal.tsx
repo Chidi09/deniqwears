@@ -44,6 +44,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   const [slug, setSlug] = useState(product?.slug || '');
   const [priceInDollars, setPriceInDollars] = useState(product ? product.priceInKobo / 100 : 0);
   const [status, setStatus] = useState<'live' | 'draft' | 'archived'>(product?.status || 'live');
+  const [isNewArrival, setIsNewArrival] = useState(product ? product.isNewArrival : true);
   const [category, setCategory] = useState<'dresses' | 'sets' | 'tops' | 'bottoms' | 'occasion'>(
     product?.category || 'dresses'
   );
@@ -229,6 +230,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       slug: toSlug(slug || name),
       priceInKobo: Math.round(priceInDollars * 100), // stored in cents
       status: targetStatus || status,
+      isNewArrival,
       category,
       collection,
       colors,
@@ -376,6 +378,15 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 <option value="archived">Archived (Catalog preserved)</option>
               </select>
             </div>
+
+            <label className="flex items-center gap-2 text-xs text-[#171714] sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={isNewArrival}
+                onChange={(e) => setIsNewArrival(e.target.checked)}
+              />
+              Show in &ldquo;New In&rdquo; on the home page
+            </label>
           </div>
 
           {/* 2. Photography & Media Manager (Drag, reorder, cover selection) */}
