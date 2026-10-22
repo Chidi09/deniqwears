@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Product, ProductVariant, GARMENT_SIZES } from '../../types';
 import { api } from '../../services/api';
 import { getErrorMessage } from '../../lib/errors';
-import { X, Plus, Trash2, Archive, AlertCircle, ChevronDown } from 'lucide-react';
+import { X, Plus, Trash2, Archive, AlertCircle, ChevronDown, Check } from 'lucide-react';
 
 interface AdminProductModalProps {
   product?: Product | null;
@@ -105,6 +105,24 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<{ status: 'live' | 'draft'; name: string; slug: string; newIn: boolean } | null>(null);
+
+  // A message at the top is useless if she is looking at the bottom of the form.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (error) scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [error]);
+
+  const checks = [
+    { label: 'Photo', ok: images.length > 0, step: 1 },
+    { label: 'Name', ok: !!name.trim(), step: 2 },
+    { label: 'Price', ok: priceInDollars > 0, step: 2 },
+    { label: 'Colour', ok: colours.some((c) => c.name.trim()), step: 3 },
+    { label: 'Size', ok: sizes.length > 0, step: 3 },
+  ];
+  const missing = checks.filter((c) => !c.ok);
+  const canPublish = missing.length === 0 && !uploading && !saving;
+  const canSaveDraft = checks.slice(0, 3).every((c) => c.ok) && !uploading && !saving;
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -209,13 +227,12 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
     };
 
     try {
-      if (isEditing && product) {
-        await api.updateAdminProduct(product.id, payload);
-      } else {
-        await api.createAdminProduct(payload);
-      }
+      const saved =
+        isEditing && product
+          ? await api.updateAdminProduct(product.id, payload)
+          : await api.createAdminProduct(payload);
       onSaved();
-      onClose();
+      setDone({ status, name: cleanName, slug: saved?.slug || payload.slug, newIn: isNewArrival });
     } catch (err) {
       setError(getErrorMessage(err, 'Could not save the product. Please try again.'));
     } finally {
@@ -235,9 +252,64 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
     }
   };
 
+  if (done) {
+    const live = done.status === 'live';
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+        <div className="bg-[#FAF9F6] border border-[#D8D4CC] w-full max-w-lg p-8 text-center shadow-2xl space-y-5">
+          <div
+            className={`mx-auto flex h-16 w-16 items-center justify-center rounded-full text-white ${
+              live ? 'bg-emerald-600' : 'bg-amber-600'
+            }`}
+          >
+            <Check className="w-9 h-9" />
+          </div>
+          <h2 className="font-serif text-3xl text-[#171714]">
+            {live ? (isEditing ? 'Changes saved' : 'Your product is live!') : 'Saved, but not on the website yet'}
+          </h2>
+          <p className="text-base text-[#171714]">
+            {live ? (
+              <>
+                <strong>{done.name}</strong> is now on your website.
+                {done.newIn ? ' It also shows in “New In” on the home page.' : ''}
+              </>
+            ) : (
+              <>
+                <strong>{done.name}</strong> is saved privately. Customers cannot see it. When you are ready, open it
+                from the Products list and press <strong>Publish to website</strong>.
+              </>
+            )}
+          </p>
+          <div className="flex flex-col gap-3 pt-2">
+            {live && (
+              <a
+                href={`/product/${done.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="px-6 py-3.5 bg-[#171714] hover:bg-[#681F2C] text-white text-base font-semibold"
+              >
+                See it on the website
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-3.5 border border-[#171714] text-base font-semibold text-[#171714] hover:bg-[#171714] hover:text-white"
+            >
+              Back to my products
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-[#FAF9F6] border border-[#D8D4CC] w-full max-w-2xl max-h-[94vh] overflow-y-auto shadow-2xl">
+      <div
+        ref={scrollRef}
+        className="bg-[#FAF9F6] border border-[#D8D4CC] w-full max-w-2xl max-h-[94vh] overflow-y-auto shadow-2xl"
+      >
         <div className="flex justify-between items-center p-5 border-b border-[#D8D4CC] sticky top-0 bg-[#FAF9F6] z-10">
           <h2 className="font-serif text-2xl text-[#171714]">
             {isEditing ? `Edit ${product.name}` : 'Add a new product'}
@@ -530,20 +602,39 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({ product, o
         </div>
 
         <div className="p-5 border-t border-[#D8D4CC] bg-[#F4F1EB] sticky bottom-0 z-10 space-y-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {checks.map((c) => (
+              <span
+                key={c.label}
+                className={`flex items-center gap-1 font-semibold ${c.ok ? 'text-emerald-700' : 'text-red-700'}`}
+              >
+                {c.ok ? <Check className="w-4 h-4" /> : <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-red-700" />}
+                {c.label}
+                {!c.ok && <span className="font-normal text-[#56554F]">(step {c.step})</span>}
+              </span>
+            ))}
+          </div>
+          <p className={`text-sm ${canPublish ? 'text-emerald-800 font-semibold' : 'text-[#56554F]'}`}>
+            {uploading
+              ? 'Uploading your photos, please wait…'
+              : canPublish
+              ? 'Everything is filled in. Press the black button to put it on your website.'
+              : `Still to do: ${missing.map((c) => c.label.toLowerCase()).join(', ')}. The black button switches on when these are done.`}
+          </p>
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
             <button
               type="button"
               onClick={() => save('draft')}
-              disabled={saving || uploading}
-              className="px-5 py-3 border border-[#171714] text-sm font-semibold text-[#171714] hover:bg-[#171714] hover:text-white disabled:opacity-50"
+              disabled={!canSaveDraft}
+              className="px-5 py-3 border border-[#171714] text-sm font-semibold text-[#171714] hover:bg-[#171714] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#171714]"
             >
               {wasLive ? 'Hide from website' : 'Save without publishing'}
             </button>
             <button
               type="button"
               onClick={() => save('live')}
-              disabled={saving || uploading}
-              className="px-6 py-3 bg-[#171714] hover:bg-[#681F2C] text-white text-sm font-semibold disabled:opacity-50"
+              disabled={!canPublish}
+              className="px-6 py-3.5 bg-[#171714] hover:bg-[#681F2C] text-white text-base font-semibold disabled:opacity-40 disabled:hover:bg-[#171714]"
             >
               {saving ? 'Saving…' : wasLive ? 'Save changes' : 'Publish to website'}
             </button>
