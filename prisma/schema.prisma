@@ -270,3 +270,12 @@ model AdminActivityLog {
 
   @@index([timestamp])
 }
+
+/// Product photos uploaded from the admin. Stored already resized (WebP) and
+/// served from /api/media/<id>.
+model MediaAsset {
+  id        String   @id @default(cuid())
+  mime      String
+  data      Bytes
+  createdAt DateTime @default(now())
+}

@@ -50,12 +50,12 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   const [collection, setCollection] = useState(product?.collection || 'COLLECTION 01');
   const [description, setDescription] = useState(product?.description || '');
   const [fitAndSize, setFitAndSize] = useState(
-    product?.fitAndSize || 'Architectural fit through the bodice. Model is 5\'10" wearing size S.'
+    product?.fitAndSize || 'Relaxed, easy fit. Available in sizes 10 to 20. Check the size chart for bust, waist, hip and length measurements.'
   );
   const [delivery, setDelivery] = useState(
-    product?.delivery || 'Ships within 1–2 business days.'
+    product?.delivery || 'Ships within 1–2 business days. Flat $10 standard shipping across the US.'
   );
-  const [care, setCare] = useState(product?.care || 'Dry clean only. Store on wide padded hanger.');
+  const [care, setCare] = useState(product?.care || 'Hand wash cold or dry clean. Do not tumble dry.');
 
   // Image Manager State
   const [images, setImages] = useState<string[]>(
@@ -66,20 +66,25 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       : []
   );
   const [primaryImageIdx, setPrimaryImageIdx] = useState(0);
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
 
   // Variants Matrix
   const [variants, setVariants] = useState<ProductVariant[]>(
     product?.variants && product.variants.length > 0
       ? product.variants
-      : [
-          { id: 'v-1', color: 'Black', size: '12', stock: 4, active: true },
-          { id: 'v-2', color: 'Black', size: '14', stock: 5, active: true },
-          { id: 'v-3', color: 'Black', size: '16', stock: 3, active: true },
-          { id: 'v-4', color: 'Ivory', size: '12', stock: 2, active: true },
-          { id: 'v-5', color: 'Ivory', size: '14', stock: 3, active: true },
-        ]
+      : GARMENT_SIZES.map((size) => ({
+          id: `v-${size}`,
+          color: 'Main colour',
+          size,
+          stock: 5,
+          active: true,
+        }))
   );
+  // Swatch shown to customers for each colour name.
+  const [swatches, setSwatches] = useState<Record<string, string>>(() =>
+    Object.fromEntries((product?.colors ?? []).map((c) => [c.name, c.hex]))
+  );
+  const swatchFor = (colorName: string) => swatches[colorName] || '#681F2C';
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,11 +103,22 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   };
 
   // Image actions
-  const handleAddImage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newImageUrl.trim()) return;
-    setImages([...images, newImageUrl.trim()]);
-    setNewImageUrl('');
+  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setUploading(true);
+    setError(null);
+    const added: string[] = [];
+    for (const file of files) {
+      try {
+        added.push(await api.uploadAdminPhoto(file));
+      } catch (err) {
+        setError(`${file.name}: ${getErrorMessage(err, 'Photo upload failed. Please try again.')}`);
+      }
+    }
+    if (added.length > 0) setImages((prev) => [...prev, ...added]);
+    setUploading(false);
   };
 
   const handleSetPrimaryImage = (idx: number) => {
@@ -145,9 +161,9 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
   const handleAddVariantRow = () => {
     const newVariant: ProductVariant = {
       id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
-      color: 'Black',
-      size: '14',
-      stock: 4,
+      color: variants[variants.length - 1]?.color || 'Main colour',
+      size: GARMENT_SIZES.find((sz) => !variants.some((v) => v.size === sz && v.color === (variants[variants.length - 1]?.color || 'Main colour'))) || '14',
+      stock: 5,
       active: true,
     };
     setVariants([...variants, newVariant]);
@@ -165,7 +181,22 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     }
 
     if (images.length === 0) {
-      setError('Please add at least one photograph');
+      setError('Please upload at least one photo');
+      return;
+    }
+
+    if (!(priceInDollars > 0)) {
+      setError('Please enter a price');
+      return;
+    }
+
+    if (uploading) {
+      setError('Please wait for the photos to finish uploading');
+      return;
+    }
+
+    if ((targetStatus || status) === 'live' && !variants.some((v) => v.active && v.color.trim())) {
+      setError('Add at least one size with a colour name and mark it Active, so customers can buy it');
       return;
     }
 
@@ -183,16 +214,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
     // Derive available colors and sizes from variants
     const colorsMap = new Map<string, string>();
     variants.forEach((v) => {
-      if (!colorsMap.has(v.color)) {
-        colorsMap.set(
-          v.color,
-          v.color.toLowerCase() === 'black'
-            ? '#171714'
-            : v.color.toLowerCase() === 'ivory'
-            ? '#FAF9F6'
-            : '#681F2C'
-        );
-      }
+      if (!colorsMap.has(v.color)) colorsMap.set(v.color, swatchFor(v.color));
     });
 
     const colors = Array.from(colorsMap.entries()).map(([cName, hex]) => ({
@@ -219,8 +241,6 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
       fitAndSize,
       delivery,
       care,
-      rating: product?.rating || 4.9,
-      reviewsCount: product?.reviewsCount || 1,
     };
 
     try {
@@ -260,7 +280,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               {isEditing ? 'Edit product' : 'Add a new product'}
             </span>
             <h2 className="font-serif text-2xl text-[#171714]">
-              {isEditing ? product.name : 'Catalogue Item Entry'}
+              {isEditing ? product.name : 'New product'}
             </h2>
           </div>
 
@@ -431,31 +451,37 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               ))}
             </div>
 
-            {/* Add Image URL */}
-            <form onSubmit={handleAddImage} className="flex gap-2 pt-2">
-              <input
-                type="url"
-                placeholder="Paste photographic asset URL (Unsplash or CDN link)..."
-                value={newImageUrl}
-                onChange={(e) => setNewImageUrl(e.target.value)}
-                className="flex-1 bg-[#F4F1EB] border border-[#D8D4CC] px-3 py-2 text-xs focus:outline-none focus:border-[#171714]"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2 bg-[#171714] text-[#FAF9F6] text-xs font-semibold uppercase tracking-wider hover:bg-[#681F2C] transition-colors"
+            {/* Upload photos */}
+            <div className="pt-2">
+              <label
+                className={`inline-flex items-center gap-2 px-4 py-2.5 bg-[#171714] text-[#FAF9F6] text-xs font-semibold uppercase tracking-wider transition-colors ${
+                  uploading ? 'opacity-60 cursor-wait' : 'cursor-pointer hover:bg-[#681F2C]'
+                }`}
               >
-                + Add Photo
-              </button>
-            </form>
+                <Plus className="w-3.5 h-3.5" />
+                {uploading ? 'Uploading…' : 'Upload photos'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  disabled={uploading}
+                  onChange={handleFiles}
+                  className="sr-only"
+                />
+              </label>
+              <p className="mt-2 text-xs text-[#56554F]">
+                JPG, PNG or WebP, up to 4 MB each. Photos are resized automatically.
+              </p>
+            </div>
           </div>
 
           {/* 3. Variants Matrix (Stock by Color & Size) */}
           <div className="space-y-3 border-t border-[#D8D4CC] pt-6">
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="font-serif text-lg text-[#171714]">Variant Inventory Matrix</h3>
+                <h3 className="font-serif text-lg text-[#171714]">Stock by colour and size</h3>
                 <p className="text-xs text-[#56554F]">
-                  Server source of truth: stock numbers decrement immediately on verified client payment.
+                  Stock goes down automatically each time an order is paid. Every size needs a colour name.
                 </p>
               </div>
               <button
@@ -463,7 +489,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 onClick={handleAddVariantRow}
                 className="px-3 py-1.5 border border-[#D8D4CC] text-xs font-semibold uppercase tracking-wider hover:border-[#171714]"
               >
-                + Add Variant Row
+                + Add size
               </button>
             </div>
 
@@ -471,9 +497,9 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-[#D8D4CC] bg-[#F4F1EB] text-[11px] uppercase tracking-wider text-[#56554F]">
-                    <th className="py-2.5 px-3">Color</th>
+                    <th className="py-2.5 px-3">Colour</th>
                     <th className="py-2.5 px-3">Size</th>
-                    <th className="py-2.5 px-3">Stock Units</th>
+                    <th className="py-2.5 px-3">In stock</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3 text-right">Delete</th>
                   </tr>
@@ -481,7 +507,14 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                 <tbody className="divide-y divide-[#D8D4CC]">
                   {variants.map((v) => (
                     <tr key={v.id} className="hover:bg-[#F4F1EB]/40">
-                      <td className="py-2 px-3">
+                      <td className="py-2 px-3 flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={swatchFor(v.color)}
+                          onChange={(e) => setSwatches((prev) => ({ ...prev, [v.color]: e.target.value }))}
+                          title="Pick the colour swatch customers see"
+                          className="w-7 h-7 p-0 border border-[#D8D4CC] bg-transparent cursor-pointer"
+                        />
                         <input
                           type="text"
                           value={v.color}
@@ -491,7 +524,8 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
                               prev.map((item) => (item.id === v.id ? { ...item, color: val } : item))
                             );
                           }}
-                          className="w-24 px-2 py-1 border border-[#D8D4CC] bg-[#FAF9F6] text-xs"
+                          maxLength={40}
+                          className="w-32 px-2 py-1 border border-[#D8D4CC] bg-[#FAF9F6] text-xs"
                         />
                       </td>
                       <td className="py-2 px-3">
@@ -554,7 +588,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
 
           {/* 4. Editorial Copy & Specs */}
           <div className="space-y-4 border-t border-[#D8D4CC] pt-6">
-            <h3 className="font-serif text-lg text-[#171714]">Editorial Specifications</h3>
+            <h3 className="font-serif text-lg text-[#171714]">Product details</h3>
 
             <div className="space-y-1">
               <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
@@ -572,7 +606,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1">
                 <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                  Fit & Sizing Guide
+                  Fit and sizing
                 </label>
                 <textarea
                   rows={2}
@@ -594,7 +628,7 @@ export const AdminProductModal: React.FC<AdminProductModalProps> = ({
               </div>
               <div className="space-y-1">
                 <label className="text-xs uppercase tracking-wider font-semibold text-[#56554F]">
-                  Care Instructions
+                  Care
                 </label>
                 <textarea
                   rows={2}

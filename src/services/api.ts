@@ -194,6 +194,17 @@ export const api = {
     return data.products;
   },
 
+  /** Uploads one photo; returns the address the website serves it from. */
+  async uploadAdminPhoto(file: File): Promise<string> {
+    const body = new FormData();
+    body.append('file', file);
+    const res = await fetch('/api/admin/upload', { method: 'POST', body, credentials: 'same-origin' });
+    if (res.status === 401) throw new Error('Admin session expired. Please sign in again.');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Photo upload failed. Please try again.');
+    return data.url;
+  },
+
   async createAdminProduct(productData: ProductInput): Promise<Product> {
     const data = await this.adminFetch('/api/admin/products', {
       method: 'POST',
