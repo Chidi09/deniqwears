@@ -281,17 +281,23 @@ export const db = {
         // product's variants), and omitted rows were left untouched and
         // silently purchasable after being removed in the editor.
         const storedVariants = await tx.productVariant.findMany({ where: { productId: id } });
-        const storedIds = new Set(storedVariants.map((v) => v.id));
         const submittedIds = new Set<string>();
 
         for (const v of updates.variants) {
-          const isExisting = v.id && storedIds.has(v.id);
+          // Match by id first, then by colour + size: a row the editor made up
+          // (e.g. "v-10") still maps onto the stored row for that colour and size
+          // instead of colliding with it on the unique constraint.
+          const match =
+            (v.id && storedVariants.find((s) => s.id === v.id)) ||
+            storedVariants.find(
+              (s) => s.size === v.size && s.color.toLowerCase() === v.color.toLowerCase() && !submittedIds.has(s.id)
+            );
 
-          if (isExisting) {
-            submittedIds.add(v.id!);
+          if (match) {
+            submittedIds.add(match.id);
             await tx.productVariant.updateMany({
               // Scoped by productId so an id from another product can't match.
-              where: { id: v.id!, productId: id },
+              where: { id: match.id, productId: id },
               data: {
                 color: v.color,
                 size: v.size,
