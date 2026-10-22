@@ -24,6 +24,8 @@ interface AdminProductsProps {
   onOpenEdit: (product: Product) => void;
 }
 
+const STATUS_LABEL: Record<string, string> = { all: 'All', live: 'On the website', draft: 'Not published', archived: 'Removed' };
+
 export const AdminProducts: React.FC<AdminProductsProps> = ({
   products,
   onRefresh,
@@ -165,7 +167,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
           <Search className="w-3.5 h-3.5 text-[#56554F] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search products by name or category…"
+            placeholder="Search by name or type…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-[#F4F1EB] border border-[#D8D4CC] pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-[#171714]"
@@ -188,7 +190,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>{quickEditMode ? 'Exit Quick Edit' : 'Quick Edit Mode'}</span>
+            <span>{quickEditMode ? 'Done editing' : 'Change prices and stock quickly'}</span>
           </button>
 
           <button
@@ -196,7 +198,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
             className="px-4 py-2 bg-[#171714] hover:bg-[#681F2C] text-[#FAF9F6] text-xs font-semibold uppercase tracking-[0.16em] flex items-center space-x-1.5 transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Add product</span>
+            <span>Add a product</span>
           </button>
         </div>
       </div>
@@ -213,7 +215,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                 : 'text-[#56554F] hover:text-[#171714]'
             }`}
           >
-            {tab} ({products.filter((p) => (tab === 'all' ? true : p.status === tab)).length})
+            {STATUS_LABEL[tab]} ({products.filter((p) => (tab === 'all' ? true : p.status === tab)).length})
           </button>
         ))}
       </div>
@@ -228,7 +230,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                 <th className="py-3 px-4">Category</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Price</th>
-                <th className="py-3 px-4">Stock Units</th>
+                <th className="py-3 px-4">In stock</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -270,9 +272,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                           onChange={(e) => handleQuickChange(p.id, 'status', e.target.value)}
                           className="bg-white border border-[#D8D4CC] px-2 py-1 text-xs uppercase tracking-wider font-semibold"
                         >
-                          <option value="live">Live</option>
-                          <option value="draft">Draft</option>
-                          <option value="archived">Archived</option>
+                          <option value="live">On the website</option>
+                          <option value="draft">Not published</option>
+                          <option value="archived">Removed</option>
                         </select>
                       ) : (
                         <span
@@ -284,7 +286,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                               : 'bg-neutral-100 text-neutral-600 border-neutral-300'
                           }`}
                         >
-                          {p.status}
+                          {STATUS_LABEL[p.status] ?? p.status}
                         </span>
                       )}
                     </td>
@@ -359,7 +361,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                             totalStock <= 2 ? 'text-[#681F2C] font-semibold' : 'text-[#171714]'
                           }`}
                         >
-                          {totalStock} units
+                          {totalStock} in stock
                         </span>
                       )}
                     </td>
@@ -369,10 +371,11 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => onOpenEdit(p)}
-                          className="p-1.5 text-[#56554F] hover:text-[#171714] hover:bg-[#E6E1D7] transition-colors"
-                          title="Full Edit Drawer"
+                          className="flex items-center p-1.5 text-[#56554F] hover:text-[#171714] hover:bg-[#E6E1D7] transition-colors"
+                          title="Edit this product"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
+                          <span className="ml-1 text-xs font-semibold">Edit</span>
                         </button>
                         {p.status !== 'archived' && (
                           <button
